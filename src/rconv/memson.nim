@@ -1,13 +1,14 @@
-import std/[parseutils, sequtils, sugar, strformat, strutils, tables]
-import std/nre except toSeq
-import pkg/[unpack]
+import std/[sequtils, sugar, strformat, tables, unicode]
+import std/strutils except split, strip
+
+import ./utils/lineReader
 
 {.experimental: "codeReordering".}
 
 type
     ParseError* = object of CatchableError
 
-    TokenType {.pure.} = enum
+    Token {.pure.} = enum
         # Notes
         Pos1        = "①",
         Pos2        = "②",
@@ -31,18 +32,21 @@ type
         Up          = "∧",
         Down        = "∨",
         Left        = "＜"
-        Right       = "＞"
+        Right       = "＞",
+        # Empty tokens
+        EmptyTick   = "ー"
+        EmptyNote   = "口"
 
     Difficulty {.pure.} = enum
         Basic       = "basic",
         Advanced    = "advanced",
         Extreme     = "extreme"
-    
+
     NoteType {.pure.} = enum
         Note,
         Hold
 
-    NotePosition = range[1..16]
+    NotePosition = range[0..15]
 
     Note = object
         time: uint8
@@ -61,15 +65,15 @@ type
         snaps: seq[uint8]
         originalSnaps: seq[uint8]
         notes: Table[NotePosition, Note]
-    
+
     Snap = object
         length: uint8
         row: uint8
 
     SubSection = object
-        timings: seq[TokenType]
+        timings: seq[Token]
         snaps: seq[Snap]
-        notes: Table[NotePosition, TokenType]
+        notes: Table[NotePosition, Token]
 
     Memson* = object
         songTitle: string
@@ -80,8 +84,11 @@ type
         bpmRange: tuple[min: float, max: float]
         sections: seq[Section]
 
-proc parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] } =
-    var data: seq[string]
+const
+    NonTokenChars = toRunes($(Whitespace + {'|'}))
+
+proc parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] .} =
+    let reader = newLineReader(content)
     var sectionIndex: uint = 0
     var minBpm: float = -1
     var maxBpm: float = -1
@@ -90,35 +97,29 @@ proc parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] 
     var subSections = newSeq[SubSection]()
 
     try:
-        let metaSplit = content.strip().split(re"(\r?\n){2}", 3)
-        let songSplit = metaSplit[0].splitLines()
-        echo(metaSplit)
-        result.songTitle = songSplit[0]
-        result.artist = songSplit[1].strip()
-        result.difficulty = parseDifficulty(metaSplit[1].strip())
+        result.songTitle = reader.nextLine()
+        result.artist = reader.nextLine()
+        result.difficulty = parseDifficulty(reader.nextLine())
         result.sections = newSeq[Section]()
-        data = metaSplit[2].splitLines()
     except:
         raise newException(ParseError, fmt"Could not parse memo header!: " & getCurrentExceptionMsg())
 
-    var rowIndex = 0
-    while rowIndex < data.len:
-        var row = data[rowIndex].strip()
-        rowIndex += 1
+    while not reader.isEOF():
+        var row = reader.nextLine()
 
         if row.isEmptyOrWhitespace():
             continue
 
-        if row.startsWith("level"):
+        if row.toLower.startsWith("level"):
             try:
-                result.level = uint8(parseUInt(row.substr(6).strip()))
+                result.level = uint8(parseUInt(row.runeSubStr(6).strip))
                 continue
             except ValueError:
                 raise newException(ParseError, fmt"Could not parse Level '{row}'!: " & getCurrentExceptionMsg())
 
-        if row.startsWith("bpm"):
+        if row.toLower.startsWith("bpm"):
             try:
-                bpm = parseFloat(row.substr(4).strip())
+                bpm = parseFloat(row.runeSubStr(4).strip)
                 minBpm = if (minBpm == -1): bpm else: min(bpm, minBpm)
                 maxBpm = if (maxBpm == -1): bpm else: max(bpm, maxBpm)
 
@@ -127,11 +128,13 @@ proc parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] 
                 continue
             except ValueError:
                 raise newException(ParseError, fmt"Could not parse BPM '{row}'!: " & getCurrentExceptionMsg())
-        
+
         try:
-            let tmpIndex = parseUInt(row.strip())
+            let tmpIndex = parseUInt(row.strip)
             if tmpIndex > 1:
-                finishSection(sectionIndex, bpm, holds, result.sections, subSections)
+                # Build the section from the sub-sections if any exist
+                if subSections.len > 0:
+                    result.sections.add parseSection(sectionIndex, bpm, holds, subSections)
                 # Clear the sub-sections
                 subSections = newSeq[SubSection]()
             # Update the section to the next one
@@ -140,43 +143,47 @@ proc parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] 
         except:
             discard
 
-        subSections.add(parseSubSection(holds, [row, data[rowIndex + 1], data[rowIndex + 2], data[rowIndex + 3]]))
-        rowIndex += 3
-    
-    finishSection(sectionIndex, bpm, holds, result.sections, subSections)
+        subSections.add parseSubSection(holds, [row, reader.nextLine(), reader.nextLine(), reader.nextLine()])
 
-proc finishSection(index: uint, bpm: float, holds: Table[NotePosition, Note], sections: var seq[Section], subSections: seq[SubSection]): void =
-    if subSections.len < 1:
-        return
+    # Build the section from the sub-sections if any exist
+    if subSections.len > 0:
+        result.sections.add parseSection(sectionIndex, bpm, holds, subSections)
 
-    sections.add parseSection(index, bpm, holds, sections, subSections)
-
-func parseSection(index: uint, bpm: float, holds: Table[NotePosition, Note], sections: var seq[Section], subSections: seq[SubSection]): Section =
+func parseSection(index: uint, bpm: float, holds: Table[NotePosition, Note], subSections: seq[SubSection]): Section =
     result.index = index
     result.bpm = bpm
     # TODO: Implementation
 
-func parseSubSection(holds: Table[NotePosition, Note], rows: array[4, string]): SubSection =
+proc parseSubSection(holds: Table[NotePosition, Note], rows: array[4, string]): SubSection =
     result.snaps = newSeq[Snap]()
-    result.timings = newSeq[TokenType]()
-    result.notes = initTable[NotePosition, TokenType]()
+    result.timings = newSeq[Token]()
+    result.notes = initTable[NotePosition, Token]()
 
-    for rowIndex in 0..rows.len:
-        let noteData = rows[rowIndex].substr(0, 4)
-        for noteIndex in 0..noteData.len:
+    for rowIndex in 0..(rows.len-1):
+        echo rows[rowIndex]
+        let noteData = rows[rowIndex].runeSubStr(0, 4).strip(runes = NonTokenChars)
+        for noteIndex in 0..noteData.runeLen:
             try:
-                result.notes[(rowIndex * 4) + noteIndex] = parseEnum[TokenType]($noteData[noteIndex])
+                result.notes[(rowIndex * 4) + noteIndex] = parseEnum[Token]($noteData.runeAt(noteIndex))
             except:
-                discard
-        
-        if noteData.len > 4:
-            let timingData = rows[rowIndex].substr(4).strip(chars = Whitespace + {'|'})
-            let timings = @timingData.map(str => parseEnum[TokenType]($str))
-            result.timings &= timings
-            result.snaps.add Snap(length: uint8(timings.len), row: uint8(rowIndex))
+                raise newException(ParseError, fmt"Could not parse note-data from line: '{noteData.runeAt(noteIndex)}'!")
 
-func parseDifficulty(diff: string): Difficulty {.raises: [ParseError, ValueError] } =
+        if rows[rowIndex].runeLen > 4:
+            try:
+                let timingData = rows[rowIndex].runeSubStr(4).strip(runes = NonTokenChars)
+                for str in utf8(timingData):
+                    try:
+                        result.timings.add parseEnum[Token]($str)
+                    except:
+                        echo fmt"Could not parse timing token from '{str}'!"
+                        raise
+
+                result.snaps.add Snap(length: uint8(timingData.runeLen), row: uint8(rowIndex))
+            except:
+                raise newException(ParseError, fmt"Could not parse timing-data from line: '{rows[rowIndex]}'! " & getCurrentExceptionMsg())
+
+func parseDifficulty(diff: string): Difficulty {.raises: [ParseError, ValueError] .} =
     try:
-        return parseEnum[Difficulty](diff.toLowerAscii())
+        return parseEnum[Difficulty](diff.toLower())
     except ValueError:
         raise newException(ParseError, fmt"Could not parse Difficulty '{diff}'!")

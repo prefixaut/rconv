@@ -1,0 +1,15 @@
+####
+## System Files
+####
+.DS_Store
+thumbs.db
+
+####
+## Output Files
+####
+dist
+
+####
+## Misc
+####
+!.gitkeep

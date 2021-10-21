@@ -1,13 +1,12 @@
 import std/[sequtils, sugar, strformat, tables, unicode]
 import std/strutils except split, strip
 
-import ./utils/lineReader
+import ./utils/[lineReader]
+import ./common
 
 {.experimental: "codeReordering".}
 
 type
-    ParseError* = object of CatchableError
-
     Token {.pure.} = enum
         # Notes
         Pos1        = "①",
@@ -87,7 +86,7 @@ type
 const
     NonTokenChars = toRunes($(Whitespace + {'|'}))
 
-proc parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] .} =
+func parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] .} =
     let reader = newLineReader(content)
     var sectionIndex: uint = 0
     var minBpm: float = -1
@@ -102,7 +101,8 @@ proc parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] 
         result.difficulty = parseDifficulty(reader.nextLine())
         result.sections = newSeq[Section]()
     except:
-        raise newException(ParseError, fmt"Could not parse memo header!: " & getCurrentExceptionMsg())
+        {.cast(noSideEffect).}:
+            raise newException(ParseError, fmt"Could not parse memo header!: " & getCurrentExceptionMsg())
 
     while not reader.isEOF():
         var row = reader.nextLine()
@@ -115,7 +115,8 @@ proc parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] 
                 result.level = uint8(parseUInt(row.runeSubStr(6).strip))
                 continue
             except ValueError:
-                raise newException(ParseError, fmt"Could not parse Level '{row}'!: " & getCurrentExceptionMsg())
+                {.cast(noSideEffect).}:
+                    raise newException(ParseError, fmt"Could not parse Level '{row}' on line {reader.line}!: " & getCurrentExceptionMsg())
 
         if row.toLower.startsWith("bpm"):
             try:
@@ -127,7 +128,8 @@ proc parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] 
                     result.bpm = bpm
                 continue
             except ValueError:
-                raise newException(ParseError, fmt"Could not parse BPM '{row}'!: " & getCurrentExceptionMsg())
+                {.cast(noSideEffect).}:
+                    raise newException(ParseError, fmt"Could not parse BPM '{row}'!: " & getCurrentExceptionMsg())
 
         try:
             let tmpIndex = parseUInt(row.strip)
@@ -143,44 +145,49 @@ proc parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] 
         except:
             discard
 
-        subSections.add parseSubSection(holds, [row, reader.nextLine(), reader.nextLine(), reader.nextLine()])
+        log "new subsection: " & $reader.line
+        subSections.add parseSubSection([row, reader.nextLine(), reader.nextLine(), reader.nextLine()])
 
     # Build the section from the sub-sections if any exist
     if subSections.len > 0:
         result.sections.add parseSection(sectionIndex, bpm, holds, subSections)
 
-func parseSection(index: uint, bpm: float, holds: Table[NotePosition, Note], subSections: seq[SubSection]): Section =
+proc parseSection(index: uint, bpm: float, holds: Table[NotePosition, Note], subSections: seq[SubSection]): Section =
     result.index = index
     result.bpm = bpm
     # TODO: Implementation
 
-proc parseSubSection(holds: Table[NotePosition, Note], rows: array[4, string]): SubSection =
+func parseSubSection(rows: array[4, string]): SubSection =
     result.snaps = newSeq[Snap]()
     result.timings = newSeq[Token]()
     result.notes = initTable[NotePosition, Token]()
 
-    for rowIndex in 0..(rows.len-1):
-        echo rows[rowIndex]
-        let noteData = rows[rowIndex].runeSubStr(0, 4).strip(runes = NonTokenChars)
-        for noteIndex in 0..noteData.runeLen:
+    var rowIndex = 0
+    for line in rows:
+        log line
+        let noteData = line.runeSubStr(0, 3).strip(runes = NonTokenChars)
+        var noteIndex = 0
+        for note in utf8(noteData):
             try:
-                result.notes[(rowIndex * 4) + noteIndex] = parseEnum[Token]($noteData.runeAt(noteIndex))
+                result.notes[(rowIndex * 4) + noteIndex] = parseEnum[Token](note)
+                inc noteIndex
             except:
                 raise newException(ParseError, fmt"Could not parse note-data from line: '{noteData.runeAt(noteIndex)}'!")
 
-        if rows[rowIndex].runeLen > 4:
+        if line.runeLen > 4:
             try:
-                let timingData = rows[rowIndex].runeSubStr(4).strip(runes = NonTokenChars)
+                let timingData = line.runeSubStr(4).strip(runes = NonTokenChars)
                 for str in utf8(timingData):
                     try:
                         result.timings.add parseEnum[Token]($str)
                     except:
-                        echo fmt"Could not parse timing token from '{str}'!"
+                        log fmt"Could not parse timing token from '{str}'!"
                         raise
 
                 result.snaps.add Snap(length: uint8(timingData.runeLen), row: uint8(rowIndex))
             except:
-                raise newException(ParseError, fmt"Could not parse timing-data from line: '{rows[rowIndex]}'! " & getCurrentExceptionMsg())
+                {.cast(noSideEffect).}:
+                    raise newException(ParseError, fmt"Could not parse timing-data from line: '{rows[rowIndex]}'! " & getCurrentExceptionMsg())
 
 func parseDifficulty(diff: string): Difficulty {.raises: [ParseError, ValueError] .} =
     try:

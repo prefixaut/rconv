@@ -8,6 +8,7 @@ thumbs.db
 ## Output Files
 ####
 dist
+output.json
 
 ####
 ## Misc

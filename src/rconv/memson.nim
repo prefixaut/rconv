@@ -1,4 +1,4 @@
-import std/[sequtils, sugar, strformat, tables, unicode]
+import std/[strformat, tables, unicode]
 import std/strutils except split, strip
 
 import ./utils/[lineReader]
@@ -29,7 +29,7 @@ type
         Vertical    = "｜",
         Horizontal  = "―",
         Up          = "∧",
-        Down        = "∨",
+        Down        = "Ｖ",
         Left        = "＜"
         Right       = "＞",
         # Empty tokens
@@ -45,7 +45,8 @@ type
         Note,
         Hold
 
-    NotePosition = range[0..15]
+    NoteRange = range[0..15]
+    RowIndex = range[0..3]
 
     Note = object
         time: uint8
@@ -60,19 +61,19 @@ type
     Section = object
         index: uint
         bpm: float
-        timings: seq[uint8]
-        snaps: seq[uint8]
+        timings: seq[Token]
+        snaps: array[RowIndex, uint8]
         originalSnaps: seq[uint8]
-        notes: Table[NotePosition, Note]
+        notes: Table[NoteRange, Note]
 
     Snap = object
-        length: uint8
-        row: uint8
+        len: uint8
+        row: RowIndex
 
     SubSection = object
         timings: seq[Token]
         snaps: seq[Snap]
-        notes: Table[NotePosition, Token]
+        notes: Table[NoteRange, Token]
 
     Memson* = object
         songTitle: string
@@ -84,6 +85,9 @@ type
         sections: seq[Section]
 
 const
+    FillerNotes = { Token.Vertical, Token.Horizontal, Token.EmptyNote }
+    HoldStart = { Token.Up, Token.Down, Token.Left, Token.Right }
+    NotePosition = 0..15.NoteRange
     NonTokenChars = toRunes($(Whitespace + {'|'}))
 
 func parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] .} =
@@ -92,7 +96,7 @@ func parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] 
     var minBpm: float = -1
     var maxBpm: float = -1
     var bpm : float = -1
-    var holds = initTable[NotePosition, Note]()
+    var holds = initTable[NoteRange, seq[Note]]()
     var subSections = newSeq[SubSection]()
 
     try:
@@ -137,6 +141,8 @@ func parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] 
                 # Build the section from the sub-sections if any exist
                 if subSections.len > 0:
                     result.sections.add parseSection(sectionIndex, bpm, holds, subSections)
+                    inc sectionIndex
+
                 # Clear the sub-sections
                 subSections = newSeq[SubSection]()
             # Update the section to the next one
@@ -145,46 +151,118 @@ func parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] 
         except:
             discard
 
-        log "new subsection: " & $reader.line
         subSections.add parseSubSection([row, reader.nextLine(), reader.nextLine(), reader.nextLine()])
 
     # Build the section from the sub-sections if any exist
     if subSections.len > 0:
         result.sections.add parseSection(sectionIndex, bpm, holds, subSections)
+        inc sectionIndex
 
-proc parseSection(index: uint, bpm: float, holds: Table[NotePosition, Note], subSections: seq[SubSection]): Section =
+proc parseSection(index: uint, bpm: float, holds: var Table[NoteRange, seq[Note]], subSections: seq[SubSection]): Section =
     result.index = index
     result.bpm = bpm
-    # TODO: Implementation
+    result.notes = initTable[NoteRange, Note]()
+    result.timings = newSeq[Token]()
+    result.snaps = [uint8(0), uint8(0), uint8(0), uint8(0)]
+    
+    # TODO: Fix all of this, still a mess
+    var offset = 0
+
+    for sub in subSections:
+        # Add the snaps
+        for snap in sub.snaps:
+            result.snaps[snap.row] += snap.len
+
+        # Add the timings
+        for timing in sub.timings:
+            result.timings.add timing
+
+        var noteIndices = newSeq[NoteRange]()
+
+        for noteIndex in NotePosition:
+            let noteType = if sub.notes.contains(noteIndex): sub.notes[noteIndex] else: Token.EmptyNote
+
+            # Skip empty/invalid notes
+            if FillerNotes.contains(noteType) or HoldStart.contains(noteType):
+                continue
+
+            var holdOffset = holdOffset(noteType)
+            
+            # If it is a regular note, save it to the note-indices for later processing
+            if holdOffset == 0:
+                noteIndices.add noteIndex
+                continue
+
+            var holdEnd = noteIndex
+            while NotePosition.contains holdEnd:
+                inc holdEnd, holdOffset
+                # Skip filler notes
+                if FillerNotes.contains sub.notes[holdEnd]:
+                    continue
+                break
+
+            var hold = Note(time: uint8(offset + result.timings.find(noteType)), noteType: NoteType.Hold, animationStartIndex: uint8(noteIndex))
+            result.notes[noteIndex] = hold
+            if not holds.contains(noteIndex):
+                holds[noteIndex] = newSeq[Note]()
+            holds[noteIndex].add hold
+
+        for noteIndex in noteIndices:
+            let noteTiming = result.timings.find(sub.notes[noteIndex])
+
+            if holds.contains(noteIndex) and holds[noteIndex].len > 0:
+                for hold in holds[noteIndex]:
+                    discard
+                    # TODO: Find out how to fix this
+                    #when hold.noteType == NoteType.Hold:
+                    #    hold.releaseSection = index
+                    #    hold.releaseTime = offset + noteIndex
+                holds.del noteIndex
+            else:
+                result.notes[noteIndex] = Note(noteType: NoteType.Note, time: uint8(offset + noteTiming))
+
+        # Increment the offset for the next sub-section
+        inc offset, sub.timings.len
 
 func parseSubSection(rows: array[4, string]): SubSection =
     result.snaps = newSeq[Snap]()
     result.timings = newSeq[Token]()
-    result.notes = initTable[NotePosition, Token]()
+    result.notes = initTable[NoteRange, Token]()
 
     var rowIndex = 0
     for line in rows:
-        log line
         let noteData = line.runeSubStr(0, 3).strip(runes = NonTokenChars)
         var noteIndex = 0
         for note in utf8(noteData):
+            var parsed: Token = EmptyNote;
+
             try:
-                result.notes[(rowIndex * 4) + noteIndex] = parseEnum[Token](note)
-                inc noteIndex
+                parsed = parseEnum[Token](note)
+            except ValueError:
+                discard
             except:
                 raise newException(ParseError, fmt"Could not parse note-data from line: '{noteData.runeAt(noteIndex)}'!")
+
+            result.notes[(rowIndex * 4) + noteIndex] = parsed
+            inc noteIndex
 
         if line.runeLen > 4:
             try:
                 let timingData = line.runeSubStr(4).strip(runes = NonTokenChars)
                 for str in utf8(timingData):
+                    var parsed = Token.EmptyTick
+
                     try:
-                        result.timings.add parseEnum[Token]($str)
+                        parsed = parseEnum[Token]($str)
+                    except ValueError:
+                        discard
                     except:
                         log fmt"Could not parse timing token from '{str}'!"
                         raise
 
-                result.snaps.add Snap(length: uint8(timingData.runeLen), row: uint8(rowIndex))
+                    result.timings.add parsed
+
+                result.snaps.add Snap(len: uint8(timingData.runeLen), row: uint8(rowIndex))
             except:
                 {.cast(noSideEffect).}:
                     raise newException(ParseError, fmt"Could not parse timing-data from line: '{rows[rowIndex]}'! " & getCurrentExceptionMsg())
@@ -194,3 +272,16 @@ func parseDifficulty(diff: string): Difficulty {.raises: [ParseError, ValueError
         return parseEnum[Difficulty](diff.toLower())
     except ValueError:
         raise newException(ParseError, fmt"Could not parse Difficulty '{diff}'!")
+
+func holdOffset(token: Token): int =
+    case token:
+        of Token.Up:
+            return -4
+        of Token.Down:
+            return 4
+        of Token.Left:
+            return -1            
+        of Token.Right:
+            return 1
+        else:
+            return 0

@@ -1,37 +1,44 @@
 import std/[unicode]
 
 type
-    LineReader* = ref object of RootObj
+    LineReader* = object of RootObj
         ## A LineReader simply reads over the provided string and retutns
         ## stripped lines until all lines have been read.
-        # The string it's reading
         str: string
-        # Total length of the string
+        ## The string it's reading
         len: int
-        # Byte offset where the reader left off
+        ## Total length of the string
         cursor: int
-        # Current line it's on
+        ## Byte offset where the reader left off
         line: int
-        # Current column it's on
+        ## Current line it's on
         col: int
+        ## Current column it's on
+    LineReaderRef* = ref LineReader
 
-# No using the strutil.Newlines, as it also contains the
-# carrige-return (\r), which we simply ignore (screw CRLF)
 const
     NewLine = '\n'
+    ## No using the strutil.Newlines, as it also contains the
+    ## carrige-return (\r), which we simply ignore (screw CRLF)
 
-func newLineReader*(str: string): LineReader =
+func newLineReader*(str: string): LineReaderRef =
     ## Creates a new LineReader instance from the given string
-    return LineReader(str: str, len: str.len, cursor: 0, line: 1, col: 1)
+    return LineReaderRef(str: str, len: str.len, cursor: 0, line: 1, col: 1)
 
-method nextLine*(this: LineReader): string {.base, noSideEffect, raises: [] .} =
+method nextLine*(this: LineReaderRef): string {.base, noSideEffect, raises: [] .} =
     ## Reads the next line without trailing whitespaces
     ## Skips empty lines all together
+    runnableExamples:
+        let reader = newLineReader("line1\n \t \nline2\n  without whitespace   ")
+        assert reader.nextLine == "line1"
+        assert reader.nextLine == "line2"
+        assert reader.nextLine == "without whitespace"
+
     var start = this.cursor
-    var lastCharcursor = -1
+    var lastCharPos = -1
     var finish = -1
 
-    while this.len > this.cursor:
+    while this.cursor < this.len:
         # Get the current character and it's byte length
         let c = this.str.runeAt(this.cursor)
         let cLen = c.size
@@ -49,7 +56,7 @@ method nextLine*(this: LineReader): string {.base, noSideEffect, raises: [] .} =
 
             # Mark the end
             if finish == -1:
-                finish = lastCharcursor
+                finish = lastCharPos
 
             # Increase the line, reset the column and move the cursor
             # to the next character
@@ -75,26 +82,26 @@ method nextLine*(this: LineReader): string {.base, noSideEffect, raises: [] .} =
             break
 
         # Include this character to the regular output
-        lastCharcursor = this.cursor
+        lastCharPos = this.cursor
         inc this.cursor, cLen
         inc this.col
 
-    # if it didn't "finish", due to reaching EOL, we need to use lastCharcursor instead of finish
-    result = if finish == -1: this.str.substr(start, lastCharcursor) else: this.str.substr(start, finish)
+    # if it didn't "finish", due to reaching EOL, we need to use lastCharPos instead of finish
+    result = if finish == -1: this.str.substr(start, lastCharPos) else: this.str.substr(start, finish)
 
-method line*(this: LineReader): int {.base, inline, noSideEffect, raises: [] .}  =
+method line*(this: LineReaderRef): int {.base, inline, noSideEffect, raises: [] .}  =
     ## Returns the line number where the reader is currently on
     return this.line
 
-method col*(this: LineReader): int {.base, inline, noSideEffect, raises: [] .} =
+method col*(this: LineReaderRef): int {.base, inline, noSideEffect, raises: [] .} =
     ## Returns the column number where the reader is currently on
     return this.col
 
-method isEOF*(this: LineReader): bool {.base, inline, noSideEffect, raises: [] .} =
+method isEOF*(this: LineReaderRef): bool {.base, inline, noSideEffect, raises: [] .} =
     ## Returns if the LineReader has reached the end and can't produce any more lines
     return this.cursor >= this.len
 
-method reset*(this: LineReader): void {.base, noSideEffect, raises: [] .} =
+method reset*(this: LineReaderRef): void {.base, noSideEffect, raises: [] .} =
     ## Resets the LineReader to the beginning
     this.cursor = 0
     this.line = 1

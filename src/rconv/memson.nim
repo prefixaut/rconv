@@ -1,7 +1,7 @@
-import std/[strformat, tables, unicode]
+import std/[json, jsonutils, strformat, sugar, tables, unicode]
 import std/strutils except split, strip
 
-import ./utils/[lineReader]
+import ./utils/[line_reader]
 import ./common
 
 {.experimental: "codeReordering".}
@@ -25,6 +25,7 @@ type
         Pos14       = "⑭",
         Pos15       = "⑮",
         Pos16       = "⑯",
+
         # Hold Indicators
         Vertical    = "｜",
         Horizontal  = "―",
@@ -32,6 +33,7 @@ type
         Down        = "Ｖ",
         Left        = "＜"
         Right       = "＞",
+
         # Empty tokens
         EmptyTick   = "ー"
         EmptyNote   = "口"
@@ -40,17 +42,17 @@ type
         Basic       = "basic",
         Advanced    = "advanced",
         Extreme     = "extreme"
-
+    
     NoteType {.pure.} = enum
-        Note,
-        Hold
+        Note        = "note"
+        Hold        = "hold"
 
     NoteRange = range[0..15]
     RowIndex = range[0..3]
 
     Note = object
         time: uint8
-        case noteType: NoteType
+        case kind: NoteType
         of Hold:
             animationStartIndex: uint8
             releaseTime: uint8
@@ -61,10 +63,10 @@ type
     Section = object
         index: uint
         bpm: float
-        timings: seq[Token]
+        timings: seq[int8]
         snaps: array[RowIndex, uint8]
-        originalSnaps: seq[uint8]
-        notes: Table[NoteRange, Note]
+        originalSnaps: seq[Snap]
+        notes: OrderedTable[NoteRange, Note]
 
     Snap = object
         len: uint8
@@ -85,12 +87,12 @@ type
         sections: seq[Section]
 
 const
-    FillerNotes = { Token.Vertical, Token.Horizontal, Token.EmptyNote }
+    FillerNotes = { Token.Vertical, Token.Horizontal, Token.EmptyNote, Token.EmptyTick }
     HoldStart = { Token.Up, Token.Down, Token.Left, Token.Right }
     NotePosition = 0..15.NoteRange
     NonTokenChars = toRunes($(Whitespace + {'|'}))
 
-func parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] .} =
+proc parseToMemson*(content: string): Memson =
     let reader = newLineReader(content)
     var sectionIndex: uint = 0
     var minBpm: float = -1
@@ -103,13 +105,14 @@ func parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] 
         result.songTitle = reader.nextLine()
         result.artist = reader.nextLine()
         result.difficulty = parseDifficulty(reader.nextLine())
-        result.sections = newSeq[Section]()
+        result.sections = @[]
     except:
         {.cast(noSideEffect).}:
             raise newException(ParseError, fmt"Could not parse memo header!: " & getCurrentExceptionMsg())
 
     while not reader.isEOF():
         var row = reader.nextLine()
+        #log fmt"row {reader.line()}: '{row}'"
 
         if row.isEmptyOrWhitespace():
             continue
@@ -136,21 +139,30 @@ func parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] 
                     raise newException(ParseError, fmt"Could not parse BPM '{row}'!: " & getCurrentExceptionMsg())
 
         try:
-            let tmpIndex = parseUInt(row.strip)
+            let tmpIndex = uint8(parseInt(row))
+            #log fmt"GOT INDEX {tmpIndex}"
             if tmpIndex > 1:
                 # Build the section from the sub-sections if any exist
                 if subSections.len > 0:
+                    #log "DOING SUBSECTIONS! " & $subSections
                     result.sections.add parseSection(sectionIndex, bpm, holds, subSections)
-                    inc sectionIndex
 
+                #log "CLEARING SUBSECTIONS"
                 # Clear the sub-sections
-                subSections = newSeq[SubSection]()
+                subSections = @[]
+            
+            #log "UPDATE SECTION INDEX"
             # Update the section to the next one
             sectionIndex = tmpIndex
             continue
         except:
+            if row.runeLen == 2:
+                {.cast(noSideEffect).}:
+                    log "WTF??"
+                    raise getCurrentException()
             discard
 
+        #log fmt"Section: {sectionIndex}"
         subSections.add parseSubSection([row, reader.nextLine(), reader.nextLine(), reader.nextLine()])
 
     # Build the section from the sub-sections if any exist
@@ -161,21 +173,27 @@ func parseToMemson*(content: string): Memson {.raises: [ParseError, ValueError] 
 proc parseSection(index: uint, bpm: float, holds: var Table[NoteRange, seq[Note]], subSections: seq[SubSection]): Section =
     result.index = index
     result.bpm = bpm
-    result.notes = initTable[NoteRange, Note]()
-    result.timings = newSeq[Token]()
+    result.notes = initOrderedTable[NoteRange, Note]()
+    result.timings = @[]
     result.snaps = [uint8(0), uint8(0), uint8(0), uint8(0)]
-    
+    result.originalSnaps = @[]
+
     # TODO: Fix all of this, still a mess
     var offset = 0
 
+    #log fmt"Section: {index}"
     for sub in subSections:
         # Add the snaps
         for snap in sub.snaps:
             result.snaps[snap.row] += snap.len
+            result.originalSnaps.add snap
 
         # Add the timings
-        for timing in sub.timings:
-            result.timings.add timing
+        for timingIndex, timing in sub.timings.pairs:
+            if not FillerNotes.contains timing:
+                result.timings.add tickToIndex(timing)
+            else:
+                result.timings.add -1
 
         var noteIndices = newSeq[NoteRange]()
 
@@ -187,7 +205,7 @@ proc parseSection(index: uint, bpm: float, holds: var Table[NoteRange, seq[Note]
                 continue
 
             var holdOffset = holdOffset(noteType)
-            
+
             # If it is a regular note, save it to the note-indices for later processing
             if holdOffset == 0:
                 noteIndices.add noteIndex
@@ -201,36 +219,46 @@ proc parseSection(index: uint, bpm: float, holds: var Table[NoteRange, seq[Note]
                     continue
                 break
 
-            var hold = Note(time: uint8(offset + result.timings.find(noteType)), noteType: NoteType.Hold, animationStartIndex: uint8(noteIndex))
+            let noteTiming = result.timings.find(tickToIndex(noteType))
+            #log fmt"Timing for hold {noteIndex} '{noteType}' is '{noteTiming}'"
+            var hold = Note(kind: NoteType.Hold, time: uint8(offset + noteTiming), animationStartIndex: uint8(noteIndex))
             result.notes[noteIndex] = hold
             if not holds.contains(noteIndex):
-                holds[noteIndex] = newSeq[Note]()
+                holds[noteIndex] = @[]
             holds[noteIndex].add hold
 
         for noteIndex in noteIndices:
-            let noteTiming = result.timings.find(sub.notes[noteIndex])
+            let noteType = sub.notes[noteIndex]
+            let noteTiming = result.timings.find(tickToIndex(noteType))
 
+            #log fmt"Timing for note {noteIndex} '{noteType}' is '{noteTiming}'"
             if holds.contains(noteIndex) and holds[noteIndex].len > 0:
-                for hold in holds[noteIndex]:
-                    discard
-                    # TODO: Find out how to fix this
-                    #when hold.noteType == NoteType.Hold:
-                    #    hold.releaseSection = index
-                    #    hold.releaseTime = offset + noteIndex
+                # Regular for loop makes the elements immutable, therefore
+                # using this roundabout way with the index
+                for hold in holds[noteIndex].mitems:
+                    hold.releaseSection = uint8(index)
+                    hold.releaseTime = uint8(offset + noteTiming)
                 holds.del noteIndex
             else:
-                result.notes[noteIndex] = Note(noteType: NoteType.Note, time: uint8(offset + noteTiming))
+                result.notes[noteIndex] = Note(kind: NoteType.Note, time: uint8(offset + noteTiming))
 
         # Increment the offset for the next sub-section
         inc offset, sub.timings.len
+    
+    # Sort the notes by the index
+    result.notes.sort((a, b) => system.cmp(a[0], b[0]))
 
 func parseSubSection(rows: array[4, string]): SubSection =
-    result.snaps = newSeq[Snap]()
-    result.timings = newSeq[Token]()
+    result.snaps = @[]
+    result.timings = @[]
     result.notes = initTable[NoteRange, Token]()
 
     var rowIndex = 0
     for line in rows:
+        # log line
+        if line.isEmptyOrWhitespace():
+            return
+
         let noteData = line.runeSubStr(0, 3).strip(runes = NonTokenChars)
         var noteIndex = 0
         for note in utf8(noteData):
@@ -266,6 +294,7 @@ func parseSubSection(rows: array[4, string]): SubSection =
             except:
                 {.cast(noSideEffect).}:
                     raise newException(ParseError, fmt"Could not parse timing-data from line: '{rows[rowIndex]}'! " & getCurrentExceptionMsg())
+        inc rowIndex
 
 func parseDifficulty(diff: string): Difficulty {.raises: [ParseError, ValueError] .} =
     try:
@@ -285,3 +314,76 @@ func holdOffset(token: Token): int =
             return 1
         else:
             return 0
+
+func tickToIndex(token: Token): int8 =
+    case token:
+        of Token.Pos1:
+            return 1
+        of Token.Pos2:
+            return 2
+        of Token.Pos3:
+            return 3
+        of Token.Pos4:
+            return 4
+        of Token.Pos5:
+            return 5
+        of Token.Pos6:
+            return 6
+        of Token.Pos7:
+            return 7
+        of Token.Pos8:
+            return 8
+        of Token.Pos9:
+            return 9
+        of Token.Pos10:
+            return 10
+        of Token.Pos11:
+            return 11
+        of Token.Pos12:
+            return 12
+        of Token.Pos13:
+            return 13
+        of Token.Pos14:
+            return 14
+        of Token.Pos15:
+            return 15
+        of Token.Pos16:
+            return 16
+        else:
+            return -1
+
+proc toJsonHook*[T: Memson](this: T): JsonNode =
+    result = newJObject()
+    result["songTitle"] = toJson(this.songTitle)
+    result["artist"] = toJson(this.artist)
+    result["difficulty"] = toJson(this.difficulty)
+    result["level"] = toJson(this.level)
+    result["bpm"] = toJson(this.bpm)
+    # Only needed if there's a range present
+    if (this.bpmRange.min != this.bpmRange.max):
+        result["bpmRange"] = newJObject()
+        result["bpmRange"]["min"] = toJson(this.bpmRange.min)
+        result["bpmRange"]["max"] = toJson(this.bpmRange.max)
+    result["sections"] = newJArray()
+    for sec in this.sections:
+        add(result["sections"], toJson(sec))
+
+proc toJsonHook*[T: Section](this: T): JsonNode =
+    result = newJObject()
+    result["index"] = toJson(this.index)
+    result["bpm"] = toJson(this.bpm)
+    result["timings"] = toJson(this.timings)
+    result["snaps"] = toJson(this.snaps)
+    result["originalSnaps"] = toJson(this.originalSnaps)
+    result["notes"] = newJObject()
+
+    for index, note in this.notes.pairs:
+        result["notes"][$index] = toJson(note)
+
+proc toJsonHook*[T: Note](this: T): JsonNode =
+    result = newJObject()
+    result["time"] = toJson(this.time)
+    if this.kind == NoteType.Hold:
+        result["animationStartIndex"] = toJson(this.animationStartIndex)
+        result["releaseTime"] = toJson(this.releaseTime)
+        result["releaseSection"] = toJson(this.releaseSection)

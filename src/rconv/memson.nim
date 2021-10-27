@@ -112,7 +112,6 @@ proc parseToMemson*(content: string): Memson =
 
     while not reader.isEOF():
         var row = reader.nextLine()
-        #log fmt"row {reader.line()}: '{row}'"
 
         if row.isEmptyOrWhitespace():
             continue
@@ -136,33 +135,25 @@ proc parseToMemson*(content: string): Memson =
                 continue
             except ValueError:
                 {.cast(noSideEffect).}:
-                    raise newException(ParseError, fmt"Could not parse BPM '{row}'!: " & getCurrentExceptionMsg())
+                    raise newException(ParseError, fmt"Could not parse BPM '{row}' on line {reader.line}!: " & getCurrentExceptionMsg())
 
         try:
             let tmpIndex = uint8(parseInt(row))
-            #log fmt"GOT INDEX {tmpIndex}"
             if tmpIndex > 1:
                 # Build the section from the sub-sections if any exist
                 if subSections.len > 0:
-                    #log "DOING SUBSECTIONS! " & $subSections
                     result.sections.add parseSection(sectionIndex, bpm, holds, subSections)
 
-                #log "CLEARING SUBSECTIONS"
                 # Clear the sub-sections
                 subSections = @[]
-            
-            #log "UPDATE SECTION INDEX"
+
             # Update the section to the next one
             sectionIndex = tmpIndex
             continue
         except:
-            if row.runeLen == 2:
-                {.cast(noSideEffect).}:
-                    log "WTF??"
-                    raise getCurrentException()
+            # if it's not a index which could be parsed, then it's a regular section line
             discard
 
-        #log fmt"Section: {sectionIndex}"
         subSections.add parseSubSection([row, reader.nextLine(), reader.nextLine(), reader.nextLine()])
 
     # Build the section from the sub-sections if any exist
@@ -178,10 +169,8 @@ proc parseSection(index: uint, bpm: float, holds: var Table[NoteRange, seq[Note]
     result.snaps = [uint8(0), uint8(0), uint8(0), uint8(0)]
     result.originalSnaps = @[]
 
-    # TODO: Fix all of this, still a mess
     var offset = 0
 
-    #log fmt"Section: {index}"
     for sub in subSections:
         # Add the snaps
         for snap in sub.snaps:
@@ -220,9 +209,10 @@ proc parseSection(index: uint, bpm: float, holds: var Table[NoteRange, seq[Note]
                 break
 
             let noteTiming = result.timings.find(tickToIndex(noteType))
-            #log fmt"Timing for hold {noteIndex} '{noteType}' is '{noteTiming}'"
             var hold = Note(kind: NoteType.Hold, time: uint8(offset + noteTiming), animationStartIndex: uint8(noteIndex))
             result.notes[noteIndex] = hold
+
+            # Create the seq if there's none set
             if not holds.contains(noteIndex):
                 holds[noteIndex] = @[]
             holds[noteIndex].add hold
@@ -231,7 +221,6 @@ proc parseSection(index: uint, bpm: float, holds: var Table[NoteRange, seq[Note]
             let noteType = sub.notes[noteIndex]
             let noteTiming = result.timings.find(tickToIndex(noteType))
 
-            #log fmt"Timing for note {noteIndex} '{noteType}' is '{noteTiming}'"
             if holds.contains(noteIndex) and holds[noteIndex].len > 0:
                 # Regular for loop makes the elements immutable, therefore
                 # using this roundabout way with the index
@@ -255,7 +244,6 @@ func parseSubSection(rows: array[4, string]): SubSection =
 
     var rowIndex = 0
     for line in rows:
-        # log line
         if line.isEmptyOrWhitespace():
             return
 

@@ -82,7 +82,11 @@ method nextLine*(this: LineReaderRef): string {.base, noSideEffect, raises: [] .
             break
 
         # Include this character to the regular output
-        lastCharPos = this.cursor
+        # the additional offset from the cursor is so that when the
+        # last char is a unicode char, cLen > 1
+        # therefore add the additional bytes of the char as well,
+        # otherwise it'd be cut out
+        lastCharPos = this.cursor + cLen - 1
         inc this.cursor, cLen
         inc this.col
 

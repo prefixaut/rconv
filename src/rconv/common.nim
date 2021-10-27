@@ -3,6 +3,11 @@ import std/[macros]
 type
     ParseError* = object of CatchableError
 
+    Difficulty* {.pure.} = enum
+        Basic       = "basic",
+        Advanced    = "advanced",
+        Extreme     = "extreme"
+
 const
     debug = true
 

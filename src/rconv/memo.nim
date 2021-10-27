@@ -100,7 +100,7 @@ proc parseMemoToMemson*(content: string): Memson =
                     raise newException(ParseError, fmt"Could not parse BPM '{row}' on line {reader.line}!: " & getCurrentExceptionMsg())
 
         try:
-            let tmpIndex = uint8(parseInt(row))
+            let tmpIndex = parseUInt(row)
             if tmpIndex > 1:
                 # Build the section from the sub-sections if any exist
                 if parts.len > 0:

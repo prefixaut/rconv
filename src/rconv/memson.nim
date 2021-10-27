@@ -1,11 +1,8 @@
 import std/[json, jsonutils, tables]
 
-type
-    Difficulty* {.pure.} = enum
-        Basic       = "basic",
-        Advanced    = "advanced",
-        Extreme     = "extreme"
-    
+import ./common
+
+type    
     NoteType* {.pure.} = enum
         Note        = "note"
         Hold        = "hold"
@@ -33,8 +30,8 @@ type
         notes*: OrderedTable[NoteRange, Note]
 
     Snap* = object
-        len*: uint8
-        partIndex*: uint8
+        len*: uint16
+        partIndex*: uint16
         row*: RowIndex
 
     Memson* = object

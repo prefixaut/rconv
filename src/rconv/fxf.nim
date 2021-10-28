@@ -1,11 +1,11 @@
-import std/[tables]
+import std/[json, jsonutils, tables]
 
 import ./common
 
 type
     ChartFile* = object
-        ## A complete FXF-Chart file which contains multiple charts
-        version*: uint8
+        ## A complete FXF-Chart file which contains multiple charts (Difficulties)
+        version*: int
         ## Version of the format
         title*: string
         ## Song title
@@ -31,25 +31,25 @@ type
         ## The ticks/notes of the chart
     
     BpmChange* = object
-        time*: uint
+        time*: float
         ## Timestamp in milliseconds when the bpm changes
         bpm*: float
         ## The BPM it changes to
-        snapSize*: uint8
+        snapSize*: int
         ## optional. The snap-size in which this change occurs
-        snapIndex*: uint8
+        snapIndex*: int
         ## optional. The snap-index in which the change occurs
 
-    TickRange* = range[0..15]
+    NoteRange* = range[0..15]
 
     Tick* = object
-        time*: uint
+        time*: float
         ## Timestamp in milliseconds when the button needs to be pressed
-        snapSize*: uint8
+        snapSize*: int
         ## optional. The snap-size in which this tick occurs
-        snapIndex*: uint8
+        snapIndex*: int
         ## optional. The snap-index in which the tick occurs
-        notes*: seq[TickRange]
+        notes*: seq[NoteRange]
         ## Array of note indices which need to be pressed at current time.
         ## e.g. [3, 10] -> button 3 and 10 need to be pressed.
         ##
@@ -64,12 +64,17 @@ type
         ## Sequence of timing data for holds
     
     Hold* = object
-        `from`*: uint
+        `from`*: NoteRange
         ## Index the hold starts on (see notes in Tick interface)
-        to*: uint
+        to*: NoteRange
         ## Index the hold ends on (see notes in Tick interface)
-        releaseOn*: uint
+        releaseOn*: float
         ## Timestamp in milliseconds when to release the note.
         ## 
         ## here is no need to search for the hold end
         ## and animation duration can be calculated really easily
+
+proc toJsonHook*[T: Table[Difficulty, Chart]](this: T): JsonNode =
+    result = newJObject()
+    for key, value in this.pairs:
+        result[$key] = toJson(value)

@@ -10,65 +10,53 @@ type
     NoteRange* = range[0..15]
     RowIndex* = range[0..3]
 
+    BpmRange* = tuple[min: float, max: float]
+
     Note* = object
-        time*: uint8
-        partIndex*: uint8
+        time*: int
+        partIndex*: int
         case kind*: NoteType
         of Hold:
-            animationStartIndex*: uint8
-            releaseTime*: uint8
-            releaseSection*: uint8
+            animationStartIndex*: int
+            releaseTime*: int
+            releaseSection*: int
         else:
             discard
 
     Section* = object
-        index*: uint
+        index*: int
         bpm*: float
-        partCount*: uint8
-        timings*: seq[int8]
+        partCount*: int
+        timings*: seq[int]
         snaps*: seq[Snap]
         notes*: OrderedTable[NoteRange, Note]
 
     Snap* = object
-        len*: uint16
-        partIndex*: uint16
+        len*: int
+        partIndex*: int
         row*: RowIndex
 
     Memson* = object
         songTitle*: string
         artist*: string
         difficulty*: Difficulty
-        level*: uint8
+        level*: int
         bpm*: float
-        bpmRange*: tuple[min: float, max: float]
+        bpmRange*: BpmRange
         sections*: seq[Section]
 
-proc toJsonHook*[T: Memson](this: T): JsonNode =
-    result = newJObject()
-    result["songTitle"] = toJson(this.songTitle)
-    result["artist"] = toJson(this.artist)
-    result["difficulty"] = toJson(this.difficulty)
-    result["level"] = toJson(this.level)
-    result["bpm"] = toJson(this.bpm)
-    # Only needed if there's a range present
-    if (this.bpmRange.min != this.bpmRange.max):
-        result["bpmRange"] = newJObject()
-        result["bpmRange"]["min"] = toJson(this.bpmRange.min)
-        result["bpmRange"]["max"] = toJson(this.bpmRange.max)
-    result["sections"] = newJArray()
-    for sec in this.sections:
-        add(result["sections"], toJson(sec))
+proc toJsonHook*[T: BpmRange](this: T): JsonNode =
+    result = newJNull()
 
-proc toJsonHook*[T: Section](this: T): JsonNode =
-    result = newJObject()
-    result["index"] = toJson(this.index)
-    result["bpm"] = toJson(this.bpm)
-    result["partCount"] = toJson(this.partCount)
-    result["snaps"] = toJson(this.snaps)
-    result["notes"] = newJObject()
+    if this.min != this.max:
+        result = newJObject()
+        result["min"] = this.min
+        result["max"] = this.max
 
-    for index, note in this.notes.pairs:
-        result["notes"][$index] = toJson(note)
+proc toJsonHook*[T: OrderedTable[NoteRange, Note]](this: T): JsonNode =
+    result = newJObject()
+    for index, note in this.pairs:
+        result[$index] = toJson(note)
 
 proc toJsonHook*[T: Note](this: T): JsonNode =
     result = newJObject()

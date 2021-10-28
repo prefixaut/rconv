@@ -1,6 +1,14 @@
 import std/[json, jsonutils]
+
+import ./fxf
 import ./memo
 import ./memson
+import ./converters/memson_to_fxf
 
 let fileContent = readFile("./resources/roll_the_dice_ext.memo")
-writeFile("output.json", pretty(toJson(parseMemoToMemson(fileContent)), 4))
+let parsed = parseMemoToMemson(fileContent)
+
+writeFile("memson.json", pretty(toJson(parsed), 4))
+
+let chart = convertMemsonToFXF(parsed)
+writeFile("fxf.json", pretty(toJson(chart), 4))

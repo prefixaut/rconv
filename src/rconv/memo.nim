@@ -55,13 +55,13 @@ proc parseMemoToMemson*(content: string): Memson =
     ## The content has to be a complete memo file to be parsed correctly.
 
     let reader = newLineReader(content)
-    var sectionIndex: uint = 0
+    var sectionIndex: int = 0
     var minBpm: float = -1
     var maxBpm: float = -1
     var bpm : float = -1
     var holds = initTable[NoteRange, seq[Note]]()
     var parts = newSeq[SectionPart]()
-    var partIndex: uint8 = 0
+    var partIndex: int = 0
 
     try:
         result.songTitle = reader.nextLine()
@@ -80,7 +80,7 @@ proc parseMemoToMemson*(content: string): Memson =
 
         if row.toLower.startsWith("level"):
             try:
-                result.level = uint8(parseUInt(row.runeSubStr(6).strip))
+                result.level = parseInt(row.runeSubStr(6).strip)
                 continue
             except ValueError:
                 {.cast(noSideEffect).}:
@@ -100,7 +100,7 @@ proc parseMemoToMemson*(content: string): Memson =
                     raise newException(ParseError, fmt"Could not parse BPM '{row}' on line {reader.line}!: " & getCurrentExceptionMsg())
 
         try:
-            let tmpIndex = parseUInt(row)
+            let tmpIndex = parseInt(row)
             if tmpIndex > 1:
                 # Build the section from the sub-sections if any exist
                 if parts.len > 0:
@@ -126,7 +126,7 @@ proc parseMemoToMemson*(content: string): Memson =
         partIndex = 0
         inc sectionIndex
 
-proc parseSection(index: uint, partIndex: uint8, bpm: float, holds: var Table[NoteRange, seq[Note]], parts: seq[SectionPart]): Section =
+proc parseSection(index: int, partIndex: int, bpm: float, holds: var Table[NoteRange, seq[Note]], parts: seq[SectionPart]): Section =
     result.index = index
     result.bpm = bpm
     result.partCount = partIndex
@@ -173,7 +173,7 @@ proc parseSection(index: uint, partIndex: uint8, bpm: float, holds: var Table[No
                 break
 
             let noteTiming = result.timings.find(tickToIndex(noteType))
-            var hold = Note(kind: NoteType.Hold, time: uint8(offset + noteTiming), partIndex: uint8(partIndex / 4), animationStartIndex: uint8(noteIndex))
+            var hold = Note(kind: NoteType.Hold, time: offset + noteTiming, partIndex: partIndex div 4, animationStartIndex: noteIndex)
             result.notes[noteIndex] = hold
 
             # Create the seq if there's none set
@@ -189,11 +189,11 @@ proc parseSection(index: uint, partIndex: uint8, bpm: float, holds: var Table[No
                 # Regular for loop makes the elements immutable, therefore
                 # using this roundabout way with the index
                 for hold in holds[noteIndex].mitems:
-                    hold.releaseSection = uint8(index)
-                    hold.releaseTime = uint8(offset + noteTiming)
+                    hold.releaseSection = index
+                    hold.releaseTime = offset + noteTiming
                 holds.del noteIndex
             else:
-                result.notes[noteIndex] = Note(kind: NoteType.Note, time: uint8(offset + noteTiming), partIndex: uint8(partIndex / 4))
+                result.notes[noteIndex] = Note(kind: NoteType.Note, time: offset + noteTiming, partIndex: partIndex div 4)
 
         # Increment the offset for the next sub-section
         inc offset, singlePart.timings.len
@@ -201,7 +201,7 @@ proc parseSection(index: uint, partIndex: uint8, bpm: float, holds: var Table[No
     # Sort the notes by the index
     result.notes.sort((a, b) => system.cmp(a[0], b[0]))
 
-func parseSectionParts(index: uint8, rows: array[4, string]): SectionPart =
+func parseSectionParts(index: int, rows: array[4, string]): SectionPart =
     result.snaps = @[]
     result.timings = @[]
     result.notes = initTable[NoteRange, Token]()
@@ -243,7 +243,7 @@ func parseSectionParts(index: uint8, rows: array[4, string]): SectionPart =
 
                     result.timings.add parsed
 
-                result.snaps.add Snap(len: uint8(timingData.runeLen), row: uint8(rowIndex), partIndex: index)
+                result.snaps.add Snap(len: timingData.runeLen, row: rowIndex, partIndex: index)
             except:
                 {.cast(noSideEffect).}:
                     raise newException(ParseError, fmt"Could not parse timing-data from line: '{rows[rowIndex]}'! " & getCurrentExceptionMsg())

@@ -8,7 +8,12 @@ thumbs.db
 ## Output Files
 ####
 dist
-output.json
+/*.json
+
+####
+## Test Files
+####
+resources
 
 ####
 ## Misc

@@ -11,7 +11,7 @@ type
         effect*: seq[void]
         ## Effects of the chart
         ]#
-    
+
         note*: seq[TimedElement]
         ## Notes, Holds and other timed gameplay elements
 
@@ -31,6 +31,12 @@ type
         ## Reflect Beat
         Slide = 7
         ## Mania but for touchscreen
+
+    CatchNoteType {.pure.} = enum
+        Hold = 3
+
+    SlideNoteType* {.pure.} = enum
+        Hold = 4
 
     KeyColumnRange = range[1..10]
     ## Range of available Columns
@@ -78,6 +84,8 @@ type
         bar_begin: int
         ## Used in Mode "Key" to determine when the bar should start to be displayed
         ## Usually it's the (index of the first note)-1 or 0
+        speed: int
+        ## The fall speed of the notes
 
     Beat* = array[3, int]
     ## A beat is the time when something happens
@@ -113,19 +121,50 @@ type
         ## How loud the sound should be played
 
     IndexNote* = object of TimedElement
+        ## Note for the following Modes: Pad
         index*: TabIndexRange
         ## Index of the Note (0-15) (When mode is "Pad")
 
     ColumnNote* = object of TimedElement
+        ## Note for following Modes: Key, Taiko, Ring
         column*: KeyColumnRange
-        # The column in which this note is placed in
+        ## The column in which this note is placed in
+        style*: int
+        ## Taiko: Type of taiko-note
+
+    VerticalNote* = object of TimedElement
+        ## Note for the following Modes: Catch, Slide
+        x*: int
+        ## X-Position of the Note
+
+    CatchNote* = object of VerticalNote
+        ## Note for the following Modes: Catch
+        `type`*: CatchNoteType
+        ## Optional type of the note
+
+    SlideNote* = object of VerticalNote
+        ## Note for the following Modes: Slide
+        w*: int
+        ## Width of the Note
+        `type`*: SlideNoteType
+        ## Optional type of the Note
+        seg*: seq[VerticalNote]
+        ## Additional positions of the long note/slides
 
     IndexHold* = object of IndexNote
+        ## Hold for the following Modes: Pad
         endbeat*: Beat
         ## Beat when the hold is being released
         endindex*: TabIndexRange
         ## The index where the Hold is being released on
 
     ColumnHold* = object of ColumnNote
+        ## Note for the following Modes: Key, Taiko, Ring
+        endbeat*: Beat
+        ## Beat when the hold is being released
+        hits: int
+        ## Taiko: Amount of hits the hold needs
+
+    CatchHold* = object of CatchNote
         endbeat*: Beat
         ## Beat when the hold is being released

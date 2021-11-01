@@ -249,12 +249,6 @@ func parseSectionParts(index: int, rows: array[4, string]): SectionPart =
                     raise newException(ParseError, fmt"Could not parse timing-data from line: '{rows[rowIndex]}'! " & getCurrentExceptionMsg())
         inc rowIndex
 
-func parseDifficulty(diff: string): Difficulty {.raises: [ParseError, ValueError] .} =
-    try:
-        return parseEnum[Difficulty](diff.toLower())
-    except ValueError:
-        raise newException(ParseError, fmt"Could not parse Difficulty '{diff}'!")
-
 func holdOffset(token: Token): int =
     case token:
         of Token.Up:

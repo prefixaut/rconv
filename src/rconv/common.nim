@@ -1,4 +1,4 @@
-import std/[macros]
+import std/[macros, strformat, strutils]
 
 type
     ParseError* = object of CatchableError
@@ -10,6 +10,12 @@ type
 
 const
     debug = true
+
+func parseDifficulty*(diff: string): Difficulty {.raises: [ParseError, ValueError] .} =
+    try:
+        return parseEnum[Difficulty](diff.toLower())
+    except ValueError:
+        raise newException(ParseError, fmt"Could not parse Difficulty '{diff}'!")
 
 macro log*(message: string): untyped =
     if debug:

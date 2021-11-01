@@ -78,3 +78,15 @@ proc toJsonHook*[T: Table[Difficulty, Chart]](this: T): JsonNode =
     result = newJObject()
     for key, value in this.pairs:
         result[$key] = toJson(value)
+
+proc toJsonHook*[T: Tick](this: T): JsonNode =
+    result = newJObject()
+    result["time"] = newJFloat(this.time)
+    log "hi"
+    if this.snapSize > 0:
+        result["snapSize"] = newJInt(this.snapSize)
+        result["snapIndex"] = newJInt(this.snapIndex)
+    if this.notes != nil and this.notes.len > 0:
+        result["notes"] = toJson(this.notes)
+    if this.holds != nil and this.holds.len > 0:
+        result["holds"] = toJson(this.holds)

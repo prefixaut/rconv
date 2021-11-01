@@ -9,8 +9,6 @@ type
 
 func convertMemsonToFXF*(input: memson.Memson): fxf.ChartFile =
     var chart: fxf.Chart = fxf.Chart(ticks: @[], rating: float(input.level))
-    result.charts = initTable[common.Difficulty, fxf.Chart]()
-    result.charts[input.difficulty] = chart
 
     result.bpmChanges = @[]
     result.version = 1
@@ -55,10 +53,13 @@ func convertMemsonToFXF*(input: memson.Memson): fxf.ChartFile =
                 holdRelease = newHoldRelease    
 
                 var tick = fxf.Tick(time: noteTime, snapSize: snap.len, snapIndex: snapIndex)
+                var hasData = false
 
                 for noteIndex, note in section.notes.pairs:
                     if note.time != timing:
                         continue
+
+                    hasData = true
                     if note.kind == memson.NoteType.Hold:
                         var hold = fxf.Hold(`from`: note.animationStartIndex, to: noteIndex)
                         tick.holds.add hold
@@ -66,8 +67,12 @@ func convertMemsonToFXF*(input: memson.Memson): fxf.ChartFile =
                     else:
                         tick.notes.add noteIndex
                 
-                chart.ticks.add tick
+                if hasData:
+                    chart.ticks.add tick
 
             inc indexOffset, snap.len
             globalTime = globalTime + beat
+
+    result.charts = initTable[common.Difficulty, fxf.Chart]()
+    result.charts[input.difficulty] = chart
     

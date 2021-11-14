@@ -7,13 +7,14 @@ thumbs.db
 ####
 ## Output Files
 ####
-dist
+/dist
 /*.json
 
 ####
 ## Test Files
 ####
-resources
+/resources
+/out
 
 ####
 ## Misc

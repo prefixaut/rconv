@@ -1,8 +1,11 @@
-import pkg/[argparse, glob]
+import std/[options, strutils, strformat]
 
-import ./[common, pipeline]
+import pkg/[argparse]
+
+import ./common, pipeline
 
 let cli = newParser:
+    help("Usage: rconv [options] <input-files...>")
     flag("-c", "--color", 
         help="Enable print messages to be in color.")
     flag("-d", "--delete-on-finish",
@@ -33,11 +36,47 @@ let cli = newParser:
         help="Normalize the output-paths (folder/file).")
     flag("-V", "--verbose",
         help="Print verbose messages on internal operations.")
-    option("-x", "--folder-format", default=some("%title% (%artist%)"),
+    option("-x", "--folder-format", default=some(DefaultFolderFormat),
         help="he format for song-folders. You may use the following placeholders: \"%artist%\", \"%title%\".")
     option("-z", "--chart-format",
         help="The format for the output file-name. You may use the following placeholders: \"%artist%\", \"%title%\", \"%difficulty%\", \"%ext%\". Defaults to \"%artist% - %title%.%ext%\" on type \"fxf\", otherwise to \"%artist% - %title%_%difficulty%.%ext%\"")
-    arg("file", nargs=1,
-        help="File Paths (glob) to your input-file(s).")
+    arg("files", nargs=(-1),
+        help="Input-Files to convert. At least one has to be specified")
 
-let params = cli.parse(commandLineParams())
+try:
+    var params = cli.parse(commandLineParams())
+    if params.files.len == 0:
+        raise newException(ValueError, "No input-files specified!")
+
+    let to = parseEnum[FileType](params.to.toLower)
+    if params.chart_format.isEmptyOrWhitespace:
+        case to:
+        of FileType.FXF:
+            params.chart_format = DefaultNonDifficultyChartFormat
+        else:
+            params.chart_format = DefaultChartFormat
+
+    let convOptions = ConvertOptions(
+        songFolders: params.song_folders,
+        jsonpretty: params.json_pretty,
+        merge: params.merge,
+        output: params.output,
+        preserve: params.preserve,
+        resources: params.resources,
+        normalize: params.normalize,
+        folderFormat: params.folder_format,
+        chartFormat: params.chart_format,
+    )
+
+    for path in params.files:
+        try:
+            echo $convert(path, to, some(convOptions))
+        except:
+            raise newException(ConvertException, fmt"Failed to convert file {path}! Error: {getCurrentExceptionMsg()}", getCurrentException())
+except ShortCircuit as e:
+    if e.flag == "argparse_help":
+        echo cli.help
+        quit(1)
+except:
+    stderr.writeLine getCurrentExceptionMsg()
+    quit(1)

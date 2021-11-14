@@ -94,6 +94,12 @@ const
     ## Placeholder for the charts difficulty
     PlaceholderExtension* = "%ext%"
     ## Placeholder for the file extension
+    DefaultFolderFormat* = fmt"{PlaceholderTitle} ({PlaceholderArtist})"
+    ## Default format for folders
+    DefaultChartFormat* = fmt"{PlaceholderArtist} - {PlaceholderTitle}_{PlaceholderDifficulty}.{PlaceholderExtension}"
+    ## Default format for charts which have a separate file per difficulty
+    DefaultNonDifficultyChartFormat* = fmt"{PlaceholderArtist} - {PlaceholderTitle}.{PlaceholderExtension}"
+    ## Default format for charts which have all difficulties in one file
     debug = true
 
 func parseDifficulty*(diff: string): Difficulty {.raises: [ParseError, ValueError] .} =
@@ -111,6 +117,9 @@ func formatFileName*(this: ConvertOptions, params: FormattingParameters): string
         .replaceWord(PlaceholderDifficulty, params.difficulty)
         .replaceWord(PlaceholderExtension, params.extension)
 
+    if this.normalize:
+        result = normalize(result)
+
 func formatFolderName*(this: ConvertOptions, params: FormattingParameters): string =
     ## Formats the ConvertOptions' `folderFormat` by replacing the Placeholders
     ## with the provided formatting parameters.
@@ -118,13 +127,17 @@ func formatFolderName*(this: ConvertOptions, params: FormattingParameters): stri
         .replaceWord(PlaceholderTitle, params.title)
         .replaceWord(PlaceholderArtist, params.artist)
 
-func detectFileType*(file: string): Option[FileType] =
+    if this.normalize:
+        result = normalize(result)
+
+proc detectFileType*(file: string): Option[FileType] =
     ## Attmpts to detect the file-type of the provided file-path.
     result = none(FileType)
 
     let pos = file.rfind(".")
     if pos > -1:
-        let ending = file.substr(pos)
+        let ending = file.substr(pos + 1)
+        echo fmt"ext: {ending}"
         case ending:
         of "memo":
             result = some(FileType.Memo)

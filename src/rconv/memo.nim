@@ -1,4 +1,4 @@
-import std/[strformat, sugar, tables, unicode]
+import std/[sequtils, strformat, sugar, tables, unicode]
 import std/strutils except split, strip
 
 import ./utils/line_reader
@@ -26,17 +26,25 @@ type
         Pos14       = "⑭",
         Pos15       = "⑮",
         Pos16       = "⑯",
+        Pos17       = "⑰",
+        Pos18       = "⑱",
+        Pos19       = "⑲",
+        Pos20       = "⑳",
 
         # Hold Indicators
         Vertical    = "｜",
         Horizontal  = "―",
         Up          = "∧",
         Down        = "Ｖ",
+        Down2       = "∨",
         Left        = "＜"
         Right       = "＞",
 
         # Empty tokens
         EmptyTick   = "ー"
+        EmptyTick2  = "－"
+        EmptyTick3  = "-"
+        EmptyTick4  = "〇" # WTF EVEN?!?!
         EmptyNote   = "口"
 
     SectionPart = object
@@ -45,8 +53,10 @@ type
         notes: Table[NoteRange, Token]
 
 const
-    FillerNotes = { Token.Vertical, Token.Horizontal, Token.EmptyNote, Token.EmptyTick }
-    HoldStart = { Token.Up, Token.Down, Token.Left, Token.Right }
+    AllTokens = Token.toSeq.map(t => $t)
+    TokenMap: array[Token, int] = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
+    FillerNotes = { Token.Vertical, Token.Horizontal, Token.EmptyNote, Token.EmptyTick, Token.EmptyTick2, Token.EmptyTick3, Token.EmptyTick4 }
+    HoldStart = { Token.Up, Token.Down, Token.Down2, Token.Left, Token.Right }
     NotePosition = 0..15.NoteRange
     NonTokenChars = toRunes($(Whitespace + {'|'}))
 
@@ -55,7 +65,7 @@ proc parseMemoToMemson*(content: string): Memson =
     ## The content has to be a complete memo file to be parsed correctly.
 
     let reader = newLineReader(content)
-    var sectionIndex: int = 0
+    var sectionIndex: int = -1
     var minBpm: float = -1
     var maxBpm: float = -1
     var bpm : float = -1
@@ -88,9 +98,17 @@ proc parseMemoToMemson*(content: string): Memson =
 
         if row.toLower.startsWith("bpm"):
             try:
-                bpm = parseFloat(row.runeSubStr(4).strip)
-                minBpm = if (minBpm == -1): bpm else: min(bpm, minBpm)
-                maxBpm = if (maxBpm == -1): bpm else: max(bpm, maxBpm)
+                var tmp = row.runeSubStr(4).strip
+                let dashIdx = tmp.find("-")
+                if dashIdx > -1:
+                    let tmpMin = parseFloat(tmp.runeSubStr(0, dashIdx))
+                    let tmpMax = parseFloat(tmp.runeSubStr(dashIdx + 1))
+                    minBpm = if minBpm == -1: tmpMin else: min(minBpm, tmpMin)
+                    maxBpm = if maxBpm == -1: tmpMax else: max(maxBpm, tmpMax)
+                else:
+                    bpm = parseFloat(tmp)
+                    minBpm = if minBpm == -1: bpm else: min(bpm, minBpm)
+                    maxBpm = if maxBpm == -1: bpm else: max(bpm, maxBpm)
 
                 if (sectionIndex == 0):
                     result.bpm = bpm
@@ -117,7 +135,12 @@ proc parseMemoToMemson*(content: string): Memson =
             # if it's not a index which could be parsed, then it's a regular section line
             discard
 
-        parts.add parseSectionParts(partIndex, [row, reader.nextLine(), reader.nextLine(), reader.nextLine()])
+        let firstChar = row.strip.runeAt(0)
+        if firstChar.isAlpha and not AllTokens.contains($firstChar):
+            # Ignore other parameters
+            continue
+
+        parts.add parseSectionParts(partIndex, reader.line, [row, reader.nextLine(), reader.nextLine(), reader.nextLine()])
         inc partIndex
 
     # Build the section from the sub-sections if any exist
@@ -144,7 +167,7 @@ proc parseSection(index: int, partIndex: int, bpm: float, holds: var Table[NoteR
         # Add the timings
         for timingIndex, timing in singlePart.timings.pairs:
             if not FillerNotes.contains timing:
-                result.timings.add tickToIndex(timing)
+                result.timings.add TokenMap[timing]
             else:
                 result.timings.add -1
 
@@ -172,7 +195,7 @@ proc parseSection(index: int, partIndex: int, bpm: float, holds: var Table[NoteR
                     continue
                 break
 
-            let noteTiming = result.timings.find(tickToIndex(noteType))
+            let noteTiming = result.timings.find(TokenMap[noteType])
             var hold = Note(kind: NoteType.Hold, time: offset + noteTiming, partIndex: partIndex div 4, animationStartIndex: noteIndex)
             result.notes[noteIndex] = hold
 
@@ -183,7 +206,7 @@ proc parseSection(index: int, partIndex: int, bpm: float, holds: var Table[NoteR
 
         for noteIndex in noteIndices:
             let noteType = singlePart.notes[noteIndex]
-            let noteTiming = result.timings.find(tickToIndex(noteType))
+            let noteTiming = result.timings.find(TokenMap[noteType])
 
             if holds.contains(noteIndex) and holds[noteIndex].len > 0:
                 # Regular for loop makes the elements immutable, therefore
@@ -201,7 +224,7 @@ proc parseSection(index: int, partIndex: int, bpm: float, holds: var Table[NoteR
     # Sort the notes by the index
     result.notes.sort((a, b) => system.cmp(a[0], b[0]))
 
-func parseSectionParts(index: int, rows: array[4, string]): SectionPart =
+proc parseSectionParts(index: int, lineIndex: int, rows: array[4, string]): SectionPart =
     result.snaps = @[]
     result.timings = @[]
     result.notes = initTable[NoteRange, Token]()
@@ -222,7 +245,7 @@ func parseSectionParts(index: int, rows: array[4, string]): SectionPart =
             #except ValueError:
             #    discard
             except:
-                raise newException(ParseError, fmt"Could not parse note-data from line: '{noteData.runeAt(noteIndex)}'!")
+                raise newException(ParseError, fmt"Could not parse note-data '{note}' on pos {noteIndex} from line {lineIndex + rowIndex} '{line}'!")
 
             result.notes[(rowIndex * 4) + noteIndex] = parsed
             inc noteIndex
@@ -231,6 +254,8 @@ func parseSectionParts(index: int, rows: array[4, string]): SectionPart =
             try:
                 let timingData = line.runeSubStr(4).strip(runes = NonTokenChars)
                 for str in utf8(timingData):
+                    if str.isEmptyOrWhitespace:
+                        continue
                     var parsed = Token.EmptyTick
 
                     try:
@@ -253,7 +278,7 @@ func holdOffset(token: Token): int =
     case token:
         of Token.Up:
             return -4
-        of Token.Down:
+        of Token.Down, Token.Down2:
             return 4
         of Token.Left:
             return -1            
@@ -261,40 +286,3 @@ func holdOffset(token: Token): int =
             return 1
         else:
             return 0
-
-func tickToIndex(token: Token): int8 =
-    case token:
-        of Token.Pos1:
-            return 1
-        of Token.Pos2:
-            return 2
-        of Token.Pos3:
-            return 3
-        of Token.Pos4:
-            return 4
-        of Token.Pos5:
-            return 5
-        of Token.Pos6:
-            return 6
-        of Token.Pos7:
-            return 7
-        of Token.Pos8:
-            return 8
-        of Token.Pos9:
-            return 9
-        of Token.Pos10:
-            return 10
-        of Token.Pos11:
-            return 11
-        of Token.Pos12:
-            return 12
-        of Token.Pos13:
-            return 13
-        of Token.Pos14:
-            return 14
-        of Token.Pos15:
-            return 15
-        of Token.Pos16:
-            return 16
-        else:
-            return -1

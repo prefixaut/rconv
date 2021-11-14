@@ -74,6 +74,13 @@ type
         ## here is no need to search for the hold end
         ## and animation duration can be calculated really easily
 
+func asFormattingParams*(chart: ChartFile): FormattingParameters =
+    result = FormattingParameters(
+        title: chart.title,
+        artist: chart.artist,
+        extension: $FileType.FXF,
+    )
+
 proc toJsonHook*[T: Table[Difficulty, Chart]](this: T): JsonNode =
     result = newJObject()
     for key, value in this.pairs:

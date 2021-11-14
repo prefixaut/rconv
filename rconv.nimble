@@ -10,3 +10,5 @@ srcDir        = "src"
 # Dependencies
 
 requires "nim >= 1.4.8"
+requires "argpase >= 2.0.1"
+requires "glob >= 0.11.1"

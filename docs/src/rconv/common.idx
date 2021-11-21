@@ -1,0 +1,29 @@
+Difficulty	src/rconv/common.html#Difficulty	common: Difficulty	
+FileType	src/rconv/common.html#FileType	common: FileType	
+ConvertOptions	src/rconv/common.html#ConvertOptions	common: ConvertOptions	
+FormattingParameters	src/rconv/common.html#FormattingParameters	common: FormattingParameters	
+ConvertResult	src/rconv/common.html#ConvertResult	common: ConvertResult	
+CombinedError	src/rconv/common.html#CombinedError	common: CombinedError	
+ParseError	src/rconv/common.html#ParseError	common: ParseError	
+ConvertException	src/rconv/common.html#ConvertException	common: ConvertException	
+MissingTypeException	src/rconv/common.html#MissingTypeException	common: MissingTypeException	
+InvalidTypeException	src/rconv/common.html#InvalidTypeException	common: InvalidTypeException	
+MissingConversionException	src/rconv/common.html#MissingConversionException	common: MissingConversionException	
+PreserveFileException	src/rconv/common.html#PreserveFileException	common: PreserveFileException	
+PlaceholderTitle	src/rconv/common.html#PlaceholderTitle	common: PlaceholderTitle	
+PlaceholderArtist	src/rconv/common.html#PlaceholderArtist	common: PlaceholderArtist	
+PlaceholderDifficulty	src/rconv/common.html#PlaceholderDifficulty	common: PlaceholderDifficulty	
+PlaceholderExtension	src/rconv/common.html#PlaceholderExtension	common: PlaceholderExtension	
+DefaultFolderFormat	src/rconv/common.html#DefaultFolderFormat	common: DefaultFolderFormat	
+DefaultChartFormat	src/rconv/common.html#DefaultChartFormat	common: DefaultChartFormat	
+DefaultNonDifficultyChartFormat	src/rconv/common.html#DefaultNonDifficultyChartFormat	common: DefaultNonDifficultyChartFormat	
+newConvertOptions	src/rconv/common.html#newConvertOptions,bool,bool,bool,string,bool,bool,bool,string,string	common: newConvertOptions(songFolders: bool = false; jsonPretty: bool = false;\n                  merge: bool = false; output: string = &quot;.&quot;;\n                  preserve: bool = false; resources: bool = false;\n                  normalize: bool = false;\n                  folderFormat: string = DefaultFolderFormat;\n                  chartFormat: string = &quot;&quot;): ConvertOptions	
+newFormattingParameters	src/rconv/common.html#newFormattingParameters,string,string,string,string	common: newFormattingParameters(title: string = &quot;untitled&quot;; artist: string = &quot;unknown&quot;;\n                        difficulty: string = &quot;edit&quot;; extension: string = &quot;.txt&quot;): FormattingParameters	
+parseDifficulty	src/rconv/common.html#parseDifficulty,string	common: parseDifficulty(diff: string): Difficulty	
+formatFileName	src/rconv/common.html#formatFileName,ConvertOptions,FormattingParameters	common: formatFileName(this: ConvertOptions; params: FormattingParameters): string	
+formatFolderName	src/rconv/common.html#formatFolderName,ConvertOptions,FormattingParameters	common: formatFolderName(this: ConvertOptions; params: FormattingParameters): string	
+detectFileType	src/rconv/common.html#detectFileType,string	common: detectFileType(file: string): Option[FileType]	
+getDefaultChartFormat	src/rconv/common.html#getDefaultChartFormat,FileType	common: getDefaultChartFormat(fileType: FileType): string	
+getDefaultOptions	src/rconv/common.html#getDefaultOptions,FileType	common: getDefaultOptions(to: FileType): ConvertOptions	
+getFileExtension	src/rconv/common.html#getFileExtension,FileType	common: getFileExtension(fileType: FileType): string	
+log	src/rconv/common.html#log.m,string	common: log(message: string): untyped	

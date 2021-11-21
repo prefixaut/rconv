@@ -75,21 +75,28 @@ type
         ## and animation duration can be calculated really easily
 
 func asFormattingParams*(chart: ChartFile): FormattingParameters =
-    result = FormattingParameters(
-        title: chart.title,
-        artist: chart.artist,
-        extension: $FileType.FXF,
+    ## Creates formatting-parameters from the provided chart-file
+
+    result = newFormattingParameters(
+        title = chart.title,
+        artist = chart.artist,
+        extension = $FileType.FXF,
     )
 
 proc toJsonHook*[T: Table[Difficulty, Chart]](this: T): JsonNode =
+    ## Hook to convert the Table of Difficulty and Chart to a proper json-object.
+    ## Regular table hooks convert it with additional artifacting and breaking structure.
+
     result = newJObject()
     for key, value in this.pairs:
         result[$key] = toJson(value)
 
 proc toJsonHook*[T: Tick](this: T): JsonNode =
+    ## Hook to convert a Tick into a json-object.
+    ## Excludes empty/redundant elements in the result.
+
     result = newJObject()
     result["time"] = newJFloat(this.time)
-    log "hi"
     if this.snapSize > 0:
         result["snapSize"] = newJInt(this.snapSize)
         result["snapIndex"] = newJInt(this.snapIndex)

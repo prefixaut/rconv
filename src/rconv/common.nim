@@ -2,6 +2,8 @@ import std/[macros, options, strformat, strutils]
 
 type
     Difficulty* {.pure.} = enum
+        ## Difficulty for jubeat like games.
+        ## Will be removed/replaced with a more generic solution soonish 
         Basic       = "basic",
         Advanced    = "advanced",
         Extreme     = "extreme"
@@ -116,6 +118,8 @@ func newConvertOptions*(
     folderFormat: string = DefaultFolderFormat,
     chartFormat: string = ""
 ): ConvertOptions =
+    ## Function to create a new _`ConvertOptions` instance.
+
     result = ConvertOptions(
         songFolders: songFolders,
         jsonPretty: jsonPretty,
@@ -127,6 +131,21 @@ func newConvertOptions*(
         chartFormat: chartFormat,
     )
 
+func newFormattingParameters*(
+    title: string = "untitled",
+    artist: string = "unknown",
+    difficulty: string = "edit",
+    extension: string = ".txt",
+): FormattingParameters =
+    ## Function to create a new _`FormattingParameters` instance.
+
+    result = FormattingParameters(
+        title: title,
+        artist: artist,
+        difficulty: difficulty,
+        extension: extension,
+    )
+
 func parseDifficulty*(diff: string): Difficulty {.raises: [ParseError, ValueError] .} =
     try:
         return parseEnum[Difficulty](diff.toLower())
@@ -136,6 +155,7 @@ func parseDifficulty*(diff: string): Difficulty {.raises: [ParseError, ValueErro
 func formatFileName*(this: ConvertOptions, params: FormattingParameters): string =
     ## Formats the ConvertOptions' `chartFormat` by replacing the Placeholders
     ## with the provided formatting parameters.
+
     result = this.chartFormat
         .replaceWord(PlaceholderTitle, params.title)
         .replaceWord(PlaceholderArtist, params.artist)
@@ -148,6 +168,7 @@ func formatFileName*(this: ConvertOptions, params: FormattingParameters): string
 func formatFolderName*(this: ConvertOptions, params: FormattingParameters): string =
     ## Formats the ConvertOptions' `folderFormat` by replacing the Placeholders
     ## with the provided formatting parameters.
+
     result = this.folderFormat
         .replaceWord(PlaceholderTitle, params.title)
         .replaceWord(PlaceholderArtist, params.artist)
@@ -155,11 +176,12 @@ func formatFolderName*(this: ConvertOptions, params: FormattingParameters): stri
     if this.normalize:
         result = normalize(result)
 
-proc detectFileType*(file: string): Option[FileType] =
+func detectFileType*(file: string): Option[FileType] =
     ## Attmpts to detect the file-type of the provided file-path.
-    result = none(FileType)
 
+    result = none(FileType)
     let pos = file.rfind(".")
+
     if pos > -1:
         let ending = file.substr(pos + 1)
         case ending:
@@ -175,6 +197,8 @@ proc detectFileType*(file: string): Option[FileType] =
             result = some(FileType.StepMania)
 
 func getDefaultChartFormat*(fileType: FileType): string =
+    ## Gets the default chart-format for the provided file-type
+
     case fileType:
     of FileType.FXF:
         return DefaultNonDifficultyChartFormat
@@ -182,10 +206,15 @@ func getDefaultChartFormat*(fileType: FileType): string =
         return DefaultChartFormat
 
 func getDefaultOptions*(to: FileType): ConvertOptions =
+    ## Creates file-type specific default-options.
+    ## _`getDefaultChartFormat`
+
     let format = getDefaultChartFormat(to)
     result = newConvertOptions(chartFormat = format)
 
 func getFileExtension*(fileType: FileType): string =
+    ## Get's the file-extension for the provided file-type
+
     case fileType:
     of FileType.Memo:
         result = "memo"
@@ -199,6 +228,8 @@ func getFileExtension*(fileType: FileType): string =
         result = "sm"
 
 macro log*(message: string): untyped =
+    ## Internal logging function which will be removed soon
+
     if debug:
         result = quote do:
             {.cast(noSideEffect).}:

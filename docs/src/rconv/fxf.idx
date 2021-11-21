@@ -1,0 +1,9 @@
+ChartFile	src/rconv/fxf.html#ChartFile	fxf: ChartFile	
+Chart	src/rconv/fxf.html#Chart	fxf: Chart	
+BpmChange	src/rconv/fxf.html#BpmChange	fxf: BpmChange	
+NoteRange	src/rconv/fxf.html#NoteRange	fxf: NoteRange	
+Tick	src/rconv/fxf.html#Tick	fxf: Tick	
+Hold	src/rconv/fxf.html#Hold	fxf: Hold	
+asFormattingParams	src/rconv/fxf.html#asFormattingParams,ChartFile	fxf: asFormattingParams(chart: ChartFile): FormattingParameters	
+toJsonHook	src/rconv/fxf.html#toJsonHook,T	fxf: toJsonHook[T: Table[Difficulty, Chart]](this: T): JsonNode	
+toJsonHook	src/rconv/fxf.html#toJsonHook,T_2	fxf: toJsonHook[T: Tick](this: T): JsonNode	

@@ -4,7 +4,7 @@ version       = "0.1.0"
 author        = "PreFiXAUT"
 description   = "Rhythm Game file converter"
 license       = "MIT"
-srcDir        = "src"
+srcDir        = "src/rconv"
 
 
 # Dependencies

@@ -13,6 +13,10 @@ import ./memson as memson
 {.experimental: "codeReordering".}
 
 proc convert*(file: string, fromType: Option[FileType], to: FileType, options: Option[ConvertOptions]): ConvertResult =
+    ## Converts the provided file to the requested output-format (`to`).
+    ## If the `fromType` is not provided, it'll attempt to detect it from the file via the _`detectFileType` func.
+    ## If no `options` are provided, it'll get the default options for the output-type (`to`) via the _`getDefaultOptions` func.
+
     var actualFrom: FileType
     var actualOptions: ConvertOptions
 
@@ -51,6 +55,9 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
         raise newException(InvalidTypeException, fmt"Could not find a converter for input-type {fromType}")
 
 proc saveChart(chart: var fxf.ChartFile, options: ConvertOptions, diff: Option[Difficulty] = none(Difficulty)): ConvertResult =
+    ## Saves the FXF-Chart to a file.
+    ## The file-name and output directory are determined via the provided `options`.
+
     var params = fxf.asFormattingParams(chart)
 
     if diff.isSome:

@@ -1,4 +1,5 @@
 task cli, "Build the library's CLI for direct use":
+    switch "out", "rconv"
     switch "outdir", "dist"
     switch "app", "console"
     switch "usenimcache"
@@ -8,4 +9,10 @@ task build, "Build the library":
     switch "outdir", "dist"
     switch "app", "lib"
     switch "usenimcache"
-    setCommand "c", "src/entry.nim"
+    setCommand "c", "src/rconv/entry.nim"
+
+task document, "Build the documentation":
+    switch "outdir", "docs"
+    switch "project"
+    switch "git.url", "https://github.com/prefixaut/rconv.git"
+    setCommand "doc", "src/rconv/entry.nim"

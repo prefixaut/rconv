@@ -1,0 +1,1 @@
+convertMalodyToFXF	src/rconv/converters/malody_to_fxf.html#convertMalodyToFXF	malody_to_fxf: convertMalodyToFXF(chart: malody.Chart): fxf.ChartFile	

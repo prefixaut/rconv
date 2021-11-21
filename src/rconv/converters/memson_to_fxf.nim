@@ -1,8 +1,8 @@
 import std/[math, tables]
 
 import ../common
-from ../fxf import nil
-from ../memson import nil
+import ../fxf as fxf
+import ../memson as memson
 
 type
     HoldRelease = tuple[fxf: fxf.Hold, memson: memson.Note]

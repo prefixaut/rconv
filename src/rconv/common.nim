@@ -52,6 +52,9 @@ type
         ## For a full-path, use `filePath` instead.
         filePath*: string
         ## Absolute file-path to the file.
+    
+    CombinedError* = object of CatchableError
+        errors*: seq[ref Exception]
 
     ParseError* = object of CatchableError
     ## Error which occurs when parsing of a file failed.
@@ -102,6 +105,28 @@ const
     ## Default format for charts which have all difficulties in one file
     debug = true
 
+func newConvertOptions*(
+    songFolders: bool = false,
+    jsonPretty: bool = false,
+    merge: bool = false,
+    output: string = ".",
+    preserve: bool = false,
+    resources: bool = false,
+    normalize: bool = false,
+    folderFormat: string = DefaultFolderFormat,
+    chartFormat: string = ""
+): ConvertOptions =
+    result = ConvertOptions(
+        songFolders: songFolders,
+        jsonPretty: jsonPretty,
+        merge: merge,
+        output: output,
+        resources: resources,
+        normalize: normalize,
+        folderFormat: folderFormat,
+        chartFormat: chartFormat,
+    )
+
 func parseDifficulty*(diff: string): Difficulty {.raises: [ParseError, ValueError] .} =
     try:
         return parseEnum[Difficulty](diff.toLower())
@@ -137,7 +162,6 @@ proc detectFileType*(file: string): Option[FileType] =
     let pos = file.rfind(".")
     if pos > -1:
         let ending = file.substr(pos + 1)
-        echo fmt"ext: {ending}"
         case ending:
         of "memo":
             result = some(FileType.Memo)
@@ -149,6 +173,30 @@ proc detectFileType*(file: string): Option[FileType] =
             result = some(FileType.FXF)
         of "sm":
             result = some(FileType.StepMania)
+
+func getDefaultChartFormat*(fileType: FileType): string =
+    case fileType:
+    of FileType.FXF:
+        return DefaultNonDifficultyChartFormat
+    else:
+        return DefaultChartFormat
+
+func getDefaultOptions*(to: FileType): ConvertOptions =
+    let format = getDefaultChartFormat(to)
+    result = newConvertOptions(chartFormat = format)
+
+func getFileExtension*(fileType: FileType): string =
+    case fileType:
+    of FileType.Memo:
+        result = "memo"
+    of FileType.Memo2:
+        result = "memo2"
+    of FileType.Malody:
+        result = "mc"
+    of FileType.FXF:
+        result = "fxfc"
+    of FileType.StepMania:
+        result = "sm"
 
 macro log*(message: string): untyped =
     if debug:

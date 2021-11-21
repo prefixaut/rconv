@@ -1,8 +1,8 @@
 import std/[strformat]
 
 import ../common
-from ../fxf import nil
-from ../malody import nil
+import ../fxf as fxf
+import ../malody as malody
 
 func convertMalodyToFXF*(chart: malody.Chart): fxf.ChartFile =
     if (chart.meta.mode != malody.ChartMode.Pad):

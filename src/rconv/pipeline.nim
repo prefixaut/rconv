@@ -6,26 +6,45 @@ import ./common
 # Import different game-modes into own scopes, as they often
 # have colliding types
 from ./fxf import toJsonHook
-from ./memo import nil
-from ./memson import nil
+import ./malody as malody
+import ./memo as memo
+import ./memson as memson
 
 {.experimental: "codeReordering".}
 
-proc convert*(file: string, to: FileType, options: Option[ConvertOptions]): ConvertResult =
-    let fileType = detectFileType(file)
-    if fileType.isNone:
-        raise newException(MissingTypeException, fmt"Could not detect file-file from file {file}!")
+proc convert*(file: string, fromType: Option[FileType], to: FileType, options: Option[ConvertOptions]): ConvertResult =
+    var actualFrom: FileType
+    var actualOptions: ConvertOptions
 
-    result = convert(file, fileType.get, to, options)
+    if fromType.isSome:
+        actualFrom = fromType.get
+    else:
+        let tmp = detectFileType(file)
+        if tmp.isSome:
+            actualFrom = tmp.get
+        else:
+            raise newException(MissingTypeException, fmt"Could not detect file-file from file {file}!")
+    
+    if options.isSome:
+        actualOptions = options.get
+    else:
+        actualOptions = getDefaultOptions(to)
 
-proc convert*(file: string, fromType: FileType, to: FileType, options: Option[ConvertOptions]): ConvertResult =
-    case fromType:
+    case actualFrom:
     of FileType.Memo:
         case to:
         of FileType.FXF:
             let parsed = memo.parseMemoToMemson(readFile(file))
             var chart: fxf.ChartFile = convertMemsonToFXF(parsed)
-            result = saveChart(chart, options.get, some(parsed.difficulty))
+            result = saveChart(chart, actualOptions, some(parsed.difficulty))
+        else:
+            raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
+    of FileType.Malody:
+        case to:
+        of FileType.FXF:
+            let parsed = jsonTo(parseJson(readFile(file)), malody.Chart)
+            var chart: fxf.ChartFile = convertMalodyToFXF(parsed)
+            result = saveChart(chart, actualOptions, none(Difficulty))
         else:
             raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
     else:

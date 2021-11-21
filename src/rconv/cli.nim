@@ -1,4 +1,4 @@
-import std/[options, strutils, strformat]
+import std/[options, strutils, strformat, os]
 
 import pkg/[argparse]
 
@@ -8,6 +8,8 @@ let cli = newParser:
     help("Usage: rconv [options] <input-files...>")
     flag("-c", "--color", 
         help="Enable print messages to be in color.")
+    flag("-C", "--clean",
+        help="If it should clean (delete all contents) of the output folder. Disabled if 'preserve' is enabled.")
     flag("-d", "--delete-on-finish",
         help="Delete a processed file after handling it.")
     flag("-e", "--delay-errors",
@@ -31,15 +33,16 @@ let cli = newParser:
     flag("-s", "--stats",
         help="Show stats on the end of the operation.")
     option("-t", "--to", required=true, choices=(@["fxf", "malody", "memo", "memson"]),
-        help="The output type. Must be one of the following: \"fxf\", \"malody\", \"memo\" and \"memson\".")
+        help="The output type. Must be one of the following: 'fxf', 'malody', 'memo', and 'memson'.")
     flag("-n", "--normalize",
         help="Normalize the output-paths (folder/file).")
     flag("-V", "--verbose",
         help="Print verbose messages on internal operations.")
     option("-x", "--folder-format", default=some(DefaultFolderFormat),
-        help="he format for song-folders. You may use the following placeholders: \"%artist%\", \"%title%\".")
+        help=fmt"The format for song-folders. You may use the following placeholders: '{PlaceholderArtist}', '{PlaceholderTitle}'.")
     option("-z", "--chart-format",
-        help="The format for the output file-name. You may use the following placeholders: \"%artist%\", \"%title%\", \"%difficulty%\", \"%ext%\". Defaults to \"%artist% - %title%.%ext%\" on type \"fxf\", otherwise to \"%artist% - %title%_%difficulty%.%ext%\"")
+        help=fmt"The format for the output file-name. You may use the following placeholders: '{PlaceholderArtist}', '{PlaceholderTitle}', '{PlaceholderDifficulty}', and '{PlaceholderExtension}'." &
+            fmt"Defaults to '{DefaultNonDifficultyChartFormat}' on type 'fxf', otherwise to '{DefaultChartFormat}'")
     arg("files", nargs=(-1),
         help="Input-Files to convert. At least one has to be specified")
 
@@ -50,29 +53,50 @@ try:
 
     let to = parseEnum[FileType](params.to.toLower)
     if params.chart_format.isEmptyOrWhitespace:
-        case to:
-        of FileType.FXF:
-            params.chart_format = DefaultNonDifficultyChartFormat
-        else:
-            params.chart_format = DefaultChartFormat
+        params.chart_format = getDefaultChartFormat(to)
+    if not isAbsolute(params.output):
+        params.output = joinPath(getCurrentDir(), params.output)
 
-    let convOptions = ConvertOptions(
-        songFolders: params.song_folders,
-        jsonpretty: params.json_pretty,
-        merge: params.merge,
-        output: params.output,
-        preserve: params.preserve,
-        resources: params.resources,
-        normalize: params.normalize,
-        folderFormat: params.folder_format,
-        chartFormat: params.chart_format,
+    let convOptions = newConvertOptions(
+        songFolders = params.song_folders,
+        jsonpretty = params.json_pretty,
+        merge = params.merge,
+        output = params.output,
+        preserve = params.preserve,
+        resources = params.resources,
+        normalize = params.normalize,
+        folderFormat = params.folder_format,
+        chartFormat = params.chart_format,
     )
+
+    # Delete all entries of the output folder if requested
+    if dirExists(params.output) and params.clean and not params.preserve:
+        for entry in walkDir(params.output):
+            if entry.kind == pcDir or entry.kind == pcLinkToDir:
+                removeDir(entry.path)
+            else:
+                removeFile(entry.path)
+
+    var errors = newSeq[ref Exception]()
 
     for path in params.files:
         try:
-            echo $convert(path, to, some(convOptions))
+            echo $convert(path, none(FileType), to, some(convOptions))
         except:
-            raise newException(ConvertException, fmt"Failed to convert file {path}! Error: {getCurrentExceptionMsg()}", getCurrentException())
+            let e = newException(ConvertException, fmt"Failed to convert file '{path}'! Error: {getCurrentExceptionMsg()}", getCurrentException())
+            if params.delay_errors:
+                errors.add e
+            else:
+                raise e
+
+    if errors.len > 0:
+        var msg = "Multiple errors occured!"
+        for e in errors:
+            msg &= "\n" & e.msg
+        var err = newException(CombinedError, msg)
+        err.errors = errors
+        raise err
+
 except ShortCircuit as e:
     if e.flag == "argparse_help":
         echo cli.help

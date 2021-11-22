@@ -25,6 +25,7 @@ type
         ## but it makes sense to just store all charts in one file
 
     Chart* = object
+        ## A single FXF chart which holds the note/hold information
         rating*: float
         ## The charts difficulty rating as numerical value
         ticks*: seq[Tick]
@@ -40,9 +41,21 @@ type
         snapIndex*: int
         ## optional. The snap-index in which the change occurs
 
-    NoteRange* = range[0..15]
+    NoteRange* = range[0..15] ## \
+    ## Range of note indices which need to be pressed/held at some time.
+    ## e.g. [3, 10] -> button 3 and 10 need to be pressed.
+    ##
+    ## This file format indexes buttons starting from 0 to 15::
+    ## 
+    ##  0  1  2  3
+    ##  4  5  6  7
+    ##  8  9  10 11
+    ##  12 13 14 15
+    ## 
 
     Tick* = object
+        ## A tick referres to a time in the chart, where one or more
+        ## actions need to be performed.
         time*: float
         ## Timestamp in milliseconds when the button needs to be pressed
         snapSize*: int
@@ -50,28 +63,23 @@ type
         snapIndex*: int
         ## optional. The snap-index in which the tick occurs
         notes*: seq[NoteRange]
-        ## Array of note indices which need to be pressed at current time.
-        ## e.g. [3, 10] -> button 3 and 10 need to be pressed.
-        ##
-        ## This file format indexes buttons starting from 0 to 15
-        ## ```
-        ## 0  1  2  3
-        ## 4  5  6  7
-        ## 8  9  10 11
-        ## 12 13 14 15
-        ## ```
+        ## Sequence of notes to press at this time
         holds*: seq[Hold]
-        ## Sequence of timing data for holds
+        ## Sequence of holds to start at this time
     
     Hold* = object
+        ## A hold is a regular note which needs to be held until a certain time.
+        ## It starts on the `from` position together with an animation which
+        ## starts on the `to` position.
+        ## The hold resolves at the `releaseOn` property (chart time, not offset),
+        ## and is indicated with an animation.
         `from`*: NoteRange
         ## Index the hold starts on (see notes in Tick interface)
         to*: NoteRange
         ## Index the hold ends on (see notes in Tick interface)
         releaseOn*: float
         ## Timestamp in milliseconds when to release the note.
-        ## 
-        ## here is no need to search for the hold end
+        ## There is no need to search for the hold end
         ## and animation duration can be calculated really easily
 
 func asFormattingParams*(chart: ChartFile): FormattingParameters =

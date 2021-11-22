@@ -13,6 +13,11 @@ Currently not available as nimble package just yet, as it's still in an unstable
 
 If you still want to use it as library, you can do so as a Git Submodule and import the [entry](./src/entry.nim)-file.
 
+## Documentation
+
+For full information of all functions, types, etc.,
+please refer to the [documentation](https://prefixaut.github.io/rconv/theindex.html) from this repositiory.
+
 ## Usage
 
 ### Library
@@ -27,8 +32,6 @@ import pkg/rconv/fxf as fxf
 let chart: fxf.ChartFile = convert("/home/user/some-chart.memo", none(FileType), FileType.FXF, none(ConvertOptions))
 echo chart
 ```
-
-For full information of all functions, types, etc., please refer to the documentation.
 
 ### CLI
 

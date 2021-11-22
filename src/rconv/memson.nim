@@ -8,15 +8,17 @@ type
         Note        = "note"
         Hold        = "hold"
 
-    NoteRange* = range[0..15]
+    NoteRange* = range[0..15] ## \
     ## All positions a note can be placed on.
-    ## :Posion description:
-    ##      0  1  2  3
-    ##      4  5  6  7
-    ##      8  9 10 11
-    ##      12 13 14 15
+    ## Posion description::
+    ## 
+    ##  0  1  2  3
+    ##  4  5  6  7
+    ##  8  9 10 11
+    ##  12 13 14 15
+    ## 
 
-    RowIndex* = range[0..3]
+    RowIndex* = range[0..3] ## \
     ## Range of how many row-indices may exist (4).
 
     BpmRange* = tuple[min: float, max: float]

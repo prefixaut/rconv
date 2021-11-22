@@ -2,6 +2,7 @@
 
 type
     Chart* = object
+        ## A Malody chart-File object definition
         meta*: MetaData
         ## Meta data of the chart, such as version, creator and song data
         time*: seq[TimeSignature]
@@ -16,6 +17,7 @@ type
         ## Notes, Holds and other timed gameplay elements
 
     ChartMode* {.pure.} = enum
+        ## The mode for a malody chart.
         Key = 0
         ## "Mania" game mode (SM, PIU, ...) with varying amount of keys (4,5,6,7, ...)k
         

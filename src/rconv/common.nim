@@ -39,8 +39,9 @@ type
         ## The format for chart/folders (if enabled).
         chartFormat*: string
         ## The format for the chart file.
-    
+
     FormattingParameters* = object
+        ## Parameters to format a folder or chart.
         title*: string
         artist*: string
         difficulty*: string
@@ -54,18 +55,19 @@ type
         ## For a full-path, use `filePath` instead.
         filePath*: string
         ## Absolute file-path to the file.
-    
+
     CombinedError* = object of CatchableError
+        ## An error which combines multiple error messages into one.
         errors*: seq[ref Exception]
 
-    ParseError* = object of CatchableError
+    ParseError* = object of CatchableError ## \
     ## Error which occurs when parsing of a file failed.
 
-    ConvertException* = object of CatchableError
+    ConvertException* = object of CatchableError ## \
     ## An error which occurs during conversion.
     ## More detailed information is from extending Exceptions.
 
-    MissingTypeException* = object of ConvertException
+    MissingTypeException* = object of ConvertException ## \
     ## Exception which occurs when no input type was provided and/or couldn't be determined automatically.
 
     InvalidTypeException* = object of ConvertException
@@ -86,24 +88,24 @@ type
         outputType*: FileType
         ## The fileType to where it attmepted to convert to.
 
-    PreserveFileException* = object of ConvertException
+    PreserveFileException* = object of ConvertException ## \
         ## Exception which occurs when the options have `preserve` enabled,
         ## and the output-file already exists.
 
 const
-    PlaceholderTitle* = "%title%"
+    PlaceholderTitle* = "%title%" ## \
     ## Placeholder for the charts song-title
-    PlaceholderArtist* = "%artist%"
+    PlaceholderArtist* = "%artist%" ## \
     ## Placeholder for the charts artist
-    PlaceholderDifficulty* = "%difficulty%"
+    PlaceholderDifficulty* = "%difficulty%" ## \
     ## Placeholder for the charts difficulty
-    PlaceholderExtension* = "%ext%"
+    PlaceholderExtension* = "%ext%" ## \
     ## Placeholder for the file extension
-    DefaultFolderFormat* = fmt"{PlaceholderTitle} ({PlaceholderArtist})"
+    DefaultFolderFormat* = fmt"{PlaceholderTitle} ({PlaceholderArtist})" ## \
     ## Default format for folders
-    DefaultChartFormat* = fmt"{PlaceholderArtist} - {PlaceholderTitle}_{PlaceholderDifficulty}.{PlaceholderExtension}"
+    DefaultChartFormat* = fmt"{PlaceholderArtist} - {PlaceholderTitle}_{PlaceholderDifficulty}.{PlaceholderExtension}" ## \
     ## Default format for charts which have a separate file per difficulty
-    DefaultNonDifficultyChartFormat* = fmt"{PlaceholderArtist} - {PlaceholderTitle}.{PlaceholderExtension}"
+    DefaultNonDifficultyChartFormat* = fmt"{PlaceholderArtist} - {PlaceholderTitle}.{PlaceholderExtension}" ## \
     ## Default format for charts which have all difficulties in one file
     debug = true
 
@@ -118,7 +120,7 @@ func newConvertOptions*(
     folderFormat: string = DefaultFolderFormat,
     chartFormat: string = ""
 ): ConvertOptions =
-    ## Function to create a new _`ConvertOptions` instance.
+    ## Function to create a new `ConvertOptions` instance.
 
     result = ConvertOptions(
         songFolders: songFolders,
@@ -135,9 +137,9 @@ func newFormattingParameters*(
     title: string = "untitled",
     artist: string = "unknown",
     difficulty: string = "edit",
-    extension: string = ".txt",
+    extension: string = "txt",
 ): FormattingParameters =
-    ## Function to create a new _`FormattingParameters` instance.
+    ## Function to create a new `FormattingParameters` instance.
 
     result = FormattingParameters(
         title: title,
@@ -153,7 +155,7 @@ func parseDifficulty*(diff: string): Difficulty {.raises: [ParseError, ValueErro
         raise newException(ParseError, fmt"Could not parse Difficulty '{diff}'!")
 
 func formatFileName*(this: ConvertOptions, params: FormattingParameters): string =
-    ## Formats the ConvertOptions' `chartFormat` by replacing the Placeholders
+    ## Formats the `ConvertOptions`' `chartFormat` by replacing the Placeholders
     ## with the provided formatting parameters.
 
     result = this.chartFormat
@@ -166,7 +168,7 @@ func formatFileName*(this: ConvertOptions, params: FormattingParameters): string
         result = normalize(result)
 
 func formatFolderName*(this: ConvertOptions, params: FormattingParameters): string =
-    ## Formats the ConvertOptions' `folderFormat` by replacing the Placeholders
+    ## Formats the `ConvertOptions`' `folderFormat` by replacing the Placeholders
     ## with the provided formatting parameters.
 
     result = this.folderFormat
@@ -207,7 +209,9 @@ func getDefaultChartFormat*(fileType: FileType): string =
 
 func getDefaultOptions*(to: FileType): ConvertOptions =
     ## Creates file-type specific default-options.
-    ## _`getDefaultChartFormat`
+    ## 
+    ## See also:
+    ## * `getDefaultChartFormat,FileType`_
 
     let format = getDefaultChartFormat(to)
     result = newConvertOptions(chartFormat = format)

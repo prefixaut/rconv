@@ -14,5 +14,7 @@ task build, "Build the library":
 task document, "Build the documentation":
     switch "outdir", "docs"
     switch "project"
-    switch "git.url", "https://github.com/prefixaut/rconv.git"
+    switch "index", "on"
+    switch "git.url", "https://github.com/prefixaut/rconv"
+    switch "git.devel", "master"
     setCommand "doc", "src/rconv/entry.nim"

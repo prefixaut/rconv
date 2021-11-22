@@ -129,24 +129,14 @@ function main() {
   time*: float               ## Timestamp in milliseconds when the button needs to be pressed
   snapSize*: int             ## optional. The snap-size in which this tick occurs
   snapIndex*: int            ## optional. The snap-index in which the tick occurs
-  notes*: seq[NoteRange] ## Array of note indices which need to be pressed at current time.
-                         ## e.g. [3, 10] -&gt; button 3 and 10 need to be pressed.
-                         ## 
-                         ## This file format indexes buttons starting from 0 to 15
-                         ## ```
-                         ## 0  1  2  3
-                         ## 4  5  6  7
-                         ## 8  9  10 11
-                         ## 12 13 14 15
-                         ## ```
-  holds*: seq[Hold]          ## Sequence of timing data for holds">Tick</a></li>
+  notes*: seq[NoteRange]     ## Sequence of notes to press at this time
+  holds*: seq[Hold]          ## Sequence of holds to start at this time">Tick</a></li>
   <li><a class="reference" href="#Hold"
     title="Hold = object
   `from`*: NoteRange         ## Index the hold starts on (see notes in Tick interface)
   to*: NoteRange             ## Index the hold ends on (see notes in Tick interface)
   releaseOn*: float ## Timestamp in milliseconds when to release the note.
-                    ## 
-                    ## here is no need to search for the hold end
+                    ## There is no need to search for the hold end
                     ## and animation duration can be calculated really easily">Hold</a></li>
 
   </ul>
@@ -208,9 +198,9 @@ function main() {
 
 A complete FXF-Chart file which contains multiple charts (Difficulties)
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv.git/tree/version-1-4/src/rconv/fxf.nim#L6"
+href="https://github.com/prefixaut/rconv/tree/version-1-4/src/rconv/fxf.nim#L6"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv.git/edit/devel/src/rconv/fxf.nim#L6" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L6" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="Chart"></a>
@@ -220,11 +210,11 @@ class="link-seesrc" target="_blank">Source</a>
   </pre></dt>
 <dd>
 
-
+A single FXF chart which holds the note/hold information
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv.git/tree/version-1-4/src/rconv/fxf.nim#L27"
+href="https://github.com/prefixaut/rconv/tree/version-1-4/src/rconv/fxf.nim#L27"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv.git/edit/devel/src/rconv/fxf.nim#L27" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L27" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="BpmChange"></a>
@@ -238,20 +228,28 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv.git/tree/version-1-4/src/rconv/fxf.nim#L33"
+href="https://github.com/prefixaut/rconv/tree/version-1-4/src/rconv/fxf.nim#L34"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv.git/edit/devel/src/rconv/fxf.nim#L33" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L34" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="NoteRange"></a>
 <dt><pre><a href="fxf.html#NoteRange"><span class="Identifier">NoteRange</span></a> <span class="Other">=</span> <span class="Identifier">range</span><span class="Other">[</span><span class="DecNumber">0</span> <span class="Operator">..</span> <span class="DecNumber">15</span><span class="Other">]</span></pre></dt>
 <dd>
 
+<p>
+Range of note indices which need to be pressed/held at some time. e.g. [3, 10] -&gt; button 3 and 10 need to be pressed.</p>
+<p>This file format indexes buttons starting from 0 to 15:<pre>
+0  1  2  3
+4  5  6  7
+8  9  10 11
+12 13 14 15</pre>
+</p>
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv.git/tree/version-1-4/src/rconv/fxf.nim#L43"
+href="https://github.com/prefixaut/rconv/tree/version-1-4/src/rconv/fxf.nim#L44"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv.git/edit/devel/src/rconv/fxf.nim#L43" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L44" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="Tick"></a>
@@ -259,25 +257,16 @@ class="link-seesrc" target="_blank">Source</a>
   <span class="Identifier">time</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">float</span>               <span class="Comment">## Timestamp in milliseconds when the button needs to be pressed</span>
   <span class="Identifier">snapSize</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>             <span class="Comment">## optional. The snap-size in which this tick occurs</span>
   <span class="Identifier">snapIndex</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>            <span class="Comment">## optional. The snap-index in which the tick occurs</span>
-  <span class="Identifier">notes</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><a href="fxf.html#NoteRange"><span class="Identifier">NoteRange</span></a><span class="Other">]</span> <span class="Comment">## Array of note indices which need to be pressed at current time.</span>
-                         <span class="Comment">## e.g. [3, 10] -&gt; button 3 and 10 need to be pressed.</span>
-                         <span class="Comment">## </span>
-                         <span class="Comment">## This file format indexes buttons starting from 0 to 15</span>
-                         <span class="Comment">## ```</span>
-                         <span class="Comment">## 0  1  2  3</span>
-                         <span class="Comment">## 4  5  6  7</span>
-                         <span class="Comment">## 8  9  10 11</span>
-                         <span class="Comment">## 12 13 14 15</span>
-                         <span class="Comment">## ```</span>
-  <span class="Identifier">holds</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><a href="fxf.html#Hold"><span class="Identifier">Hold</span></a><span class="Other">]</span>          <span class="Comment">## Sequence of timing data for holds</span>
+  <span class="Identifier">notes</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><a href="fxf.html#NoteRange"><span class="Identifier">NoteRange</span></a><span class="Other">]</span>     <span class="Comment">## Sequence of notes to press at this time</span>
+  <span class="Identifier">holds</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><a href="fxf.html#Hold"><span class="Identifier">Hold</span></a><span class="Other">]</span>          <span class="Comment">## Sequence of holds to start at this time</span>
   </pre></dt>
 <dd>
 
-
+A tick referres to a time in the chart, where one or more actions need to be performed.
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv.git/tree/version-1-4/src/rconv/fxf.nim#L45"
+href="https://github.com/prefixaut/rconv/tree/version-1-4/src/rconv/fxf.nim#L56"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv.git/edit/devel/src/rconv/fxf.nim#L45" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L56" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="Hold"></a>
@@ -285,17 +274,16 @@ class="link-seesrc" target="_blank">Source</a>
   <span class="Other">`</span><span class="Keyword">from</span><span class="Other">`</span><span class="Operator">*</span><span class="Other">:</span> <a href="fxf.html#NoteRange"><span class="Identifier">NoteRange</span></a>         <span class="Comment">## Index the hold starts on (see notes in Tick interface)</span>
   <span class="Identifier">to</span><span class="Operator">*</span><span class="Other">:</span> <a href="fxf.html#NoteRange"><span class="Identifier">NoteRange</span></a>             <span class="Comment">## Index the hold ends on (see notes in Tick interface)</span>
   <span class="Identifier">releaseOn</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">float</span> <span class="Comment">## Timestamp in milliseconds when to release the note.</span>
-                    <span class="Comment">## </span>
-                    <span class="Comment">## here is no need to search for the hold end</span>
+                    <span class="Comment">## There is no need to search for the hold end</span>
                     <span class="Comment">## and animation duration can be calculated really easily</span>
   </pre></dt>
 <dd>
 
-
+A hold is a regular note which needs to be held until a certain time. It starts on the <tt class="docutils literal"><span class="pre">from</span></tt> position together with an animation which starts on the <tt class="docutils literal"><span class="pre">to</span></tt> position. The hold resolves at the <tt class="docutils literal"><span class="pre">releaseOn</span></tt> property (chart time, not offset), and is indicated with an animation.
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv.git/tree/version-1-4/src/rconv/fxf.nim#L66"
+href="https://github.com/prefixaut/rconv/tree/version-1-4/src/rconv/fxf.nim#L70"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv.git/edit/devel/src/rconv/fxf.nim#L66" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L70" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 
@@ -309,9 +297,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 Hook to convert the Table of Difficulty and Chart to a proper json-object. Regular table hooks convert it with additional artifacting and breaking structure.
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv.git/tree/version-1-4/src/rconv/fxf.nim#L86"
+href="https://github.com/prefixaut/rconv/tree/version-1-4/src/rconv/fxf.nim#L94"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv.git/edit/devel/src/rconv/fxf.nim#L86" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L94" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="toJsonHook,T_2"></a>
@@ -320,9 +308,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 Hook to convert a Tick into a json-object. Excludes empty/redundant elements in the result.
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv.git/tree/version-1-4/src/rconv/fxf.nim#L94"
+href="https://github.com/prefixaut/rconv/tree/version-1-4/src/rconv/fxf.nim#L102"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv.git/edit/devel/src/rconv/fxf.nim#L94" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L102" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 
@@ -337,9 +325,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 Creates formatting-parameters from the provided chart-file
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv.git/tree/version-1-4/src/rconv/fxf.nim#L77"
+href="https://github.com/prefixaut/rconv/tree/version-1-4/src/rconv/fxf.nim#L85"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv.git/edit/devel/src/rconv/fxf.nim#L77" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L85" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 
@@ -352,7 +340,7 @@ class="link-seesrc" target="_blank">Source</a>
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br/>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2021-11-21 20:36:37 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2021-11-22 23:36:19 UTC</small>
       </div>
     </div>
   </div>

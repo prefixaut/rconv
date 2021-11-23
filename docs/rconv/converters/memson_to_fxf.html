@@ -17,7 +17,7 @@
 <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro:400,500,600' rel='stylesheet' type='text/css'/>
 
 <!-- CSS -->
-<title>src/rconv/pipeline</title>
+<title>rconv/converters/memson_to_fxf</title>
 <link rel="stylesheet" type="text/css" href="../../nimdoc.out.css">
 
 <script type="text/javascript" src="../../dochack.js"></script>
@@ -62,7 +62,7 @@ function main() {
 <body onload="main()">
 <div class="document" id="documentId">
   <div class="container">
-    <h1 class="title">src/rconv/pipeline</h1>
+    <h1 class="title">rconv/converters/memson_to_fxf</h1>
     <div class="row">
   <div class="three columns">
   <div class="theme-switch-wrapper">
@@ -98,12 +98,11 @@ function main() {
   </ul>
 </li>
 <li>
-  <a class="reference reference-toplevel" href="#12" id="62">Procs</a>
+  <a class="reference reference-toplevel" href="#13" id="63">Funcs</a>
   <ul class="simple simple-toc-section">
-      <ul class="simple nested-toc-section">convert
-      <li><a class="reference" href="#convert%2Cstring%2COption%5BFileType%5D%2CFileType%2COption%5BConvertOptions%5D"
-    title="convert(file: string; fromType: Option[FileType]; to: FileType;
-        options: Option[ConvertOptions]): ConvertResult">convert,<wbr>string,<wbr>Option[FileType],<wbr>FileType,<wbr>Option[ConvertOptions]</a></li>
+      <ul class="simple nested-toc-section">convertMemsonToFXF
+      <li><a class="reference" href="#convertMemsonToFXF"
+    title="convertMemsonToFXF(input: memson.Memson): fxf.ChartFile">convertMemsonToFXF</a></li>
 
   </ul>
 
@@ -120,25 +119,21 @@ function main() {
   <div class="section" id="6">
 <h1><a class="toc-backref" href="#6">Imports</a></h1>
 <dl class="item">
-<a class="reference external" href="converters/malody_to_fxf.html">converters/malody_to_fxf</a>, <a class="reference external" href="converters/memson_to_fxf.html">converters/memson_to_fxf</a>, <a class="reference external" href="common.html">common</a>, <a class="reference external" href="fxf.html">fxf</a>, <a class="reference external" href="malody.html">malody</a>, <a class="reference external" href="memo.html">memo</a>, <a class="reference external" href="memson.html">memson</a>
+<a class="reference external" href="../common.html">../common</a>, <a class="reference external" href="../fxf.html">../fxf</a>, <a class="reference external" href="../memson.html">../memson</a>
 </dl></div>
-<div class="section" id="12">
-<h1><a class="toc-backref" href="#12">Procs</a></h1>
+<div class="section" id="13">
+<h1><a class="toc-backref" href="#13">Funcs</a></h1>
 <dl class="item">
-<a id="convert,string,Option[FileType],FileType,Option[ConvertOptions]"></a>
-<dt><pre><span class="Keyword">proc</span> <a href="#convert%2Cstring%2COption%5BFileType%5D%2CFileType%2COption%5BConvertOptions%5D"><span class="Identifier">convert</span></a><span class="Other">(</span><span class="Identifier">file</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">fromType</span><span class="Other">:</span> <span class="Identifier">Option</span><span class="Other">[</span><a href="common.html#FileType"><span class="Identifier">FileType</span></a><span class="Other">]</span><span class="Other">;</span> <span class="Identifier">to</span><span class="Other">:</span> <a href="common.html#FileType"><span class="Identifier">FileType</span></a><span class="Other">;</span>
-             <span class="Identifier">options</span><span class="Other">:</span> <span class="Identifier">Option</span><span class="Other">[</span><a href="common.html#ConvertOptions"><span class="Identifier">ConvertOptions</span></a><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <a href="common.html#ConvertResult"><span class="Identifier">ConvertResult</span></a> <span><span class="Other">{</span><span class="Other pragmadots">...</span><span class="Other">}</span></span><span class="pragmawrap"><span class="Other">{.</span><span class="pragma"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span>
-    <span class="Identifier">MissingTypeException</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">ParseError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">,</span>
-    <span class="Identifier">PreserveFileException</span><span class="Other">,</span> <span class="Identifier">ConvertException</span><span class="Other">,</span> <span class="Identifier">MissingConversionException</span><span class="Other">,</span>
-    <span class="Identifier">JsonKindError</span><span class="Other">,</span> <span class="Identifier">JsonParsingError</span><span class="Other">,</span> <span class="Identifier">Exception</span><span class="Other">,</span> <span class="Identifier">InvalidTypeException</span><span class="Other">]</span><span class="Other">,</span>
-    <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">ReadIOEffect</span><span class="Other">,</span> <span class="Identifier">ReadDirEffect</span><span class="Other">,</span> <span class="Identifier">WriteDirEffect</span><span class="Other">,</span> <span class="Identifier">WriteIOEffect</span><span class="Other">]</span></span><span class="Other">.}</span></span></pre></dt>
+<a id="convertMemsonToFXF"></a>
+<dt><pre><span class="Keyword">func</span> <a href="#convertMemsonToFXF"><span class="Identifier">convertMemsonToFXF</span></a><span class="Other">(</span><span class="Identifier">input</span><span class="Other">:</span> <span class="Identifier">memson</span><span class="Other">.</span><span class="Identifier">Memson</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">fxf</span><span class="Other">.</span><span class="Identifier">ChartFile</span> <span><span class="Other">{</span><span class="Other pragmadots">...</span><span class="Other">}</span></span><span class="pragmawrap"><span class="Other">{.</span><span class="pragma"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span>
+    <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span><span class="Other">.}</span></span></pre></dt>
 <dd>
 
-Converts the provided file to the requested output-format (<tt class="docutils literal"><span class="pre">to</span></tt>). If the <tt class="docutils literal"><span class="pre">fromType</span></tt> is not provided, it'll attempt to detect it from the file via the _<tt class="docutils literal"><span class="pre">detectFileType</span></tt> func. If no <tt class="docutils literal"><span class="pre">options</span></tt> are provided, it'll get the default options for the output-type (<tt class="docutils literal"><span class="pre">to</span></tt>) via the _<tt class="docutils literal"><span class="pre">getDefaultOptions</span></tt> func.
+
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/version-1-4/src/rconv/pipeline.nim#L15"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/converters/memson_to_fxf.nim#L10"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/pipeline.nim#L15" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/converters/memson_to_fxf.nim#L10" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 
@@ -151,7 +146,7 @@ class="link-seesrc" target="_blank">Source</a>
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br/>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2021-11-22 23:36:19 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2021-11-23 22:39:10 UTC</small>
       </div>
     </div>
   </div>

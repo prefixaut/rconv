@@ -1,8 +1,0 @@
-LineReader	src/rconv/utils/line_reader.html#LineReader	line_reader: LineReader	
-LineReaderRef	src/rconv/utils/line_reader.html#LineReaderRef	line_reader: LineReaderRef	
-newLineReader	src/rconv/utils/line_reader.html#newLineReader,string	line_reader: newLineReader(str: string): LineReaderRef	
-nextLine	src/rconv/utils/line_reader.html#nextLine.e,LineReaderRef	line_reader: nextLine(this: LineReaderRef): string	
-line	src/rconv/utils/line_reader.html#line.e,LineReaderRef	line_reader: line(this: LineReaderRef): int	
-col	src/rconv/utils/line_reader.html#col.e,LineReaderRef	line_reader: col(this: LineReaderRef): int	
-isEOF	src/rconv/utils/line_reader.html#isEOF.e,LineReaderRef	line_reader: isEOF(this: LineReaderRef): bool	
-reset	src/rconv/utils/line_reader.html#reset.e,LineReaderRef	line_reader: reset(this: LineReaderRef): void	

@@ -32,6 +32,7 @@ type
         ## The ticks/notes of the chart
     
     BpmChange* = object
+        ## A change of BPM in the song/chart on a given time
         time*: float
         ## Timestamp in milliseconds when the bpm changes
         bpm*: float

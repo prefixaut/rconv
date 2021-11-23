@@ -1,7 +1,7 @@
 import std/[sequtils, strformat, sugar, tables, unicode]
 import std/strutils except split, strip
 
-import ./utils/line_reader
+import ./private/line_reader
 import ./common
 import ./memson
 

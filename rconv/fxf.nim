@@ -19,7 +19,7 @@ type
         ## Audio outset in ms
         bpmChanges*: seq[BpmChange]
         ## The changes of the BPM
-        charts*: Table[Difficulty, Chart]
+        charts*: Table[string, Chart]
         ## Object of charts where key is difficulty name and value is the chart itself
         ## Usually a memo file contains only one chart
         ## but it makes sense to just store all charts in one file
@@ -92,7 +92,7 @@ func asFormattingParams*(chart: ChartFile): FormattingParameters =
         extension = $FileType.FXF,
     )
 
-proc toJsonHook*[T: Table[Difficulty, Chart]](this: T): JsonNode =
+proc toJsonHook*[T: Table[string, Chart]](this: T): JsonNode =
     ## Hook to convert the Table of Difficulty and Chart to a proper json-object.
     ## Regular table hooks convert it with additional artifacting and breaking structure.
 

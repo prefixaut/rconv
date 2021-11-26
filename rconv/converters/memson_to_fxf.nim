@@ -73,6 +73,6 @@ func convertMemsonToFXF*(input: memson.Memson): fxf.ChartFile =
             inc indexOffset, snap.len
             globalTime = globalTime + beat
 
-    result.charts = initTable[common.Difficulty, fxf.Chart]()
-    result.charts[input.difficulty] = chart
+    result.charts = initTable[string, fxf.Chart]()
+    result.charts[$input.difficulty] = chart
     

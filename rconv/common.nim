@@ -1,13 +1,6 @@
 import std/[macros, options, strformat, strutils]
 
 type
-    Difficulty* {.pure.} = enum
-        ## Difficulty for jubeat like games.
-        ## Will be removed/replaced with a more generic solution soonish 
-        Basic       = "basic",
-        Advanced    = "advanced",
-        Extreme     = "extreme"
-
     FileType* {.pure.} = enum
         ## File types which are supported
         Memo = "memo",
@@ -147,12 +140,6 @@ func newFormattingParameters*(
         difficulty: difficulty,
         extension: extension,
     )
-
-func parseDifficulty*(diff: string): Difficulty {.raises: [ParseError, ValueError] .} =
-    try:
-        return parseEnum[Difficulty](diff.toLower())
-    except ValueError:
-        raise newException(ParseError, fmt"Could not parse Difficulty '{diff}'!")
 
 func formatFileName*(this: ConvertOptions, params: FormattingParameters): string =
     ## Formats the `ConvertOptions`' `chartFormat` by replacing the Placeholders

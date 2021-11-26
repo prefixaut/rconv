@@ -40,7 +40,7 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
         of FileType.FXF:
             let parsed = memo.parseMemoToMemson(readFile(file))
             var chart: fxf.ChartFile = convertMemsonToFXF(parsed)
-            result = saveChart(chart, actualOptions, some(parsed.difficulty))
+            result = saveChart(chart, actualOptions, some($parsed.difficulty))
         else:
             raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
     of FileType.Malody:
@@ -48,13 +48,13 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
         of FileType.FXF:
             let parsed = jsonTo(parseJson(readFile(file)), malody.Chart)
             var chart: fxf.ChartFile = convertMalodyToFXF(parsed)
-            result = saveChart(chart, actualOptions, none(Difficulty))
+            result = saveChart(chart, actualOptions, none(string))
         else:
             raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
     else:
         raise newException(InvalidTypeException, fmt"Could not find a converter for input-type {fromType}")
 
-proc saveChart(chart: var fxf.ChartFile, options: ConvertOptions, diff: Option[Difficulty] = none(Difficulty)): ConvertResult =
+proc saveChart(chart: var fxf.ChartFile, options: ConvertOptions, diff: Option[string] = none(string)): ConvertResult =
     ## Saves the FXF-Chart to a file.
     ## The file-name and output directory are determined via the provided `options`.
 

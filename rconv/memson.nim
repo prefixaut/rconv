@@ -1,8 +1,14 @@
-import std/[json, jsonutils, tables]
+import std/[strutils, json, jsonutils, tables]
 
-import ./common
+type
+    Difficulty* {.pure.} = enum
+        ## Difficulty for jubeat like games.
+        ## Will be removed/replaced with a more generic solution soonish 
+        Basic       = "basic",
+        Advanced    = "advanced",
+        Extreme     = "extreme"
+        Edit        = "edit"
 
-type    
     NoteType* {.pure.} = enum
         ## The types of notes that exist (regular note, or a hold)
         Note        = "note"
@@ -84,6 +90,17 @@ type
         ## May only be set if BPM changes occur in the chart.
         sections*: seq[Section]
         ## The sections of the chart.
+
+func parseDifficulty*(input: string): Difficulty =
+    case input.toLower:
+    of "basic":
+        result = Difficulty.Basic
+    of "adv", "advanced":
+        result = Difficulty.Advanced
+    of "ext", "extreme", "extra":
+        result = Difficulty.Extreme
+    else:
+        result = Difficulty.Edit
 
 proc toJsonHook*[T: BpmRange](this: T): JsonNode =
     result = newJNull()

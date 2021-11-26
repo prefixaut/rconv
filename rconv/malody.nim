@@ -1,3 +1,7 @@
+import std/[json, jsonutils, tables]
+
+import ./private/json as j
+
 {.experimental: "codeReordering".}
 
 type
@@ -170,3 +174,83 @@ type
     CatchHold* = object of CatchNote
         endbeat*: Beat
         ## Beat when the hold is being released
+
+func jsonToHook*[T: TimedElement](self: JsonNode): T =
+    if self.kind != JsonNodeKind.JObject or not self.fields.hasKey "beat":
+        discard
+
+    let beat = self.getBeatSafe()
+
+    if self.hasField("bpm", JsonNodeKind.JFloat):
+        result = TimeSignature(beat = beat, bpm = self.getFloatSafe("bpm"))
+
+    elif self.hasField("type", JsonNodeKind.JInt) and self.hasField("sound", JsonNodeKind.JString):
+        result = SoundCue(
+            beat = beat,
+            `type` = self.getTypeSafe("type"),
+            offset = self.getIntSafe("offset"),
+            vol: self.getFloatSafe("vol")
+        )
+    elif self.hasField("column", JsonNodeKind.JInt):
+        if self.fields.hasKey("endbeat"):
+            result = ColumnHold(
+                beat = beat,
+                column = self.getIntSafe("column"),
+                style = self.getIntSafe("style", -1),
+                endbeat = self.getBeatSafe("endbeat"),
+                hits = self.getIntSafe("hits", 1)
+            )
+        else:
+            result = ColumnNote(
+                beat = beat,
+                column = self.getIntSafe("column"),
+                style = self.getIntSafe("style", -1)
+            )
+    elif self.hasField("x", JsonNodeKind.JInt):
+        if self.hasField("w", JsonNodeKind.JInt):
+            result = SlideNote(
+                beat = beat,
+                w = self.getIntSafe("w"),
+                `type` = self.getIntSafe(self, "type"),
+                seg = if self.fields.hasKey("seg"): jsonTo(self.fields["seg"], seq[VerticalNote]) else: @[]
+            )
+        elif self.hasKey("type", JsonNodeKind.JInt):
+            if self.fields.hasKey("endbeat"):
+                result = CatchHold(
+                    beat = beat,
+                    `type` = self.getIntSafe("type"),
+                    endbeat = self.getBeatSafe("endbeat")
+                )
+            else:
+                result = CatchNote(
+                    beat = beat,
+                    `type` = self.getIntSafe("type")
+                )
+        else:
+            result = VerticalNote(
+                beat = beat,
+                x = self.getIntSafe("x")
+            )
+    elif self.hasField("index", JsonNodeKind.JInt):
+        if self.fields.hasKey("endbeat"):
+            result = IndexHold(
+                beat = beat,
+                index = self.getIntSafe("index"),
+                endbeat = self.getBeatSafe("endbeat"),
+                endindex = self.getIntSafe("endindex")
+            )
+        else:
+            result = IndexNote(
+                beat = beat,
+                index = self.getIntSafe("index")
+            )
+    else:
+        discard
+
+func getBeatSafe(self: JsonNode, field: string = "beat", default: Beat = [-1, 0, 0]): Beat =
+    result = default
+    if self.fields.hasKey(field):
+        try:
+            result = jsonTo(self.fields[field], Beat)
+        except:
+            discard

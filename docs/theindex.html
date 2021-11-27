@@ -63,7 +63,7 @@ function main() {
 <div class="document" id="documentId">
   <div class="container">
     <h1 class="title">Index</h1>
-    Modules: <a href="rconv/common.html">rconv/common</a>, <a href="rconv/converters/malody_to_fxf.html">rconv/converters/malody_to_fxf</a>, <a href="rconv/converters/memson_to_fxf.html">rconv/converters/memson_to_fxf</a>, <a href="rconv/fxf.html">rconv/fxf</a>, <a href="rconv/malody.html">rconv/malody</a>, <a href="rconv/memo.html">rconv/memo</a>, <a href="rconv/memson.html">rconv/memson</a>, <a href="rconv/pipeline.html">rconv/pipeline</a>, <a href="rconv/private/line_reader.html">rconv/private/line_reader</a>.<br/><p /><h2>API symbols</h2>
+    Modules: <a href="rconv/common.html">rconv/common</a>, <a href="rconv/fxf.html">rconv/fxf</a>, <a href="rconv/malody.html">rconv/malody</a>, <a href="rconv/memo.html">rconv/memo</a>, <a href="rconv/memson.html">rconv/memson</a>, <a href="rconv/pipeline.html">rconv/pipeline</a>, <a href="rconv/private/json.html">rconv/private/json</a>, <a href="rconv/private/line_reader.html">rconv/private/line_reader</a>.<br/><p /><h2>API symbols</h2>
 <dl><dt><a name="asFormattingParams" href="#asFormattingParams"><span>asFormattingParams:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="fxf: asFormattingParams(chart: ChartFile): FormattingParameters" href="rconv/fxf.html#asFormattingParams%2CChartFile">fxf: asFormattingParams(chart: ChartFile): FormattingParameters</a></li>
@@ -128,14 +128,6 @@ function main() {
 <li><a class="reference external"
           data-doc-search-tag="common: ConvertException" href="rconv/common.html#ConvertException">common: ConvertException</a></li>
           </ul></dd>
-<dt><a name="convertMalodyToFXF" href="#convertMalodyToFXF"><span>convertMalodyToFXF:</span></a></dt><dd><ul class="simple">
-<li><a class="reference external"
-          data-doc-search-tag="malody_to_fxf: convertMalodyToFXF(chart: malody.Chart): fxf.ChartFile" href="rconv/converters/malody_to_fxf.html#convertMalodyToFXF">malody_to_fxf: convertMalodyToFXF(chart: malody.Chart): fxf.ChartFile</a></li>
-          </ul></dd>
-<dt><a name="convertMemsonToFXF" href="#convertMemsonToFXF"><span>convertMemsonToFXF:</span></a></dt><dd><ul class="simple">
-<li><a class="reference external"
-          data-doc-search-tag="memson_to_fxf: convertMemsonToFXF(input: memson.Memson): fxf.ChartFile" href="rconv/converters/memson_to_fxf.html#convertMemsonToFXF">memson_to_fxf: convertMemsonToFXF(input: memson.Memson): fxf.ChartFile</a></li>
-          </ul></dd>
 <dt><a name="ConvertOptions" href="#ConvertOptions"><span>ConvertOptions:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="common: ConvertOptions" href="rconv/common.html#ConvertOptions">common: ConvertOptions</a></li>
@@ -162,7 +154,7 @@ function main() {
           </ul></dd>
 <dt><a name="Difficulty" href="#Difficulty"><span>Difficulty:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="common: Difficulty" href="rconv/common.html#Difficulty">common: Difficulty</a></li>
+          data-doc-search-tag="memson: Difficulty" href="rconv/memson.html#Difficulty">memson: Difficulty</a></li>
           </ul></dd>
 <dt><a name="FileType" href="#FileType"><span>FileType:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -192,6 +184,22 @@ function main() {
 <li><a class="reference external"
           data-doc-search-tag="common: getFileExtension(fileType: FileType): string" href="rconv/common.html#getFileExtension%2CFileType">common: getFileExtension(fileType: FileType): string</a></li>
           </ul></dd>
+<dt><a name="getFloatSafe" href="#getFloatSafe"><span>getFloatSafe:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="json: getFloatSafe(self: JsonNode; field: string; default: float = 0.0): float" href="rconv/private/json.html#getFloatSafe%2CJsonNode%2Cstring%2Cfloat">json: getFloatSafe(self: JsonNode; field: string; default: float = 0.0): float</a></li>
+          </ul></dd>
+<dt><a name="getIntSafe" href="#getIntSafe"><span>getIntSafe:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="json: getIntSafe(self: JsonNode; field: string; default: int = 0): int" href="rconv/private/json.html#getIntSafe%2CJsonNode%2Cstring%2Cint">json: getIntSafe(self: JsonNode; field: string; default: int = 0): int</a></li>
+          </ul></dd>
+<dt><a name="getStringSafe" href="#getStringSafe"><span>getStringSafe:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="json: getStringSafe(self: JsonNode; field: string; default: string = &quot;&quot;): string" href="rconv/private/json.html#getStringSafe%2CJsonNode%2Cstring%2Cstring">json: getStringSafe(self: JsonNode; field: string; default: string = &quot;&quot;): string</a></li>
+          </ul></dd>
+<dt><a name="hasField" href="#hasField"><span>hasField:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="json: hasField(self: JsonNode; field: string; kind: JsonNodeKind): bool" href="rconv/private/json.html#hasField%2CJsonNode%2Cstring%2CJsonNodeKind">json: hasField(self: JsonNode; field: string; kind: JsonNodeKind): bool</a></li>
+          </ul></dd>
 <dt><a name="Hold" href="#Hold"><span>Hold:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="fxf: Hold" href="rconv/fxf.html#Hold">fxf: Hold</a></li>
@@ -211,6 +219,10 @@ function main() {
 <dt><a name="isEOF" href="#isEOF"><span>isEOF:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="line_reader: isEOF(this: LineReaderRef): bool" href="rconv/private/line_reader.html#isEOF.e%2CLineReaderRef">line_reader: isEOF(this: LineReaderRef): bool</a></li>
+          </ul></dd>
+<dt><a name="jsonToHook" href="#jsonToHook"><span>jsonToHook:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="malody: jsonToHook[T: TimedElement](self: JsonNode): T" href="rconv/malody.html#jsonToHook%2CJsonNode">malody: jsonToHook[T: TimedElement](self: JsonNode): T</a></li>
           </ul></dd>
 <dt><a name="line" href="#line"><span>line:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -290,9 +302,13 @@ function main() {
 <li><a class="reference external"
           data-doc-search-tag="memson: NoteType" href="rconv/memson.html#NoteType">memson: NoteType</a></li>
           </ul></dd>
+<dt><a name="OneMinute" href="#OneMinute"><span>OneMinute:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="common: OneMinute" href="rconv/common.html#OneMinute">common: OneMinute</a></li>
+          </ul></dd>
 <dt><a name="parseDifficulty" href="#parseDifficulty"><span>parseDifficulty:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="common: parseDifficulty(diff: string): Difficulty" href="rconv/common.html#parseDifficulty%2Cstring">common: parseDifficulty(diff: string): Difficulty</a></li>
+          data-doc-search-tag="memson: parseDifficulty(input: string): Difficulty" href="rconv/memson.html#parseDifficulty%2Cstring">memson: parseDifficulty(input: string): Difficulty</a></li>
           </ul></dd>
 <dt><a name="ParseError" href="#ParseError"><span>ParseError:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -370,9 +386,15 @@ function main() {
 <li><a class="reference external"
           data-doc-search-tag="malody: TimeSignature" href="rconv/malody.html#TimeSignature">malody: TimeSignature</a></li>
           </ul></dd>
+<dt><a name="toFXF" href="#toFXF"><span>toFXF:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="malody: toFXF(this: Chart): fxf.ChartFile" href="rconv/malody.html#toFXF%2CChart">malody: toFXF(this: Chart): fxf.ChartFile</a></li>
+          <li><a class="reference external"
+          data-doc-search-tag="memson: toFXF(this: Memson): fxf.ChartFile" href="rconv/memson.html#toFXF%2CMemson">memson: toFXF(this: Memson): fxf.ChartFile</a></li>
+          </ul></dd>
 <dt><a name="toJsonHook" href="#toJsonHook"><span>toJsonHook:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="fxf: toJsonHook[T: Table[Difficulty, Chart]](this: T): JsonNode" href="rconv/fxf.html#toJsonHook%2CT">fxf: toJsonHook[T: Table[Difficulty, Chart]](this: T): JsonNode</a></li>
+          data-doc-search-tag="fxf: toJsonHook[T: Table[string, Chart]](this: T): JsonNode" href="rconv/fxf.html#toJsonHook%2CT">fxf: toJsonHook[T: Table[string, Chart]](this: T): JsonNode</a></li>
           <li><a class="reference external"
           data-doc-search-tag="fxf: toJsonHook[T: Tick](this: T): JsonNode" href="rconv/fxf.html#toJsonHook%2CT_2">fxf: toJsonHook[T: Tick](this: T): JsonNode</a></li>
           <li><a class="reference external"
@@ -391,7 +413,7 @@ function main() {
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br/>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2021-11-23 22:39:11 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2021-11-27 02:34:20 UTC</small>
       </div>
     </div>
   </div>

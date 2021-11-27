@@ -1,4 +1,8 @@
-import std/[json, jsonutils, tables]
+import std/[algorithm, json, jsonutils, math, sets, strformat, tables]
+
+import ./common
+import ./fxf as fxf
+import ./memson as memson
 
 import ./private/json as j
 
@@ -117,11 +121,11 @@ type
         ## The new BPM it's changing to
 
     SoundCue* = object of TimedElement
-        `type`*: int
+        `type`*: SoundCueType
         ## Type of Sound-Cue that should be played
         sound*: string
         ## (Relative) File-Path to the sound-file to play
-        offset*: int
+        offset*: float
         ## How much offset in ms it should wait before playing it
         vol*: float
         ## How loud the sound should be played
@@ -176,6 +180,8 @@ type
         ## Beat when the hold is being released
 
 func jsonToHook*[T: TimedElement](self: JsonNode): T =
+    ## Hook to convert the provided JsonNode to the appropiate `TimeElement`.
+
     if self.kind != JsonNodeKind.JObject or not self.fields.hasKey "beat":
         discard
 
@@ -187,8 +193,8 @@ func jsonToHook*[T: TimedElement](self: JsonNode): T =
     elif self.hasField("type", JsonNodeKind.JInt) and self.hasField("sound", JsonNodeKind.JString):
         result = SoundCue(
             beat = beat,
-            `type` = self.getTypeSafe("type"),
-            offset = self.getIntSafe("offset"),
+            `type` = self.getIntSafe("type"),
+            offset = self.getFloatSafe("offset"),
             vol: self.getFloatSafe("vol")
         )
     elif self.hasField("column", JsonNodeKind.JInt):
@@ -248,9 +254,143 @@ func jsonToHook*[T: TimedElement](self: JsonNode): T =
         discard
 
 func getBeatSafe(self: JsonNode, field: string = "beat", default: Beat = [-1, 0, 0]): Beat =
+    ## Internal helper function to safely get a beat from a JsonNode
+
     result = default
     if self.fields.hasKey(field):
         try:
             result = jsonTo(self.fields[field], Beat)
         except:
             discard
+
+func getPriority(this: TimedElement): int =
+    ## Internal helper function to get the priority of a `TimedElement`.
+    ## Usually used for sorting.
+
+    result = 1
+    # Unknown types get a default score of 1
+
+    if this of IndexNote or this of ColumnNote or this of VerticalNote or this of CatchNote:
+        # All Notes get a score of 2
+        result = 2
+    elif this of SoundCue:
+        result = 3
+    elif this of TimeSignature:
+        result = 4
+
+func toFXF*(this: Chart): fxf.ChartFile =
+    ## Converts `this` Chart to a FXF-ChartFile.
+    ## The actual note-data will be present in the `fxf.ChartFile.charts`_ table.
+    ## The difficulty is determined by the `memson.parseDifficulty`_ function.
+
+    if (this.meta.mode != ChartMode.Pad):
+        raise newException(ValueError, fmt"The provided Malody-Chart is from the wrong Mode! Mode is {this.meta.mode}, where a {ChartMode.Pad} is required!")
+
+    let diff = $memson.parseDifficulty(this.meta.version)
+    var chart: fxf.Chart = fxf.Chart(ticks: @[], rating: 1)
+
+    result.artist = this.meta.song.artist
+    result.title = this.meta.song.title
+    result.jacket = this.meta.background
+    result.audio = ""
+    result.bpmChanges = @[]
+    result.charts = initTable[string, fxf.Chart]()
+    result.charts[diff] = chart
+
+    var beats = initHashSet[Beat]()
+    var holdBeats = initHashSet[Beat]()
+    var tmp: seq[TimedElement] = @[]
+
+    for e in this.note:
+        beats.incl e.beat
+        if e of IndexHold:
+            holdBeats.incl IndexHold(e).endbeat
+        tmp.add e
+
+    for e in this.time:
+        beats.incl e.beat
+        tmp.add e
+
+    # Temporary additional timed-element entry which will be added
+    # when no other element is present on that beat.
+    # Used to properly end hold notes.
+    for b in difference(beats, holdBeats):
+        tmp.add TimedElement(beat: b)
+
+    let timedElements = sorted(tmp, proc (a: TimedElement, b: TimedElement): int =
+        result = 0
+
+        for i in 0..1:
+            let diff = a.beat[i] - b.beat[i]
+            if diff != 0:
+                return diff
+        
+        result = b.getPriority - a.getPriority
+    )
+
+    var bpm: float = 1
+    var offset: float = 0
+    var lastBpmSection: int = 0
+    var holdTable = initTable[Beat, seq[fxf.Hold]]()
+    var beatTable = initTable[Beat, fxf.Tick]()
+
+    for element in timedElements:        
+        let beatSize = OneMinute / bpm
+        let snapLength = beatSize / float(element.beat[2])
+        let elementTime = offset + (beatSize * float(element.beat[0] - lastBpmSection)) + (snapLength * float(element.beat[1]))
+        let roundedTime = round(elementTime * 10) / 10
+
+        if holdTable.hasKey element.beat:
+            #for hold in holdTable[element.beat]:
+            #    hold.releaseOn = roundedTime
+            holdTable.del element.beat
+
+        if element of TimeSignature:
+            offset = elementTime
+            bpm = TimeSignature(element).bpm
+            lastBpmSection = element.beat[0]
+            result.bpmChanges.add fxf.BpmChange(
+                bpm: TimeSignature(element).bpm,
+                time: roundedTime,
+                snapIndex: element.beat[1],
+                snapSize: element.beat[2]
+            )
+            continue
+
+        if element of SoundCue:
+            if SoundCue(element).`type` == SoundCueType.Song:
+                result.audio = SoundCue(element).sound
+                offset = (roundedTime + SoundCue(element).offset) * -1
+            continue
+
+        if not (element of IndexNote):
+            # Skip all other unused elements
+            continue
+
+        var tick: fxf.Tick
+        if not beatTable.hasKey element.beat:
+            tick = Tick(
+                time: roundedTime,
+                snapIndex: element.beat[1],
+                snapSize: element.beat[2],
+                notes: @[],
+                holds: @[]
+            )
+            beatTable[element.beat] = tick
+        else:
+            tick = beatTable[element.beat]
+        
+        if not (element of IndexHold):
+            tick.notes.add IndexHold(element).index
+            continue
+        
+        var hold = fxf.Hold(
+            `from`: IndexHold(element).index,
+            to: IndexHold(element).endindex,
+            releaseOn: -1.0
+        )
+
+        if not holdTable.hasKey element.beat:
+            holdTable[element.beat] = @[]
+        holdTable[element.beat].add hold
+        tick.holds.add hold

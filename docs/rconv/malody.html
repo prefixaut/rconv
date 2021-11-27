@@ -92,6 +92,12 @@ function main() {
   </div>
   <ul class="simple simple-toc" id="toc-list">
 <li>
+  <a class="reference reference-toplevel" href="#6" id="56">Imports</a>
+  <ul class="simple simple-toc-section">
+    
+  </ul>
+</li>
+<li>
   <a class="reference reference-toplevel" href="#7" id="57">Types</a>
   <ul class="simple simple-toc-section">
       <li><a class="reference" href="#ChartMode"
@@ -153,9 +159,9 @@ function main() {
                              ## Usually ignored if the note hasn&apos;t been hit (see BMS)">SoundCueType</a></li>
   <li><a class="reference" href="#SoundCue"
     title="SoundCue = object of TimedElement
-  `type`*: int               ## Type of Sound-Cue that should be played
+  `type`*: SoundCueType      ## Type of Sound-Cue that should be played
   sound*: string             ## (Relative) File-Path to the sound-file to play
-  offset*: int               ## How much offset in ms it should wait before playing it
+  offset*: float             ## How much offset in ms it should wait before playing it
   vol*: float                ## How loud the sound should be played">SoundCue</a></li>
   <li><a class="reference" href="#IndexNote"
     title="IndexNote = object of TimedElement
@@ -189,6 +195,22 @@ function main() {
 
   </ul>
 </li>
+<li>
+  <a class="reference reference-toplevel" href="#13" id="63">Funcs</a>
+  <ul class="simple simple-toc-section">
+      <ul class="simple nested-toc-section">jsonToHook
+      <li><a class="reference" href="#jsonToHook%2CJsonNode"
+    title="jsonToHook[T: TimedElement](self: JsonNode): T">jsonToHook,<wbr>JsonNode</a></li>
+
+  </ul>
+  <ul class="simple nested-toc-section">toFXF
+      <li><a class="reference" href="#toFXF%2CChart"
+    title="toFXF(this: Chart): fxf.ChartFile">toFXF,<wbr>Chart</a></li>
+
+  </ul>
+
+  </ul>
+</li>
 
 </ul>
 
@@ -197,7 +219,12 @@ function main() {
   <div id="tocRoot"></div>
   
   <p class="module-desc"></p>
-  <div class="section" id="7">
+  <div class="section" id="6">
+<h1><a class="toc-backref" href="#6">Imports</a></h1>
+<dl class="item">
+<a class="reference external" href="common.html">common</a>, <a class="reference external" href="fxf.html">fxf</a>, <a class="reference external" href="memson.html">memson</a>, <a class="reference external" href="private/json.html">private/json</a>
+</dl></div>
+<div class="section" id="7">
 <h1><a class="toc-backref" href="#7">Types</a></h1>
 <dl class="item">
 <a id="ChartMode"></a>
@@ -212,9 +239,9 @@ function main() {
 
 The mode for a malody chart.
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L19"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L27"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L19" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L27" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="SongData"></a>
@@ -231,9 +258,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L69"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L77"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L69" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L77" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="ModeData"></a>
@@ -247,9 +274,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L83"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L91"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L83" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L91" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="MetaData"></a>
@@ -269,9 +296,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L47"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L55"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L47" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L55" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="Beat"></a>
@@ -280,9 +307,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L92"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L100"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L92" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L100" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="TimedElement"></a>
@@ -293,9 +320,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L107"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L115"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L107" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L115" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="TimeSignature"></a>
@@ -306,9 +333,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L111"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L119"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L111" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L119" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="Chart"></a>
@@ -321,9 +348,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 A Malody chart-File object definition
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L4"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L12"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L4" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L12" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="SlideNoteType"></a>
@@ -333,9 +360,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L40"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L48"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L40" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L48" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="SoundCueType"></a>
@@ -348,25 +375,25 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L98"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L106"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L98" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L106" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="SoundCue"></a>
 <dt><pre><a href="malody.html#SoundCue"><span class="Identifier">SoundCue</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a>
-  <span class="Other">`</span><span class="Keyword">type</span><span class="Other">`</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>               <span class="Comment">## Type of Sound-Cue that should be played</span>
+  <span class="Other">`</span><span class="Keyword">type</span><span class="Other">`</span><span class="Operator">*</span><span class="Other">:</span> <a href="malody.html#SoundCueType"><span class="Identifier">SoundCueType</span></a>      <span class="Comment">## Type of Sound-Cue that should be played</span>
   <span class="Identifier">sound</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span>             <span class="Comment">## (Relative) File-Path to the sound-file to play</span>
-  <span class="Identifier">offset</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>               <span class="Comment">## How much offset in ms it should wait before playing it</span>
+  <span class="Identifier">offset</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">float</span>             <span class="Comment">## How much offset in ms it should wait before playing it</span>
   <span class="Identifier">vol</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">float</span>                <span class="Comment">## How loud the sound should be played</span>
   </pre></dt>
 <dd>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L115"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L123"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L115" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L123" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="IndexNote"></a>
@@ -377,9 +404,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 Note for the following Modes: Pad
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L125"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L133"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L125" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L133" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="ColumnNote"></a>
@@ -391,9 +418,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 Note for following Modes: Key, Taiko, Ring
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L130"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L138"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L130" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L138" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="VerticalNote"></a>
@@ -404,9 +431,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 Note for the following Modes: Catch, Slide
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L137"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L145"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L137" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L145" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="CatchNote"></a>
@@ -417,9 +444,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 Note for the following Modes: Catch
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L142"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L150"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L142" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L150" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="SlideNote"></a>
@@ -432,9 +459,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 Note for the following Modes: Slide
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L147"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L155"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L147" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L155" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="IndexHold"></a>
@@ -446,9 +473,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 Hold for the following Modes: Pad
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L156"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L164"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L156" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L164" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="ColumnHold"></a>
@@ -460,9 +487,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 Note for the following Modes: Key, Taiko, Ring
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L163"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L171"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L163" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L171" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 <a id="CatchHold"></a>
@@ -473,9 +500,37 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L170"
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L178"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L170" class="link-seesrc" target="_blank" >Edit</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L178" class="link-seesrc" target="_blank" >Edit</a>
+
+</dd>
+
+</dl></div>
+<div class="section" id="13">
+<h1><a class="toc-backref" href="#13">Funcs</a></h1>
+<dl class="item">
+<a id="jsonToHook,JsonNode"></a>
+<dt><pre><span class="Keyword">func</span> <a href="#jsonToHook%2CJsonNode"><span class="Identifier">jsonToHook</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">:</span> <a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a><span class="Other">]</span><span class="Other">(</span><span class="Identifier">self</span><span class="Other">:</span> <span class="Identifier">JsonNode</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">T</span></pre></dt>
+<dd>
+
+Hook to convert the provided JsonNode to the appropiate <tt class="docutils literal"><span class="pre">TimeElement</span></tt>.
+&nbsp;&nbsp;<a
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L182"
+class="link-seesrc" target="_blank">Source</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L182" class="link-seesrc" target="_blank" >Edit</a>
+
+</dd>
+<a id="toFXF,Chart"></a>
+<dt><pre><span class="Keyword">func</span> <a href="#toFXF%2CChart"><span class="Identifier">toFXF</span></a><span class="Other">(</span><span class="Identifier">this</span><span class="Other">:</span> <a href="malody.html#Chart"><span class="Identifier">Chart</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">fxf</span><span class="Other">.</span><span class="Identifier">ChartFile</span> <span><span class="Other">{</span><span class="Other pragmadots">...</span><span class="Other">}</span></span><span class="pragmawrap"><span class="Other">{.</span><span class="pragma"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">]</span><span class="Other">,</span>
+    <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span><span class="Other">.}</span></span></pre></dt>
+<dd>
+
+Converts <tt class="docutils literal"><span class="pre">this</span></tt> Chart to a FXF-ChartFile. The actual note-data will be present in the <a class="reference external" href="#fxfdotchartfiledotcharts">fxf.ChartFile.charts</a> table. The difficulty is determined by the <a class="reference external" href="#memsondotparsedifficulty">memson.parseDifficulty</a> function.
+&nbsp;&nbsp;<a
+href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L281"
+class="link-seesrc" target="_blank">Source</a>
+<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L281" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 
@@ -488,7 +543,7 @@ class="link-seesrc" target="_blank">Source</a>
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br/>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2021-11-23 22:39:10 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2021-11-27 02:34:19 UTC</small>
       </div>
     </div>
   </div>

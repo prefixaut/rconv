@@ -1,3 +1,4 @@
+Difficulty	rconv/memson.html#Difficulty	memson: Difficulty	
 NoteType	rconv/memson.html#NoteType	memson: NoteType	
 NoteRange	rconv/memson.html#NoteRange	memson: NoteRange	
 RowIndex	rconv/memson.html#RowIndex	memson: RowIndex	
@@ -6,6 +7,8 @@ Note	rconv/memson.html#Note	memson: Note
 Section	rconv/memson.html#Section	memson: Section	
 Snap	rconv/memson.html#Snap	memson: Snap	
 Memson	rconv/memson.html#Memson	memson: Memson	
+parseDifficulty	rconv/memson.html#parseDifficulty,string	memson: parseDifficulty(input: string): Difficulty	
 toJsonHook	rconv/memson.html#toJsonHook,T	memson: toJsonHook[T: BpmRange](this: T): JsonNode	
 toJsonHook	rconv/memson.html#toJsonHook,T_2	memson: toJsonHook[T: OrderedTable[NoteRange, Note]](this: T): JsonNode	
 toJsonHook	rconv/memson.html#toJsonHook,T_3	memson: toJsonHook[T: Note](this: T): JsonNode	
+toFXF	rconv/memson.html#toFXF,Memson	memson: toFXF(this: Memson): fxf.ChartFile	

@@ -1,0 +1,4 @@
+hasField	rconv/private/json.html#hasField,JsonNode,string,JsonNodeKind	json: hasField(self: JsonNode; field: string; kind: JsonNodeKind): bool	
+getIntSafe	rconv/private/json.html#getIntSafe,JsonNode,string,int	json: getIntSafe(self: JsonNode; field: string; default: int = 0): int	
+getFloatSafe	rconv/private/json.html#getFloatSafe,JsonNode,string,float	json: getFloatSafe(self: JsonNode; field: string; default: float = 0.0): float	
+getStringSafe	rconv/private/json.html#getStringSafe,JsonNode,string,string	json: getStringSafe(self: JsonNode; field: string; default: string = &quot;&quot;): string	

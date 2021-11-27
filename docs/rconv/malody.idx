@@ -17,3 +17,5 @@ SlideNote	rconv/malody.html#SlideNote	malody: SlideNote
 IndexHold	rconv/malody.html#IndexHold	malody: IndexHold	
 ColumnHold	rconv/malody.html#ColumnHold	malody: ColumnHold	
 CatchHold	rconv/malody.html#CatchHold	malody: CatchHold	
+jsonToHook	rconv/malody.html#jsonToHook,JsonNode	malody: jsonToHook[T: TimedElement](self: JsonNode): T	
+toFXF	rconv/malody.html#toFXF,Chart	malody: toFXF(this: Chart): fxf.ChartFile	

@@ -86,6 +86,8 @@ type
         ## and the output-file already exists.
 
 const
+    OneMinute* = 60_000 ## \
+    ## One minute in milliseconds. Used for various time convertions
     PlaceholderTitle* = "%title%" ## \
     ## Placeholder for the charts song-title
     PlaceholderArtist* = "%artist%" ## \

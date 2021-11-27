@@ -1,6 +1,5 @@
 import std/[json, jsonutils, tables, strformat, options, os]
 
-import ./converters/[malody_to_fxf, memson_to_fxf]
 import ./common
 
 # Import different game-modes into own scopes, as they often
@@ -39,7 +38,7 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
         case to:
         of FileType.FXF:
             let parsed = memo.parseMemoToMemson(readFile(file))
-            var chart: fxf.ChartFile = convertMemsonToFXF(parsed)
+            var chart: fxf.ChartFile = parsed.toFXF
             result = saveChart(chart, actualOptions, some($parsed.difficulty))
         else:
             raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
@@ -47,7 +46,7 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
         case to:
         of FileType.FXF:
             let parsed = jsonTo(parseJson(readFile(file)), malody.Chart)
-            var chart: fxf.ChartFile = convertMalodyToFXF(parsed)
+            var chart: fxf.ChartFile = parsed.toFXF
             result = saveChart(chart, actualOptions, none(string))
         else:
             raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")

@@ -1,0 +1,6 @@
+jsonToHook	rconv/private/json_hooks.html#jsonToHook,JsonNode	json_hooks: jsonToHook[T: malody.TimedElement](self: JsonNode): T	
+toJsonHook	rconv/private/json_hooks.html#toJsonHook,T	json_hooks: toJsonHook[T: memson.BpmRange](this: T): JsonNode	
+toJsonHook	rconv/private/json_hooks.html#toJsonHook,T_2	json_hooks: toJsonHook[T: OrderedTable[NoteRange, Note]](this: T): JsonNode	
+toJsonHook	rconv/private/json_hooks.html#toJsonHook,T_3	json_hooks: toJsonHook[T: memson.Note](this: T): JsonNode	
+toJsonHook	rconv/private/json_hooks.html#toJsonHook,T_4	json_hooks: toJsonHook[T: Table[string, Chart]](this: T): JsonNode	
+toJsonHook	rconv/private/json_hooks.html#toJsonHook,T_5	json_hooks: toJsonHook[T: fxf.Tick](this: T): JsonNode	

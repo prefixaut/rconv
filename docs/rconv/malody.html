@@ -17,7 +17,7 @@
 <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro:400,500,600' rel='stylesheet' type='text/css'/>
 
 <!-- CSS -->
-<title>rconv/malody</title>
+<title>src/rconv/malody</title>
 <link rel="stylesheet" type="text/css" href="../nimdoc.out.css">
 
 <script type="text/javascript" src="../dochack.js"></script>
@@ -34,7 +34,6 @@ function main() {
     }
   }
 
-  const toggleSwitch = document.querySelector('.theme-switch input[type="checkbox"]');
   function switchTheme(e) {
       if (e.target.checked) {
           document.documentElement.setAttribute('data-theme', 'dark');
@@ -45,24 +44,32 @@ function main() {
       }
   }
 
-  toggleSwitch.addEventListener('change', switchTheme, false);
+  const toggleSwitch = document.querySelector('.theme-switch input[type="checkbox"]');
+  if (toggleSwitch !== null) {
+    toggleSwitch.addEventListener('change', switchTheme, false);
+  }
 
-  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  var currentTheme = localStorage.getItem('theme');
+  if (!currentTheme && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    currentTheme = 'dark';
+  }
   if (currentTheme) {
     document.documentElement.setAttribute('data-theme', currentTheme);
 
-    if (currentTheme === 'dark') {
+    if (currentTheme === 'dark' && toggleSwitch !== null) {
       toggleSwitch.checked = true;
     }
   }
 }
+
+window.addEventListener('DOMContentLoaded', main);
 </script>
 
 </head>
-<body onload="main()">
+<body>
 <div class="document" id="documentId">
   <div class="container">
-    <h1 class="title">rconv/malody</h1>
+    <h1 class="title">src/rconv/malody</h1>
     <div class="row">
   <div class="three columns">
   <div class="theme-switch-wrapper">
@@ -100,7 +107,20 @@ function main() {
 <li>
   <a class="reference reference-toplevel" href="#7" id="57">Types</a>
   <ul class="simple simple-toc-section">
-      <li><a class="reference" href="#ChartMode"
+      <li><a class="reference" href="#Beat"
+    title="Beat = array[3, int]">Beat</a></li>
+  <li><a class="reference" href="#CatchHold"
+    title="CatchHold = object of CatchNote
+  endbeat*: Beat             ## Beat when the hold is being released">CatchHold</a></li>
+  <li><a class="reference" href="#CatchNote"
+    title="CatchNote = object of VerticalNote
+  `type`*: CatchNoteType     ## Optional type of the note">CatchNote</a></li>
+  <li><a class="reference" href="#Chart"
+    title="Chart = object
+  meta*: MetaData            ## Meta data of the chart, such as version, creator and song data
+  time*: seq[TimeSignature]  ## Time signatures of the chart (BPM changes)
+  note*: seq[TimedElement]   ## Notes, Holds and other timed gameplay elements">Chart</a></li>
+  <li><a class="reference" href="#ChartMode"
     title="ChartMode {.pure.} = enum
   Key = 0,                  ## &quot;Mania&quot; game mode (SM, PIU, ...) with varying amount of keys (4,5,6,7, ...)k
   Catch = 3,                ## osu!catch
@@ -108,21 +128,21 @@ function main() {
   Taiko = 5,                ## You should know taiko
   Ring = 6,                 ## Reflect Beat
   Slide = 7                  ## Mania but for touchscreen">ChartMode</a></li>
-  <li><a class="reference" href="#SongData"
-    title="SongData = object
-  title*: string             ## Title of the song.
-                             ## If the `titleorg` field exists, then this is should be the romanized/latin version
-  titleorg*: string          ## Title of the song in the original language
-  artist*: string            ## Artist of the song
-                             ## If the `artistorg` field exists, then this is should be the romanized/latin version
-  artistorg*: string         ## Arist of the song in the original language
-  id*: int                   ## ID combination of the title &amp; artist (only for ranked)">SongData</a></li>
-  <li><a class="reference" href="#ModeData"
-    title="ModeData = object
-  column*: int               ## Used in Mode &quot;Key&quot; to determine how many keys/columns it&apos;s using
-  bar_begin: int ## Used in Mode &quot;Key&quot; to determine when the bar should start to be displayed
-                 ## Usually it&apos;s the (index of the first note)-1 or 0
-  speed: int                 ## The fall speed of the notes">ModeData</a></li>
+  <li><a class="reference" href="#ColumnHold"
+    title="ColumnHold = object of ColumnNote
+  endbeat*: Beat             ## Beat when the hold is being released
+  hits: int                  ## Taiko: Amount of hits the hold needs">ColumnHold</a></li>
+  <li><a class="reference" href="#ColumnNote"
+    title="ColumnNote = object of TimedElement
+  column*: KeyColumnRange    ## The column in which this note is placed in
+  style*: int                ## Taiko: Type of taiko-note">ColumnNote</a></li>
+  <li><a class="reference" href="#IndexHold"
+    title="IndexHold = object of IndexNote
+  endbeat*: Beat             ## Beat when the hold is being released
+  endindex*: TabIndexRange   ## The index where the Hold is being released on">IndexHold</a></li>
+  <li><a class="reference" href="#IndexNote"
+    title="IndexNote = object of TimedElement
+  index*: TabIndexRange      ## Index of the Note (0-15) (When mode is &quot;Pad&quot;)">IndexNote</a></li>
   <li><a class="reference" href="#MetaData"
     title="MetaData = object
   `$ ver`*: int              ## Version of the chart-format
@@ -135,77 +155,59 @@ function main() {
   time*: int                 ## Timestamp of when the chart was edited the last time
   song*: SongData            ## Song meta-data
   mode_ext*: ModeData        ## Extra Data specifically for the Mode">MetaData</a></li>
-  <li><a class="reference" href="#Beat"
-    title="Beat = array[3, int]">Beat</a></li>
-  <li><a class="reference" href="#TimedElement"
-    title="TimedElement = object of RootObj
-  beat*: Beat                ## The Beat on which this timed-element occurs">TimedElement</a></li>
-  <li><a class="reference" href="#TimeSignature"
-    title="TimeSignature = object of TimedElement
-  bpm*: float                ## The new BPM it&apos;s changing to">TimeSignature</a></li>
-  <li><a class="reference" href="#Chart"
-    title="Chart = object
-  meta*: MetaData            ## Meta data of the chart, such as version, creator and song data
-  time*: seq[TimeSignature]  ## Time signatures of the chart (BPM changes)
-  note*: seq[TimedElement]   ## Notes, Holds and other timed gameplay elements">Chart</a></li>
+  <li><a class="reference" href="#ModeData"
+    title="ModeData = object
+  column*: int               ## Used in Mode &quot;Key&quot; to determine how many keys/columns it's using
+  bar_begin: int ## Used in Mode &quot;Key&quot; to determine when the bar should start to be displayed
+                 ## Usually it's the (index of the first note)-1 or 0
+  speed: int                 ## The fall speed of the notes">ModeData</a></li>
+  <li><a class="reference" href="#SlideNote"
+    title="SlideNote = object of VerticalNote
+  w*: int                    ## Width of the Note
+  `type`*: SlideNoteType     ## Optional type of the Note
+  seg*: seq[VerticalNote]    ## Additional positions of the long note/slides">SlideNote</a></li>
   <li><a class="reference" href="#SlideNoteType"
     title="SlideNoteType {.pure.} = enum
   Hold = 4">SlideNoteType</a></li>
-  <li><a class="reference" href="#SoundCueType"
-    title="SoundCueType {.pure.} = enum
-  Effect = 0,               ## A sound effect which is simply played over the song.
-  Song = 1,                 ## Sound/Actual song which is played for the entirety of the chart
-  KeySound = 2               ## Sound which is only played for a certain note.
-                             ## Usually ignored if the note hasn&apos;t been hit (see BMS)">SoundCueType</a></li>
+  <li><a class="reference" href="#SongData"
+    title="SongData = object
+  title*: string             ## Title of the song.
+                             ## If the `titleorg` field exists, then this is should be the romanized/latin version
+  titleorg*: string          ## Title of the song in the original language
+  artist*: string            ## Artist of the song
+                             ## If the `artistorg` field exists, then this is should be the romanized/latin version
+  artistorg*: string         ## Arist of the song in the original language
+  id*: int                   ## ID combination of the title &amp; artist (only for ranked)">SongData</a></li>
   <li><a class="reference" href="#SoundCue"
     title="SoundCue = object of TimedElement
   `type`*: SoundCueType      ## Type of Sound-Cue that should be played
   sound*: string             ## (Relative) File-Path to the sound-file to play
   offset*: float             ## How much offset in ms it should wait before playing it
   vol*: float                ## How loud the sound should be played">SoundCue</a></li>
-  <li><a class="reference" href="#IndexNote"
-    title="IndexNote = object of TimedElement
-  index*: TabIndexRange      ## Index of the Note (0-15) (When mode is &quot;Pad&quot;)">IndexNote</a></li>
-  <li><a class="reference" href="#ColumnNote"
-    title="ColumnNote = object of TimedElement
-  column*: KeyColumnRange    ## The column in which this note is placed in
-  style*: int                ## Taiko: Type of taiko-note">ColumnNote</a></li>
+  <li><a class="reference" href="#SoundCueType"
+    title="SoundCueType {.pure.} = enum
+  Effect = 0,               ## A sound effect which is simply played over the song.
+  Song = 1,                 ## Sound/Actual song which is played for the entirety of the chart
+  KeySound = 2               ## Sound which is only played for a certain note.
+                             ## Usually ignored if the note hasn't been hit (see BMS)">SoundCueType</a></li>
+  <li><a class="reference" href="#TimedElement"
+    title="TimedElement = object of RootObj
+  beat*: Beat                ## The Beat on which this timed-element occurs">TimedElement</a></li>
+  <li><a class="reference" href="#TimeSignature"
+    title="TimeSignature = object of TimedElement
+  bpm*: float                ## The new BPM it's changing to">TimeSignature</a></li>
   <li><a class="reference" href="#VerticalNote"
     title="VerticalNote = object of TimedElement
   x*: int                    ## X-Position of the Note">VerticalNote</a></li>
-  <li><a class="reference" href="#CatchNote"
-    title="CatchNote = object of VerticalNote
-  `type`*: CatchNoteType     ## Optional type of the note">CatchNote</a></li>
-  <li><a class="reference" href="#SlideNote"
-    title="SlideNote = object of VerticalNote
-  w*: int                    ## Width of the Note
-  `type`*: SlideNoteType     ## Optional type of the Note
-  seg*: seq[VerticalNote]    ## Additional positions of the long note/slides">SlideNote</a></li>
-  <li><a class="reference" href="#IndexHold"
-    title="IndexHold = object of IndexNote
-  endbeat*: Beat             ## Beat when the hold is being released
-  endindex*: TabIndexRange   ## The index where the Hold is being released on">IndexHold</a></li>
-  <li><a class="reference" href="#ColumnHold"
-    title="ColumnHold = object of ColumnNote
-  endbeat*: Beat             ## Beat when the hold is being released
-  hits: int                  ## Taiko: Amount of hits the hold needs">ColumnHold</a></li>
-  <li><a class="reference" href="#CatchHold"
-    title="CatchHold = object of CatchNote
-  endbeat*: Beat             ## Beat when the hold is being released">CatchHold</a></li>
 
   </ul>
 </li>
 <li>
-  <a class="reference reference-toplevel" href="#13" id="63">Funcs</a>
+  <a class="reference reference-toplevel" href="#12" id="62">Procs</a>
   <ul class="simple simple-toc-section">
-      <ul class="simple nested-toc-section">jsonToHook
-      <li><a class="reference" href="#jsonToHook%2CJsonNode"
-    title="jsonToHook[T: TimedElement](self: JsonNode): T">jsonToHook,<wbr>JsonNode</a></li>
-
-  </ul>
-  <ul class="simple nested-toc-section">toFXF
+      <ul class="simple nested-toc-section">toFXF
       <li><a class="reference" href="#toFXF%2CChart"
-    title="toFXF(this: Chart): fxf.ChartFile">toFXF,<wbr>Chart</a></li>
+    title="toFXF(this: Chart): fxf.ChartFile">toFXF(this: Chart): fxf.ChartFile</a></li>
 
   </ul>
 
@@ -215,6 +217,11 @@ function main() {
 </ul>
 
   </div>
+  &nbsp;&nbsp;<a
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L1"
+class="link-seesrc" target="_blank">Source</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L1" class="link-seesrc" target="_blank" >Edit</a>
+
   <div class="nine columns" id="content">
   <div id="tocRoot"></div>
   
@@ -222,13 +229,69 @@ function main() {
   <div class="section" id="6">
 <h1><a class="toc-backref" href="#6">Imports</a></h1>
 <dl class="item">
-<a class="reference external" href="common.html">common</a>, <a class="reference external" href="fxf.html">fxf</a>, <a class="reference external" href="memson.html">memson</a>, <a class="reference external" href="private/json.html">private/json</a>
+<a class="reference external" href="common.html">common</a>, <a class="reference external" href="fxf.html">fxf</a>, <a class="reference external" href="memson.html">memson</a>
 </dl></div>
 <div class="section" id="7">
 <h1><a class="toc-backref" href="#7">Types</a></h1>
 <dl class="item">
-<a id="ChartMode"></a>
-<dt><pre><a href="malody.html#ChartMode"><span class="Identifier">ChartMode</span></a> <span><span class="Other">{</span><span class="Other pragmadots">...</span><span class="Other">}</span></span><span class="pragmawrap"><span class="Other">{.</span><span class="pragma"><span class="Identifier">pure</span></span><span class="Other">.}</span></span> <span class="Other">=</span> <span class="Keyword">enum</span>
+<div id="Beat">
+<dt><pre><a href="malody.html#Beat"><span class="Identifier">Beat</span></a> <span class="Other">=</span> <span class="Identifier">array</span><span class="Other">[</span><span class="DecNumber">3</span><span class="Other">,</span> <span class="Identifier">int</span><span class="Other">]</span></pre></dt>
+<dd>
+
+
+&nbsp;&nbsp;<a
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L98"
+class="link-seesrc" target="_blank">Source</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L98" class="link-seesrc" target="_blank" >Edit</a>
+
+</dd>
+</div>
+<div id="CatchHold">
+<dt><pre><a href="malody.html#CatchHold"><span class="Identifier">CatchHold</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#CatchNote"><span class="Identifier">CatchNote</span></a>
+  <span class="Identifier">endbeat</span><span class="Operator">*</span><span class="Other">:</span> <a href="malody.html#Beat"><span class="Identifier">Beat</span></a>             <span class="Comment">## Beat when the hold is being released</span>
+  </pre></dt>
+<dd>
+
+
+&nbsp;&nbsp;<a
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L176"
+class="link-seesrc" target="_blank">Source</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L176" class="link-seesrc" target="_blank" >Edit</a>
+
+</dd>
+</div>
+<div id="CatchNote">
+<dt><pre><a href="malody.html#CatchNote"><span class="Identifier">CatchNote</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#VerticalNote"><span class="Identifier">VerticalNote</span></a>
+  <span class="Other">`</span><span class="Keyword">type</span><span class="Other">`</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">CatchNoteType</span>     <span class="Comment">## Optional type of the note</span>
+  </pre></dt>
+<dd>
+
+Note for the following Modes: Catch
+&nbsp;&nbsp;<a
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L148"
+class="link-seesrc" target="_blank">Source</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L148" class="link-seesrc" target="_blank" >Edit</a>
+
+</dd>
+</div>
+<div id="Chart">
+<dt><pre><a href="malody.html#Chart"><span class="Identifier">Chart</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
+  <span class="Identifier">meta</span><span class="Operator">*</span><span class="Other">:</span> <a href="malody.html#MetaData"><span class="Identifier">MetaData</span></a>            <span class="Comment">## Meta data of the chart, such as version, creator and song data</span>
+  <span class="Identifier">time</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><a href="malody.html#TimeSignature"><span class="Identifier">TimeSignature</span></a><span class="Other">]</span>  <span class="Comment">## Time signatures of the chart (BPM changes)</span>
+  <span class="Identifier">note</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a><span class="Other">]</span>   <span class="Comment">## Notes, Holds and other timed gameplay elements</span>
+  </pre></dt>
+<dd>
+
+A Malody chart-File object definition
+&nbsp;&nbsp;<a
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L10"
+class="link-seesrc" target="_blank">Source</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L10" class="link-seesrc" target="_blank" >Edit</a>
+
+</dd>
+</div>
+<div id="ChartMode">
+<dt><pre><a href="malody.html#ChartMode"><span class="Identifier">ChartMode</span></a> {.<span class="Identifier">pure</span>.} <span class="Other">=</span> <span class="Keyword">enum</span>
   <span class="Identifier">Key</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">,</span>                  <span class="Comment">## &quot;Mania&quot; game mode (SM, PIU, ...) with varying amount of keys (4,5,6,7, ...)k</span>
   <span class="Identifier">Catch</span> <span class="Other">=</span> <span class="DecNumber">3</span><span class="Other">,</span>                <span class="Comment">## osu!catch</span>
   <span class="Identifier">Pad</span> <span class="Other">=</span> <span class="DecNumber">4</span><span class="Other">,</span>                  <span class="Comment">## Jubeat</span>
@@ -239,47 +302,72 @@ function main() {
 
 The mode for a malody chart.
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L27"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L25"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L27" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L25" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
-<a id="SongData"></a>
-<dt><pre><a href="malody.html#SongData"><span class="Identifier">SongData</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
-  <span class="Identifier">title</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span>             <span class="Comment">## Title of the song.</span>
-                             <span class="Comment">## If the `titleorg` field exists, then this is should be the romanized/latin version</span>
-  <span class="Identifier">titleorg</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span>          <span class="Comment">## Title of the song in the original language</span>
-  <span class="Identifier">artist</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span>            <span class="Comment">## Artist of the song</span>
-                             <span class="Comment">## If the `artistorg` field exists, then this is should be the romanized/latin version</span>
-  <span class="Identifier">artistorg</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span>         <span class="Comment">## Arist of the song in the original language</span>
-  <span class="Identifier">id</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>                   <span class="Comment">## ID combination of the title &amp; artist (only for ranked)</span>
+</div>
+<div id="ColumnHold">
+<dt><pre><a href="malody.html#ColumnHold"><span class="Identifier">ColumnHold</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#ColumnNote"><span class="Identifier">ColumnNote</span></a>
+  <span class="Identifier">endbeat</span><span class="Operator">*</span><span class="Other">:</span> <a href="malody.html#Beat"><span class="Identifier">Beat</span></a>             <span class="Comment">## Beat when the hold is being released</span>
+  <span class="Identifier">hits</span><span class="Other">:</span> <span class="Identifier">int</span>                  <span class="Comment">## Taiko: Amount of hits the hold needs</span>
   </pre></dt>
 <dd>
 
-
+Note for the following Modes: Key, Taiko, Ring
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L77"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L169"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L77" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L169" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
-<a id="ModeData"></a>
-<dt><pre><a href="malody.html#ModeData"><span class="Identifier">ModeData</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
-  <span class="Identifier">column</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>               <span class="Comment">## Used in Mode &quot;Key&quot; to determine how many keys/columns it's using</span>
-  <span class="Identifier">bar_begin</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Comment">## Used in Mode &quot;Key&quot; to determine when the bar should start to be displayed</span>
-                 <span class="Comment">## Usually it's the (index of the first note)-1 or 0</span>
-  <span class="Identifier">speed</span><span class="Other">:</span> <span class="Identifier">int</span>                 <span class="Comment">## The fall speed of the notes</span>
+</div>
+<div id="ColumnNote">
+<dt><pre><a href="malody.html#ColumnNote"><span class="Identifier">ColumnNote</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a>
+  <span class="Identifier">column</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">KeyColumnRange</span>    <span class="Comment">## The column in which this note is placed in</span>
+  <span class="Identifier">style</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>                <span class="Comment">## Taiko: Type of taiko-note</span>
   </pre></dt>
 <dd>
 
-
+Note for following Modes: Key, Taiko, Ring
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L91"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L136"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L91" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L136" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
-<a id="MetaData"></a>
+</div>
+<div id="IndexHold">
+<dt><pre><a href="malody.html#IndexHold"><span class="Identifier">IndexHold</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#IndexNote"><span class="Identifier">IndexNote</span></a>
+  <span class="Identifier">endbeat</span><span class="Operator">*</span><span class="Other">:</span> <a href="malody.html#Beat"><span class="Identifier">Beat</span></a>             <span class="Comment">## Beat when the hold is being released</span>
+  <span class="Identifier">endindex</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">TabIndexRange</span>   <span class="Comment">## The index where the Hold is being released on</span>
+  </pre></dt>
+<dd>
+
+Hold for the following Modes: Pad
+&nbsp;&nbsp;<a
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L162"
+class="link-seesrc" target="_blank">Source</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L162" class="link-seesrc" target="_blank" >Edit</a>
+
+</dd>
+</div>
+<div id="IndexNote">
+<dt><pre><a href="malody.html#IndexNote"><span class="Identifier">IndexNote</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a>
+  <span class="Identifier">index</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">TabIndexRange</span>      <span class="Comment">## Index of the Note (0-15) (When mode is &quot;Pad&quot;)</span>
+  </pre></dt>
+<dd>
+
+Note for the following Modes: Pad
+&nbsp;&nbsp;<a
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L131"
+class="link-seesrc" target="_blank">Source</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L131" class="link-seesrc" target="_blank" >Edit</a>
+
+</dd>
+</div>
+<div id="MetaData">
 <dt><pre><a href="malody.html#MetaData"><span class="Identifier">MetaData</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
   <span class="Other">`</span><span class="Operator">$</span> <span class="Identifier">ver</span><span class="Other">`</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>              <span class="Comment">## Version of the chart-format</span>
   <span class="Identifier">creator</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span>           <span class="Comment">## Creator of the chart</span>
@@ -296,91 +384,79 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L55"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L53"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L55" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L53" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
-<a id="Beat"></a>
-<dt><pre><a href="malody.html#Beat"><span class="Identifier">Beat</span></a> <span class="Other">=</span> <span class="Identifier">array</span><span class="Other">[</span><span class="DecNumber">3</span><span class="Other">,</span> <span class="Identifier">int</span><span class="Other">]</span></pre></dt>
-<dd>
-
-
-&nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L100"
-class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L100" class="link-seesrc" target="_blank" >Edit</a>
-
-</dd>
-<a id="TimedElement"></a>
-<dt><pre><a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <span class="Identifier">RootObj</span>
-  <span class="Identifier">beat</span><span class="Operator">*</span><span class="Other">:</span> <a href="malody.html#Beat"><span class="Identifier">Beat</span></a>                <span class="Comment">## The Beat on which this timed-element occurs</span>
+</div>
+<div id="ModeData">
+<dt><pre><a href="malody.html#ModeData"><span class="Identifier">ModeData</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
+  <span class="Identifier">column</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>               <span class="Comment">## Used in Mode &quot;Key&quot; to determine how many keys/columns it's using</span>
+  <span class="Identifier">bar_begin</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Comment">## Used in Mode &quot;Key&quot; to determine when the bar should start to be displayed</span>
+                 <span class="Comment">## Usually it's the (index of the first note)-1 or 0</span>
+  <span class="Identifier">speed</span><span class="Other">:</span> <span class="Identifier">int</span>                 <span class="Comment">## The fall speed of the notes</span>
   </pre></dt>
 <dd>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L115"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L89"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L115" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L89" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
-<a id="TimeSignature"></a>
-<dt><pre><a href="malody.html#TimeSignature"><span class="Identifier">TimeSignature</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a>
-  <span class="Identifier">bpm</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">float</span>                <span class="Comment">## The new BPM it's changing to</span>
+</div>
+<div id="SlideNote">
+<dt><pre><a href="malody.html#SlideNote"><span class="Identifier">SlideNote</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#VerticalNote"><span class="Identifier">VerticalNote</span></a>
+  <span class="Identifier">w</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>                    <span class="Comment">## Width of the Note</span>
+  <span class="Other">`</span><span class="Keyword">type</span><span class="Other">`</span><span class="Operator">*</span><span class="Other">:</span> <a href="malody.html#SlideNoteType"><span class="Identifier">SlideNoteType</span></a>     <span class="Comment">## Optional type of the Note</span>
+  <span class="Identifier">seg</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><a href="malody.html#VerticalNote"><span class="Identifier">VerticalNote</span></a><span class="Other">]</span>    <span class="Comment">## Additional positions of the long note/slides</span>
   </pre></dt>
 <dd>
 
-
+Note for the following Modes: Slide
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L119"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L153"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L119" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L153" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
-<a id="Chart"></a>
-<dt><pre><a href="malody.html#Chart"><span class="Identifier">Chart</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
-  <span class="Identifier">meta</span><span class="Operator">*</span><span class="Other">:</span> <a href="malody.html#MetaData"><span class="Identifier">MetaData</span></a>            <span class="Comment">## Meta data of the chart, such as version, creator and song data</span>
-  <span class="Identifier">time</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><a href="malody.html#TimeSignature"><span class="Identifier">TimeSignature</span></a><span class="Other">]</span>  <span class="Comment">## Time signatures of the chart (BPM changes)</span>
-  <span class="Identifier">note</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a><span class="Other">]</span>   <span class="Comment">## Notes, Holds and other timed gameplay elements</span>
-  </pre></dt>
-<dd>
-
-A Malody chart-File object definition
-&nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L12"
-class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L12" class="link-seesrc" target="_blank" >Edit</a>
-
-</dd>
-<a id="SlideNoteType"></a>
-<dt><pre><a href="malody.html#SlideNoteType"><span class="Identifier">SlideNoteType</span></a> <span><span class="Other">{</span><span class="Other pragmadots">...</span><span class="Other">}</span></span><span class="pragmawrap"><span class="Other">{.</span><span class="pragma"><span class="Identifier">pure</span></span><span class="Other">.}</span></span> <span class="Other">=</span> <span class="Keyword">enum</span>
+</div>
+<div id="SlideNoteType">
+<dt><pre><a href="malody.html#SlideNoteType"><span class="Identifier">SlideNoteType</span></a> {.<span class="Identifier">pure</span>.} <span class="Other">=</span> <span class="Keyword">enum</span>
   <span class="Identifier">Hold</span> <span class="Other">=</span> <span class="DecNumber">4</span></pre></dt>
 <dd>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L48"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L46"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L48" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L46" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
-<a id="SoundCueType"></a>
-<dt><pre><a href="malody.html#SoundCueType"><span class="Identifier">SoundCueType</span></a> <span><span class="Other">{</span><span class="Other pragmadots">...</span><span class="Other">}</span></span><span class="pragmawrap"><span class="Other">{.</span><span class="pragma"><span class="Identifier">pure</span></span><span class="Other">.}</span></span> <span class="Other">=</span> <span class="Keyword">enum</span>
-  <span class="Identifier">Effect</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">,</span>               <span class="Comment">## A sound effect which is simply played over the song.</span>
-  <span class="Identifier">Song</span> <span class="Other">=</span> <span class="DecNumber">1</span><span class="Other">,</span>                 <span class="Comment">## Sound/Actual song which is played for the entirety of the chart</span>
-  <span class="Identifier">KeySound</span> <span class="Other">=</span> <span class="DecNumber">2</span>               <span class="Comment">## Sound which is only played for a certain note.</span>
-                             <span class="Comment">## Usually ignored if the note hasn't been hit (see BMS)</span></pre></dt>
+</div>
+<div id="SongData">
+<dt><pre><a href="malody.html#SongData"><span class="Identifier">SongData</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
+  <span class="Identifier">title</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span>             <span class="Comment">## Title of the song.</span>
+                             <span class="Comment">## If the `titleorg` field exists, then this is should be the romanized/latin version</span>
+  <span class="Identifier">titleorg</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span>          <span class="Comment">## Title of the song in the original language</span>
+  <span class="Identifier">artist</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span>            <span class="Comment">## Artist of the song</span>
+                             <span class="Comment">## If the `artistorg` field exists, then this is should be the romanized/latin version</span>
+  <span class="Identifier">artistorg</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span>         <span class="Comment">## Arist of the song in the original language</span>
+  <span class="Identifier">id</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>                   <span class="Comment">## ID combination of the title &amp; artist (only for ranked)</span>
+  </pre></dt>
 <dd>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L106"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L75"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L106" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L75" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
-<a id="SoundCue"></a>
+</div>
+<div id="SoundCue">
 <dt><pre><a href="malody.html#SoundCue"><span class="Identifier">SoundCue</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a>
   <span class="Other">`</span><span class="Keyword">type</span><span class="Other">`</span><span class="Operator">*</span><span class="Other">:</span> <a href="malody.html#SoundCueType"><span class="Identifier">SoundCueType</span></a>      <span class="Comment">## Type of Sound-Cue that should be played</span>
   <span class="Identifier">sound</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span>             <span class="Comment">## (Relative) File-Path to the sound-file to play</span>
@@ -391,39 +467,57 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L123"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L121"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L123" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L121" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
-<a id="IndexNote"></a>
-<dt><pre><a href="malody.html#IndexNote"><span class="Identifier">IndexNote</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a>
-  <span class="Identifier">index</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">TabIndexRange</span>      <span class="Comment">## Index of the Note (0-15) (When mode is &quot;Pad&quot;)</span>
+</div>
+<div id="SoundCueType">
+<dt><pre><a href="malody.html#SoundCueType"><span class="Identifier">SoundCueType</span></a> {.<span class="Identifier">pure</span>.} <span class="Other">=</span> <span class="Keyword">enum</span>
+  <span class="Identifier">Effect</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">,</span>               <span class="Comment">## A sound effect which is simply played over the song.</span>
+  <span class="Identifier">Song</span> <span class="Other">=</span> <span class="DecNumber">1</span><span class="Other">,</span>                 <span class="Comment">## Sound/Actual song which is played for the entirety of the chart</span>
+  <span class="Identifier">KeySound</span> <span class="Other">=</span> <span class="DecNumber">2</span>               <span class="Comment">## Sound which is only played for a certain note.</span>
+                             <span class="Comment">## Usually ignored if the note hasn't been hit (see BMS)</span></pre></dt>
+<dd>
+
+
+&nbsp;&nbsp;<a
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L104"
+class="link-seesrc" target="_blank">Source</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L104" class="link-seesrc" target="_blank" >Edit</a>
+
+</dd>
+</div>
+<div id="TimedElement">
+<dt><pre><a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <span class="Identifier">RootObj</span>
+  <span class="Identifier">beat</span><span class="Operator">*</span><span class="Other">:</span> <a href="malody.html#Beat"><span class="Identifier">Beat</span></a>                <span class="Comment">## The Beat on which this timed-element occurs</span>
   </pre></dt>
 <dd>
 
-Note for the following Modes: Pad
+
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L133"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L113"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L133" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L113" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
-<a id="ColumnNote"></a>
-<dt><pre><a href="malody.html#ColumnNote"><span class="Identifier">ColumnNote</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a>
-  <span class="Identifier">column</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">KeyColumnRange</span>    <span class="Comment">## The column in which this note is placed in</span>
-  <span class="Identifier">style</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>                <span class="Comment">## Taiko: Type of taiko-note</span>
+</div>
+<div id="TimeSignature">
+<dt><pre><a href="malody.html#TimeSignature"><span class="Identifier">TimeSignature</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a>
+  <span class="Identifier">bpm</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">float</span>                <span class="Comment">## The new BPM it's changing to</span>
   </pre></dt>
 <dd>
 
-Note for following Modes: Key, Taiko, Ring
+
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L138"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L117"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L138" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L117" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
-<a id="VerticalNote"></a>
+</div>
+<div id="VerticalNote">
 <dt><pre><a href="malody.html#VerticalNote"><span class="Identifier">VerticalNote</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a>
   <span class="Identifier">x</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>                    <span class="Comment">## X-Position of the Note</span>
   </pre></dt>
@@ -431,108 +525,30 @@ class="link-seesrc" target="_blank">Source</a>
 
 Note for the following Modes: Catch, Slide
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L145"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L143"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L145" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L143" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
-<a id="CatchNote"></a>
-<dt><pre><a href="malody.html#CatchNote"><span class="Identifier">CatchNote</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#VerticalNote"><span class="Identifier">VerticalNote</span></a>
-  <span class="Other">`</span><span class="Keyword">type</span><span class="Other">`</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">CatchNoteType</span>     <span class="Comment">## Optional type of the note</span>
-  </pre></dt>
-<dd>
-
-Note for the following Modes: Catch
-&nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L150"
-class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L150" class="link-seesrc" target="_blank" >Edit</a>
-
-</dd>
-<a id="SlideNote"></a>
-<dt><pre><a href="malody.html#SlideNote"><span class="Identifier">SlideNote</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#VerticalNote"><span class="Identifier">VerticalNote</span></a>
-  <span class="Identifier">w</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>                    <span class="Comment">## Width of the Note</span>
-  <span class="Other">`</span><span class="Keyword">type</span><span class="Other">`</span><span class="Operator">*</span><span class="Other">:</span> <a href="malody.html#SlideNoteType"><span class="Identifier">SlideNoteType</span></a>     <span class="Comment">## Optional type of the Note</span>
-  <span class="Identifier">seg</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><a href="malody.html#VerticalNote"><span class="Identifier">VerticalNote</span></a><span class="Other">]</span>    <span class="Comment">## Additional positions of the long note/slides</span>
-  </pre></dt>
-<dd>
-
-Note for the following Modes: Slide
-&nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L155"
-class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L155" class="link-seesrc" target="_blank" >Edit</a>
-
-</dd>
-<a id="IndexHold"></a>
-<dt><pre><a href="malody.html#IndexHold"><span class="Identifier">IndexHold</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#IndexNote"><span class="Identifier">IndexNote</span></a>
-  <span class="Identifier">endbeat</span><span class="Operator">*</span><span class="Other">:</span> <a href="malody.html#Beat"><span class="Identifier">Beat</span></a>             <span class="Comment">## Beat when the hold is being released</span>
-  <span class="Identifier">endindex</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">TabIndexRange</span>   <span class="Comment">## The index where the Hold is being released on</span>
-  </pre></dt>
-<dd>
-
-Hold for the following Modes: Pad
-&nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L164"
-class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L164" class="link-seesrc" target="_blank" >Edit</a>
-
-</dd>
-<a id="ColumnHold"></a>
-<dt><pre><a href="malody.html#ColumnHold"><span class="Identifier">ColumnHold</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#ColumnNote"><span class="Identifier">ColumnNote</span></a>
-  <span class="Identifier">endbeat</span><span class="Operator">*</span><span class="Other">:</span> <a href="malody.html#Beat"><span class="Identifier">Beat</span></a>             <span class="Comment">## Beat when the hold is being released</span>
-  <span class="Identifier">hits</span><span class="Other">:</span> <span class="Identifier">int</span>                  <span class="Comment">## Taiko: Amount of hits the hold needs</span>
-  </pre></dt>
-<dd>
-
-Note for the following Modes: Key, Taiko, Ring
-&nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L171"
-class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L171" class="link-seesrc" target="_blank" >Edit</a>
-
-</dd>
-<a id="CatchHold"></a>
-<dt><pre><a href="malody.html#CatchHold"><span class="Identifier">CatchHold</span></a> <span class="Other">=</span> <span class="Keyword">object</span> <span class="Keyword">of</span> <a href="malody.html#CatchNote"><span class="Identifier">CatchNote</span></a>
-  <span class="Identifier">endbeat</span><span class="Operator">*</span><span class="Other">:</span> <a href="malody.html#Beat"><span class="Identifier">Beat</span></a>             <span class="Comment">## Beat when the hold is being released</span>
-  </pre></dt>
-<dd>
-
-
-&nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L178"
-class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L178" class="link-seesrc" target="_blank" >Edit</a>
-
-</dd>
+</div>
 
 </dl></div>
-<div class="section" id="13">
-<h1><a class="toc-backref" href="#13">Funcs</a></h1>
+<div class="section" id="12">
+<h1><a class="toc-backref" href="#12">Procs</a></h1>
 <dl class="item">
-<a id="jsonToHook,JsonNode"></a>
-<dt><pre><span class="Keyword">func</span> <a href="#jsonToHook%2CJsonNode"><span class="Identifier">jsonToHook</span></a><span class="Other">[</span><span class="Identifier">T</span><span class="Other">:</span> <a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a><span class="Other">]</span><span class="Other">(</span><span class="Identifier">self</span><span class="Other">:</span> <span class="Identifier">JsonNode</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">T</span></pre></dt>
+<div id="toFXF,Chart">
+<dt><pre><span class="Keyword">proc</span> <a href="#toFXF%2CChart"><span class="Identifier">toFXF</span></a><span class="Other">(</span><span class="Identifier">this</span><span class="Other">:</span> <a href="malody.html#Chart"><span class="Identifier">Chart</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">fxf</span><span class="Other">.</span><span class="Identifier">ChartFile</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">]</span><span class="Other">,</span>
+    <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
 <dd>
 
-Hook to convert the provided JsonNode to the appropiate <tt class="docutils literal"><span class="pre">TimeElement</span></tt>.
+Converts <tt class="docutils literal"><span class="pre"><span class="Identifier">this</span></span></tt> Chart to a FXF-ChartFile. The actual note-data will be present in the <a class="reference internal" href="#fxf">fxf</a> table. The difficulty is determined by the <a class="reference internal" href="#memson">memson</a> function.
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L182"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L195"
 class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L182" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L195" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
-<a id="toFXF,Chart"></a>
-<dt><pre><span class="Keyword">func</span> <a href="#toFXF%2CChart"><span class="Identifier">toFXF</span></a><span class="Other">(</span><span class="Identifier">this</span><span class="Other">:</span> <a href="malody.html#Chart"><span class="Identifier">Chart</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">fxf</span><span class="Other">.</span><span class="Identifier">ChartFile</span> <span><span class="Other">{</span><span class="Other pragmadots">...</span><span class="Other">}</span></span><span class="pragmawrap"><span class="Other">{.</span><span class="pragma"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">]</span><span class="Other">,</span>
-    <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span><span class="Other">.}</span></span></pre></dt>
-<dd>
-
-Converts <tt class="docutils literal"><span class="pre">this</span></tt> Chart to a FXF-ChartFile. The actual note-data will be present in the <a class="reference external" href="#fxfdotchartfiledotcharts">fxf.ChartFile.charts</a> table. The difficulty is determined by the <a class="reference external" href="#memsondotparsedifficulty">memson.parseDifficulty</a> function.
-&nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/rconv/malody.nim#L281"
-class="link-seesrc" target="_blank">Source</a>
-<a href="https://github.com/prefixaut/rconv/edit/master/rconv/malody.nim#L281" class="link-seesrc" target="_blank" >Edit</a>
-
-</dd>
+</div>
 
 </dl></div>
 
@@ -543,7 +559,7 @@ class="link-seesrc" target="_blank">Source</a>
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br/>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2021-11-27 02:34:19 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2021-12-04 01:47:06 UTC</small>
       </div>
     </div>
   </div>

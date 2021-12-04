@@ -1,10 +1,8 @@
-import std/[algorithm, json, jsonutils, math, sets, strformat, tables]
+import std/[algorithm, math, sets, strformat, tables]
 
 import ./common
 import ./fxf as fxf
 import ./memson as memson
-
-import ./private/json as j
 
 {.experimental: "codeReordering".}
 
@@ -179,106 +177,22 @@ type
         endbeat*: Beat
         ## Beat when the hold is being released
 
-func jsonToHook*[T: TimedElement](self: JsonNode): T =
-    ## Hook to convert the provided JsonNode to the appropiate `TimeElement`.
-
-    if self.kind != JsonNodeKind.JObject or not self.fields.hasKey "beat":
-        discard
-
-    let beat = self.getBeatSafe()
-
-    if self.hasField("bpm", JsonNodeKind.JFloat):
-        result = TimeSignature(beat = beat, bpm = self.getFloatSafe("bpm"))
-
-    elif self.hasField("type", JsonNodeKind.JInt) and self.hasField("sound", JsonNodeKind.JString):
-        result = SoundCue(
-            beat = beat,
-            `type` = self.getIntSafe("type"),
-            offset = self.getFloatSafe("offset"),
-            vol: self.getFloatSafe("vol")
-        )
-    elif self.hasField("column", JsonNodeKind.JInt):
-        if self.fields.hasKey("endbeat"):
-            result = ColumnHold(
-                beat = beat,
-                column = self.getIntSafe("column"),
-                style = self.getIntSafe("style", -1),
-                endbeat = self.getBeatSafe("endbeat"),
-                hits = self.getIntSafe("hits", 1)
-            )
-        else:
-            result = ColumnNote(
-                beat = beat,
-                column = self.getIntSafe("column"),
-                style = self.getIntSafe("style", -1)
-            )
-    elif self.hasField("x", JsonNodeKind.JInt):
-        if self.hasField("w", JsonNodeKind.JInt):
-            result = SlideNote(
-                beat = beat,
-                w = self.getIntSafe("w"),
-                `type` = self.getIntSafe(self, "type"),
-                seg = if self.fields.hasKey("seg"): jsonTo(self.fields["seg"], seq[VerticalNote]) else: @[]
-            )
-        elif self.hasKey("type", JsonNodeKind.JInt):
-            if self.fields.hasKey("endbeat"):
-                result = CatchHold(
-                    beat = beat,
-                    `type` = self.getIntSafe("type"),
-                    endbeat = self.getBeatSafe("endbeat")
-                )
-            else:
-                result = CatchNote(
-                    beat = beat,
-                    `type` = self.getIntSafe("type")
-                )
-        else:
-            result = VerticalNote(
-                beat = beat,
-                x = self.getIntSafe("x")
-            )
-    elif self.hasField("index", JsonNodeKind.JInt):
-        if self.fields.hasKey("endbeat"):
-            result = IndexHold(
-                beat = beat,
-                index = self.getIntSafe("index"),
-                endbeat = self.getBeatSafe("endbeat"),
-                endindex = self.getIntSafe("endindex")
-            )
-        else:
-            result = IndexNote(
-                beat = beat,
-                index = self.getIntSafe("index")
-            )
-    else:
-        discard
-
-func getBeatSafe(self: JsonNode, field: string = "beat", default: Beat = [-1, 0, 0]): Beat =
-    ## Internal helper function to safely get a beat from a JsonNode
-
-    result = default
-    if self.fields.hasKey(field):
-        try:
-            result = jsonTo(self.fields[field], Beat)
-        except:
-            discard
-
-func getPriority(this: TimedElement): int =
+func getPriority(this: malody.TimedElement): int =
     ## Internal helper function to get the priority of a `TimedElement`.
     ## Usually used for sorting.
 
     result = 1
     # Unknown types get a default score of 1
 
-    if this of IndexNote or this of ColumnNote or this of VerticalNote or this of CatchNote:
+    if this of malody.IndexNote or this of malody.ColumnNote or this of malody.VerticalNote or this of malody.CatchNote:
         # All Notes get a score of 2
         result = 2
-    elif this of SoundCue:
+    elif this of malody.SoundCue:
         result = 3
-    elif this of TimeSignature:
+    elif this of malody.TimeSignature:
         result = 4
 
-func toFXF*(this: Chart): fxf.ChartFile =
+proc toFXF*(this: Chart): fxf.ChartFile =
     ## Converts `this` Chart to a FXF-ChartFile.
     ## The actual note-data will be present in the `fxf.ChartFile.charts`_ table.
     ## The difficulty is determined by the `memson.parseDifficulty`_ function.
@@ -303,6 +217,7 @@ func toFXF*(this: Chart): fxf.ChartFile =
 
     for e in this.note:
         beats.incl e.beat
+        echo e
         if e of IndexHold:
             holdBeats.incl IndexHold(e).endbeat
         tmp.add e
@@ -369,7 +284,7 @@ func toFXF*(this: Chart): fxf.ChartFile =
 
         var tick: fxf.Tick
         if not beatTable.hasKey element.beat:
-            tick = Tick(
+            tick = fxf.Tick(
                 time: roundedTime,
                 snapIndex: element.beat[1],
                 snapSize: element.beat[2],

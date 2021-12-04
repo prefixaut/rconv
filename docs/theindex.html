@@ -34,7 +34,6 @@ function main() {
     }
   }
 
-  const toggleSwitch = document.querySelector('.theme-switch input[type="checkbox"]');
   function switchTheme(e) {
       if (e.target.checked) {
           document.documentElement.setAttribute('data-theme', 'dark');
@@ -45,25 +44,33 @@ function main() {
       }
   }
 
-  toggleSwitch.addEventListener('change', switchTheme, false);
+  const toggleSwitch = document.querySelector('.theme-switch input[type="checkbox"]');
+  if (toggleSwitch !== null) {
+    toggleSwitch.addEventListener('change', switchTheme, false);
+  }
 
-  const currentTheme = localStorage.getItem('theme') ? localStorage.getItem('theme') : null;
+  var currentTheme = localStorage.getItem('theme');
+  if (!currentTheme && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    currentTheme = 'dark';
+  }
   if (currentTheme) {
     document.documentElement.setAttribute('data-theme', currentTheme);
 
-    if (currentTheme === 'dark') {
+    if (currentTheme === 'dark' && toggleSwitch !== null) {
       toggleSwitch.checked = true;
     }
   }
 }
+
+window.addEventListener('DOMContentLoaded', main);
 </script>
 
 </head>
-<body onload="main()">
+<body>
 <div class="document" id="documentId">
   <div class="container">
     <h1 class="title">Index</h1>
-    Modules: <a href="rconv/common.html">rconv/common</a>, <a href="rconv/fxf.html">rconv/fxf</a>, <a href="rconv/malody.html">rconv/malody</a>, <a href="rconv/memo.html">rconv/memo</a>, <a href="rconv/memson.html">rconv/memson</a>, <a href="rconv/pipeline.html">rconv/pipeline</a>, <a href="rconv/private/json.html">rconv/private/json</a>, <a href="rconv/private/line_reader.html">rconv/private/line_reader</a>.<br/><p /><h2>API symbols</h2>
+    Modules: <a href="rconv/common.html">rconv/common</a>, <a href="rconv/fxf.html">rconv/fxf</a>, <a href="rconv/malody.html">rconv/malody</a>, <a href="rconv/memo.html">rconv/memo</a>, <a href="rconv/memson.html">rconv/memson</a>, <a href="rconv/pipeline.html">rconv/pipeline</a>, <a href="rconv/private/json.html">rconv/private/json</a>, <a href="rconv/private/json_hooks.html">rconv/private/json_hooks</a>, <a href="rconv/private/line_reader.html">rconv/private/line_reader</a>.<br/><p /><h2>API symbols</h2>
 <dl><dt><a name="asFormattingParams" href="#asFormattingParams"><span>asFormattingParams:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="fxf: asFormattingParams(chart: ChartFile): FormattingParameters" href="rconv/fxf.html#asFormattingParams%2CChartFile">fxf: asFormattingParams(chart: ChartFile): FormattingParameters</a></li>
@@ -222,7 +229,7 @@ function main() {
           </ul></dd>
 <dt><a name="jsonToHook" href="#jsonToHook"><span>jsonToHook:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="malody: jsonToHook[T: TimedElement](self: JsonNode): T" href="rconv/malody.html#jsonToHook%2CJsonNode">malody: jsonToHook[T: TimedElement](self: JsonNode): T</a></li>
+          data-doc-search-tag="json_hooks: jsonToHook[T: malody.TimedElement](self: JsonNode): T" href="rconv/private/json_hooks.html#jsonToHook%2CJsonNode">json_hooks: jsonToHook[T: malody.TimedElement](self: JsonNode): T</a></li>
           </ul></dd>
 <dt><a name="line" href="#line"><span>line:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -394,15 +401,15 @@ function main() {
           </ul></dd>
 <dt><a name="toJsonHook" href="#toJsonHook"><span>toJsonHook:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="fxf: toJsonHook[T: Table[string, Chart]](this: T): JsonNode" href="rconv/fxf.html#toJsonHook%2CT">fxf: toJsonHook[T: Table[string, Chart]](this: T): JsonNode</a></li>
+          data-doc-search-tag="json_hooks: toJsonHook[T: memson.BpmRange](this: T): JsonNode" href="rconv/private/json_hooks.html#toJsonHook%2CT">json_hooks: toJsonHook[T: memson.BpmRange](this: T): JsonNode</a></li>
           <li><a class="reference external"
-          data-doc-search-tag="fxf: toJsonHook[T: Tick](this: T): JsonNode" href="rconv/fxf.html#toJsonHook%2CT_2">fxf: toJsonHook[T: Tick](this: T): JsonNode</a></li>
+          data-doc-search-tag="json_hooks: toJsonHook[T: OrderedTable[NoteRange, Note]](this: T): JsonNode" href="rconv/private/json_hooks.html#toJsonHook%2CT_2">json_hooks: toJsonHook[T: OrderedTable[NoteRange, Note]](this: T): JsonNode</a></li>
           <li><a class="reference external"
-          data-doc-search-tag="memson: toJsonHook[T: BpmRange](this: T): JsonNode" href="rconv/memson.html#toJsonHook%2CT">memson: toJsonHook[T: BpmRange](this: T): JsonNode</a></li>
+          data-doc-search-tag="json_hooks: toJsonHook[T: memson.Note](this: T): JsonNode" href="rconv/private/json_hooks.html#toJsonHook%2CT_3">json_hooks: toJsonHook[T: memson.Note](this: T): JsonNode</a></li>
           <li><a class="reference external"
-          data-doc-search-tag="memson: toJsonHook[T: OrderedTable[NoteRange, Note]](this: T): JsonNode" href="rconv/memson.html#toJsonHook%2CT_2">memson: toJsonHook[T: OrderedTable[NoteRange, Note]](this: T): JsonNode</a></li>
+          data-doc-search-tag="json_hooks: toJsonHook[T: Table[string, Chart]](this: T): JsonNode" href="rconv/private/json_hooks.html#toJsonHook%2CT_4">json_hooks: toJsonHook[T: Table[string, Chart]](this: T): JsonNode</a></li>
           <li><a class="reference external"
-          data-doc-search-tag="memson: toJsonHook[T: Note](this: T): JsonNode" href="rconv/memson.html#toJsonHook%2CT_3">memson: toJsonHook[T: Note](this: T): JsonNode</a></li>
+          data-doc-search-tag="json_hooks: toJsonHook[T: fxf.Tick](this: T): JsonNode" href="rconv/private/json_hooks.html#toJsonHook%2CT_5">json_hooks: toJsonHook[T: fxf.Tick](this: T): JsonNode</a></li>
           </ul></dd>
 <dt><a name="VerticalNote" href="#VerticalNote"><span>VerticalNote:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -413,7 +420,7 @@ function main() {
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br/>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2021-11-27 02:34:20 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2021-12-04 01:47:06 UTC</small>
       </div>
     </div>
   </div>

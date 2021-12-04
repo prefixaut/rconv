@@ -1,4 +1,4 @@
-import std/[json, jsonutils, tables]
+import std/tables
 
 import ./common
 
@@ -92,24 +92,3 @@ func asFormattingParams*(chart: ChartFile): FormattingParameters =
         extension = $FileType.FXF,
     )
 
-proc toJsonHook*[T: Table[string, Chart]](this: T): JsonNode =
-    ## Hook to convert the Table of Difficulty and Chart to a proper json-object.
-    ## Regular table hooks convert it with additional artifacting and breaking structure.
-
-    result = newJObject()
-    for key, value in this.pairs:
-        result[$key] = toJson(value)
-
-proc toJsonHook*[T: Tick](this: T): JsonNode =
-    ## Hook to convert a Tick into a json-object.
-    ## Excludes empty/redundant elements in the result.
-
-    result = newJObject()
-    result["time"] = newJFloat(this.time)
-    if this.snapSize > 0:
-        result["snapSize"] = newJInt(this.snapSize)
-        result["snapIndex"] = newJInt(this.snapIndex)
-    if this.notes != nil and this.notes.len > 0:
-        result["notes"] = toJson(this.notes)
-    if this.holds != nil and this.holds.len > 0:
-        result["holds"] = toJson(this.holds)

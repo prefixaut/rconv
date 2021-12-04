@@ -3,13 +3,13 @@ task cli, "Build the library's CLI for direct use":
     switch "outdir", "dist"
     switch "app", "console"
     switch "usenimcache"
-    setCommand "c", "rconv/cli.nim"
+    setCommand "c", "src/rconv/cli.nim"
 
 task build, "Build the library":
     switch "outdir", "dist"
     switch "app", "lib"
     switch "usenimcache"
-    setCommand "c", "rconv/library.nim"
+    setCommand "c", "src/rconv.nim"
 
 task document, "Build the documentation":
     switch "outdir", "docs"
@@ -18,4 +18,4 @@ task document, "Build the documentation":
     switch "git.url", "https://github.com/prefixaut/rconv"
     switch "git.commit", "master"
     switch "git.devel", "master"
-    setCommand "doc", "rconv/library.nim"
+    setCommand "doc", "src/rconv.nim"

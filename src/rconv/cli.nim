@@ -1,11 +1,12 @@
 import std/[options, strutils, strformat, os]
 
-import pkg/[argparse]
+import pkg/[argparse, glob]
 
 import ./common, pipeline
 
 let cli = newParser:
-    help("Usage: rconv [options] <input-files...>")
+    help("rconv v0.1.0")
+
     flag("-c", "--color", 
         help="Enable print messages to be in color.")
     flag("-C", "--clean",
@@ -21,7 +22,7 @@ let cli = newParser:
     flag("-m", "--merge",
         help="Merge all possible charts into existing files.")
     option("-o", "--output", default=some("."),
-        help="The output location for the files. If the directory doesn't exist, they will be created. Defaults to current directoy (\".\").")
+        help="The output location for the files. If the directory doesn't exist, they will be created.")
     flag("-p", "--preserve",
         help="Preserve the original output file (don't override it) if it already exists.")
     flag("-P", "--progress",
@@ -32,8 +33,8 @@ let cli = newParser:
         help="Copy all neccessary resources (Sound-File, Jacket) to the output directory. Should only be used in comination with the \"song-folders\" option.")
     flag("-s", "--stats",
         help="Show stats on the end of the operation.")
-    option("-t", "--to", required=true, choices=(@["fxf", "malody", "memo", "memson"]),
-        help="The output type. Must be one of the following: 'fxf', 'malody', 'memo', and 'memson'.")
+    option("-t", "--to", required=true, choices=(@["fxf", "malody", "memo"]),
+        help="The output type. Must be one of the following: 'fxf', 'malody', and 'memo''.")
     flag("-n", "--normalize",
         help="Normalize the output-paths (folder/file).")
     flag("-V", "--verbose",
@@ -79,15 +80,21 @@ try:
 
     var errors = newSeq[ref Exception]()
 
-    for path in params.files:
-        try:
-            echo $convert(path, none(FileType), to, some(convOptions))
-        except:
-            let e = newException(ConvertException, fmt"Failed to convert file '{path}'! Error: {getCurrentExceptionMsg()}", getCurrentException())
-            if params.delay_errors:
-                errors.add e
-            else:
-                raise e
+    for path in params.files.mitems:
+        # Fix windows paths, as glob doesn't work with these,
+        # as it assumes the backslash is for escaping.
+        when defined(windows):
+            path = path.multiReplace(("\\", "/"))
+
+        for filePath in walkGlob(path):
+            try:
+                echo $convert(filePath, none(FileType), to, some(convOptions))
+            except:
+                let e = newException(ConvertException, fmt"Failed to convert file '{filePath}'! Error: {getCurrentExceptionMsg()}", getCurrentException())
+                if params.delay_errors:
+                    errors.add e
+                else:
+                    raise e
 
     if errors.len > 0:
         var msg = "Multiple errors occured!"
@@ -97,10 +104,10 @@ try:
         err.errors = errors
         raise err
 
-except ShortCircuit as e:
-    if e.flag == "argparse_help":
-        echo cli.help
-        quit(1)
+except ShortCircuit, UsageError:
+    echo cli.help
+    quit(1)
 except:
+    echo repr(getCurrentException())
     stderr.writeLine getCurrentExceptionMsg()
     quit(1)

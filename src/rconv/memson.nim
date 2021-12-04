@@ -1,7 +1,8 @@
-import std/[json, jsonutils, math, strutils, tables]
+import std/[math, strutils, tables]
 
 import ./common
 import ./fxf as fxf
+import ./private/json as cj
 
 type
     Difficulty* {.pure.} = enum
@@ -109,27 +110,6 @@ func parseDifficulty*(input: string): Difficulty =
     else:
         result = Difficulty.Edit
 
-proc toJsonHook*[T: BpmRange](this: T): JsonNode =
-    result = newJNull()
-
-    if this.min != this.max:
-        result = newJObject()
-        result["min"] = this.min
-        result["max"] = this.max
-
-proc toJsonHook*[T: OrderedTable[NoteRange, Note]](this: T): JsonNode =
-    result = newJObject()
-    for index, note in this.pairs:
-        result[$index] = toJson(note)
-
-proc toJsonHook*[T: Note](this: T): JsonNode =
-    result = newJObject()
-    result["time"] = toJson(this.time)
-    if this.kind == NoteType.Hold:
-        result["animationStartIndex"] = toJson(this.animationStartIndex)
-        result["releaseTime"] = toJson(this.releaseTime)
-        result["releaseSection"] = toJson(this.releaseSection)
-
 func toFXF*(this: Memson): fxf.ChartFile =
     var chart: fxf.Chart = fxf.Chart(ticks: @[], rating: float(this.level))
 
@@ -198,4 +178,4 @@ func toFXF*(this: Memson): fxf.ChartFile =
 
     result.charts = initTable[string, fxf.Chart]()
     result.charts[$this.difficulty] = chart
-    
+

@@ -5,5 +5,3 @@ NoteRange	rconv/fxf.html#NoteRange	fxf: NoteRange
 Tick	rconv/fxf.html#Tick	fxf: Tick	
 Hold	rconv/fxf.html#Hold	fxf: Hold	
 asFormattingParams	rconv/fxf.html#asFormattingParams,ChartFile	fxf: asFormattingParams(chart: ChartFile): FormattingParameters	
-toJsonHook	rconv/fxf.html#toJsonHook,T	fxf: toJsonHook[T: Table[string, Chart]](this: T): JsonNode	
-toJsonHook	rconv/fxf.html#toJsonHook,T_2	fxf: toJsonHook[T: Tick](this: T): JsonNode	

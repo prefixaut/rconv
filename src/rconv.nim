@@ -1,7 +1,7 @@
 # The library entry file
 
-import ./common
-import ./pipeline
+import ./rconv/common
+import ./rconv/pipeline
 
 export common
 export pipeline

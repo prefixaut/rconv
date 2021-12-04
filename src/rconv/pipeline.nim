@@ -4,10 +4,11 @@ import ./common
 
 # Import different game-modes into own scopes, as they often
 # have colliding types
-from ./fxf import toJsonHook
+import ./fxf as fxf
 import ./malody as malody
 import ./memo as memo
 import ./memson as memson
+import ./private/json_hooks
 
 {.experimental: "codeReordering".}
 
@@ -37,19 +38,24 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
     of FileType.Memo:
         case to:
         of FileType.FXF:
-            let parsed = memo.parseMemoToMemson(readFile(file))
+            let raw = readFile(file)
+            let parsed = memo.parseMemoToMemson(raw)
             var chart: fxf.ChartFile = parsed.toFXF
             result = saveChart(chart, actualOptions, some($parsed.difficulty))
         else:
             raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
+
     of FileType.Malody:
         case to:
         of FileType.FXF:
-            let parsed = jsonTo(parseJson(readFile(file)), malody.Chart)
-            var chart: fxf.ChartFile = parsed.toFXF
+            let raw = parseJson(readFile(file))
+            var mc = malody.Chart()
+            mc.fromJson(raw, Joptions(allowMissingKeys: true, allowExtraKeys: true))
+            var chart: fxf.ChartFile = mc.toFXF
             result = saveChart(chart, actualOptions, none(string))
         else:
             raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
+
     else:
         raise newException(InvalidTypeException, fmt"Could not find a converter for input-type {fromType}")
 
@@ -81,15 +87,18 @@ proc saveChart(chart: var fxf.ChartFile, options: ConvertOptions, diff: Option[s
 
     if fileExists(filePath) and options.merge:
         try:
-            let rawOriginal = readFile(filePath)
-            var parsedOriginal = parseJson(rawOriginal).jsonTo(fxf.ChartFile)
-            for d, c in parsedOriginal.charts.pairs:
+            var raw = parseJson(readFile(filePath))
+            var existing = fxf.ChartFile()
+            existing.fromJson(raw)
+
+            for d, c in existing.charts.pairs:
                 if not chart.charts.hasKey(d):
                     chart.charts[d] = c
         except:
             raise newException(ConvertException, fmt"Error while merging existing file {filePath}", getCurrentException())
 
     if options.jsonPretty:
+        # TODO: Find solution, or this: https://github.com/treeform/jsony/issues/3
         writeFile(filePath, pretty(toJson(chart), 4))
     else:
         writeFile(filePath, $toJson(chart))

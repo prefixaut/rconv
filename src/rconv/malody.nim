@@ -7,6 +7,10 @@ import ./memson as memson
 {.experimental: "codeReordering".}
 
 type
+    InvalidModeException* = object of CatchableError
+    ## Exception which is thrown when the chart's type can't be converted to the
+    ## required output format
+
     Chart* = object
         ## A Malody chart-File object definition
         meta*: MetaData
@@ -46,7 +50,7 @@ type
     SlideNoteType* {.pure.} = enum
         Hold = 4
 
-    KeyColumnRange = range[1..10]
+    KeyColumnRange = range[0..9]
     ## Range of available Columns
     TabIndexRange = range[0..15]
 
@@ -170,7 +174,7 @@ type
         ## Note for the following Modes: Key, Taiko, Ring
         endbeat*: Beat
         ## Beat when the hold is being released
-        hits: int
+        hits*: int
         ## Taiko: Amount of hits the hold needs
 
     CatchHold* = object of CatchNote
@@ -192,24 +196,60 @@ func getPriority(this: malody.TimedElement): int =
     elif this of malody.TimeSignature:
         result = 4
 
+func getSoundCueType*(id: int): SoundCueType =
+    result = SoundCueType.Effect
+
+    case id:
+    of 0:
+        result = SoundCueType.Effect
+    of 1:
+        result = SoundCueType.Song
+    of 2:
+        result = SoundCueType.KeySound
+    else:
+        discard
+
+func getSlideNoteType*(id: int): SlideNoteType =
+    result = SlideNoteType.Hold
+
+    case id:
+    of 4:
+        result = SlideNoteType.Hold
+    else:
+        discard
+
+func getCatchNoteType*(id: int): CatchNoteType =
+    result = CatchNoteType.Hold
+
+    case id:
+    of 3:
+        result = CatchNoteType.Hold
+    else:
+        discard
+
 proc toFXF*(this: Chart): fxf.ChartFile =
     ## Converts `this` Chart to a FXF-ChartFile.
     ## The actual note-data will be present in the `fxf.ChartFile.charts`_ table.
     ## The difficulty is determined by the `memson.parseDifficulty`_ function.
 
     if (this.meta.mode != ChartMode.Pad):
-        raise newException(ValueError, fmt"The provided Malody-Chart is from the wrong Mode! Mode is {this.meta.mode}, where a {ChartMode.Pad} is required!")
+        raise newException(InvalidModeException, fmt"The provided Malody-Chart is from the wrong Mode! Mode is {this.meta.mode}, where a {ChartMode.Pad} is required!")
 
-    let diff = $memson.parseDifficulty(this.meta.version)
-    var chart: fxf.Chart = fxf.Chart(ticks: @[], rating: 1)
+    result = fxf.newChartFile(
+        artist = this.meta.song.artist,
+        title = this.meta.song.title,
+        jacket = this.meta.background,
+    )
 
-    result.artist = this.meta.song.artist
-    result.title = this.meta.song.title
-    result.jacket = this.meta.background
-    result.audio = ""
-    result.bpmChanges = @[]
-    result.charts = initTable[string, fxf.Chart]()
-    result.charts[diff] = chart
+    let diff = memson.parseDifficulty(this.meta.version)
+    var chart: fxf.Chart = fxf.newChart(rating = 1)
+
+    if diff == memson.Difficulty.Basic:
+        result.charts.basic = chart
+    elif diff == memson.Difficulty.Advanced:
+        result.charts.advanced = chart
+    else:
+        result.charts.extreme = chart
 
     var beats = initHashSet[Beat]()
     var holdBeats = initHashSet[Beat]()
@@ -217,8 +257,7 @@ proc toFXF*(this: Chart): fxf.ChartFile =
 
     for e in this.note:
         beats.incl e.beat
-        echo e
-        if e of IndexHold:
+        if e is IndexHold:
             holdBeats.incl IndexHold(e).endbeat
         tmp.add e
 
@@ -253,7 +292,7 @@ proc toFXF*(this: Chart): fxf.ChartFile =
         let beatSize = OneMinute / bpm
         let snapLength = beatSize / float(element.beat[2])
         let elementTime = offset + (beatSize * float(element.beat[0] - lastBpmSection)) + (snapLength * float(element.beat[1]))
-        let roundedTime = round(elementTime * 10) / 10
+        let roundedTime: float32 = round(elementTime * 10) / 10
 
         if holdTable.hasKey element.beat:
             #for hold in holdTable[element.beat]:
@@ -264,11 +303,11 @@ proc toFXF*(this: Chart): fxf.ChartFile =
             offset = elementTime
             bpm = TimeSignature(element).bpm
             lastBpmSection = element.beat[0]
-            result.bpmChanges.add fxf.BpmChange(
-                bpm: TimeSignature(element).bpm,
-                time: roundedTime,
-                snapIndex: element.beat[1],
-                snapSize: element.beat[2]
+            result.bpmChange.add fxf.newBpmChange(
+                bpm = float32(TimeSignature(element).bpm),
+                time = roundedTime,
+                snapIndex = uint16(element.beat[1]),
+                snapSize = uint16(element.beat[2])
             )
             continue
 
@@ -284,19 +323,17 @@ proc toFXF*(this: Chart): fxf.ChartFile =
 
         var tick: fxf.Tick
         if not beatTable.hasKey element.beat:
-            tick = fxf.Tick(
-                time: roundedTime,
-                snapIndex: element.beat[1],
-                snapSize: element.beat[2],
-                notes: @[],
-                holds: @[]
+            tick = fxf.newTick(
+                time = roundedTime,
+                snapIndex = uint16(element.beat[1]),
+                snapSize = uint16(element.beat[2])
             )
             beatTable[element.beat] = tick
         else:
             tick = beatTable[element.beat]
         
         if not (element of IndexHold):
-            tick.notes.add IndexHold(element).index
+            tick.notes.add uint8(IndexHold(element).index)
             continue
         
         var hold = fxf.Hold(

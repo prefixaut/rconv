@@ -1,4 +1,4 @@
-import std/[json, jsonutils, tables, strformat, options, os]
+import std/[json, jsonutils, tables, streams, strformat, options, os]
 
 import ./common
 
@@ -8,7 +8,8 @@ import ./fxf as fxf
 import ./malody as malody
 import ./memo as memo
 import ./memson as memson
-import ./private/json_hooks
+
+include ./private/json_hooks
 
 {.experimental: "codeReordering".}
 
@@ -48,9 +49,9 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
     of FileType.Malody:
         case to:
         of FileType.FXF:
-            let raw = parseJson(readFile(file))
-            var mc = malody.Chart()
-            mc.fromJson(raw, Joptions(allowMissingKeys: true, allowExtraKeys: true))
+            var raw = parseJson(readFile(file))
+            var mc = raw.toMalodyChart
+            # echo mc
             var chart: fxf.ChartFile = mc.toFXF
             result = saveChart(chart, actualOptions, none(string))
         else:
@@ -87,21 +88,31 @@ proc saveChart(chart: var fxf.ChartFile, options: ConvertOptions, diff: Option[s
 
     if fileExists(filePath) and options.merge:
         try:
-            var raw = parseJson(readFile(filePath))
-            var existing = fxf.ChartFile()
-            existing.fromJson(raw)
+            var readStrm = newFileStream(filePath, fmRead)
+            var existing = readStrm.readFXFChartFile
+            readStrm.close
 
-            for d, c in existing.charts.pairs:
-                if not chart.charts.hasKey(d):
-                    chart.charts[d] = c
+            if options.keep:
+                chart.title = existing.title
+                chart.artist = existing.artist
+                chart.audio = existing.audio
+                chart.jacket = existing.jacket
+                # TODO: Do offset and bpmChange as well?
+
+            if existing.charts.basic != nil and chart.charts.basic == nil:
+                chart.charts.basic = existing.charts.basic
+            if existing.charts.advanced != nil and chart.charts.advanced == nil:
+                chart.charts.advanced = existing.charts.advanced
+            if existing.charts.extreme != nil and chart.charts.extreme == nil:
+                chart.charts.extreme = existing.charts.extreme
+
         except:
             raise newException(ConvertException, fmt"Error while merging existing file {filePath}", getCurrentException())
 
-    if options.jsonPretty:
-        # TODO: Find solution, or this: https://github.com/treeform/jsony/issues/3
-        writeFile(filePath, pretty(toJson(chart), 4))
-    else:
-        writeFile(filePath, $toJson(chart))
+    var writeStrm = newFileStream(filePath, fmWrite)
+    chart.writeToStream(writeStrm)
+    writeStrm.flush
+    writeStrm.close
 
     result = ConvertResult(
         folderName: folderName,

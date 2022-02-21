@@ -3,6 +3,7 @@ import std/[options, strutils, strformat, os]
 import pkg/[argparse, glob]
 
 import ./common, pipeline
+import ./malody as malody
 
 let cli = newParser:
     help("rconv v0.1.0")
@@ -19,6 +20,8 @@ let cli = newParser:
         help="Enable that each song is getting placed into it's own sub-directory.")
     flag("-j", "--json-pretty",
         help="Output JSON data prettily.")
+    flag("-k", "--keep",
+        help="If it should keep the original meta data when merging a file.")
     flag("-m", "--merge",
         help="Merge all possible charts into existing files.")
     option("-o", "--output", default=some("."),
@@ -61,6 +64,7 @@ try:
     let convOptions = newConvertOptions(
         songFolders = params.song_folders,
         jsonpretty = params.json_pretty,
+        keep = params.keep,
         merge = params.merge,
         output = params.output,
         preserve = params.preserve,
@@ -89,6 +93,8 @@ try:
         for filePath in walkGlob(path):
             try:
                 echo $convert(filePath, none(FileType), to, some(convOptions))
+            except malody.InvalidModeException:
+                discard
             except:
                 let e = newException(ConvertException, fmt"Failed to convert file '{filePath}'! Error: {getCurrentExceptionMsg()}", getCurrentException())
                 if params.delay_errors:

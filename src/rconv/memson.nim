@@ -2,7 +2,6 @@ import std/[math, strutils, tables]
 
 import ./common
 import ./fxf as fxf
-import ./private/json as cj
 
 type
     Difficulty* {.pure.} = enum
@@ -31,7 +30,8 @@ type
     RowIndex* = range[0..3] ## \
     ## Range of how many row-indices may exist (4).
 
-    BpmRange* = tuple[min: float, max: float]
+    BpmRange* = tuple[min: float, max: float] ## \
+        ## The range of BPM the file is in
 
     Note* = object
         ## A Note or Hold which has to be pressed.
@@ -95,9 +95,9 @@ type
         sections*: seq[Section]
         ## The sections of the chart.
 
-    FXFHoldRelease = tuple[fxf: fxf.Hold, memson: memson.Note]
-    ## Tuple to join a fxf and memson hold, to be able to set the
-    ## `releaseOn` field of the fxf hold on time.
+    FXFHoldRelease = tuple[fxf: fxf.Hold, memson: memson.Note] ## \
+        ## Tuple to join a fxf and memson hold, to be able to set the
+        ## `releaseOn` field of the fxf hold on time.
 
 func parseDifficulty*(input: string): Difficulty =
     case input.toLower:
@@ -111,28 +111,28 @@ func parseDifficulty*(input: string): Difficulty =
         result = Difficulty.Edit
 
 func toFXF*(this: Memson): fxf.ChartFile =
-    var chart: fxf.Chart = fxf.Chart(ticks: @[], rating: float(this.level))
+    result = fxf.newChartFile(
+        artist = this.artist,
+        title = this.songTitle,
+        jacket = "jacket.png",
+        audio = "audio.mp3"
+    )
+    var chart: fxf.Chart = fxf.newChart(rating = uint32(this.level))
 
-    result.bpmChanges = @[]
-    result.version = 1
-
-    # TODO: add this to memson
-    result.offset = -1
-    result.jacket = "jacket.png"
-    result.audio = "audio.mp3"
-
-    # Meta-Data
-    result.artist = this.artist
-    result.title = this.songTitle
-
-    var bpm: float
+    var bpm: float32
     var globalTime: float = 0
     var holdRelease = newSeq[FXFHoldRelease]()
 
     for section in this.sections:
         if (bpm != section.bpm):
             bpm = section.bpm
-            result.bpmChanges.add fxf.BpmChange(bpm: bpm, time: round(globalTime * 10) / 10, snapSize: section.snaps[0].len, snapIndex: 0)
+            var change = fxf.newBpmChange(
+                bpm = bpm,
+                time = float32(round(globalTime * 10) / 10),
+                snapSize = uint16(section.snaps[0].len),
+                snapIndex = uint16(0)
+            )
+            result.bpmChange.add change
 
         let beat = OneMinute / bpm
         var indexOffset = 0
@@ -155,7 +155,11 @@ func toFXF*(this: Memson): fxf.ChartFile =
                         newFXFHoldRelease.add r
                 holdRelease = newFXFHoldRelease    
 
-                var tick = fxf.Tick(time: noteTime, snapSize: snap.len, snapIndex: snapIndex)
+                var tick = fxf.newTick(
+                    time = noteTime,
+                    snapSize = uint16(snap.len),
+                    snapIndex = uint16(snapIndex)
+                )
                 var hasData = false
 
                 for noteIndex, note in section.notes.pairs:
@@ -164,18 +168,21 @@ func toFXF*(this: Memson): fxf.ChartFile =
 
                     hasData = true
                     if note.kind == NoteType.Hold:
-                        var hold = fxf.Hold(`from`: note.animationStartIndex, to: noteIndex)
+                        var hold = fxf.newHold(`from` = note.animationStartIndex, to = noteIndex)
                         tick.holds.add hold
                         holdRelease.add (hold, note)
                     else:
-                        tick.notes.add noteIndex
-                
+                        tick.notes.add uint8(noteIndex)
+
                 if hasData:
                     chart.ticks.add tick
 
             inc indexOffset, snap.len
             globalTime = globalTime + beat
 
-    result.charts = initTable[string, fxf.Chart]()
-    result.charts[$this.difficulty] = chart
-
+    if this.difficulty == Difficulty.Basic:
+        result.charts.basic = chart
+    elif this.difficulty == Difficulty.Advanced:
+        result.charts.advanced = chart
+    else:
+        result.charts.extreme = chart

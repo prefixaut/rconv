@@ -15,6 +15,8 @@ type
         ## If it should create a folder for each song (artist & title).
         jsonPretty*: bool
         ## If the output-type is json based, if it should format it prettyly
+        keep*: bool
+        ## If it should keep the original meta-data when merging a file
         merge*: bool
         ## If the output-type supports multiple charts to be in a single file,
         ## if it should merge existing and new charts together.
@@ -107,6 +109,7 @@ const
 func newConvertOptions*(
     songFolders: bool = false,
     jsonPretty: bool = false,
+    keep: bool = false,
     merge: bool = false,
     output: string = ".",
     preserve: bool = false,

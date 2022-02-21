@@ -1,88 +1,11 @@
 import std/[json, jsonutils, sets, tables]
 
-import ./json as cj
+import ./json_helpers
 
-import ../fxf as fxf
 import ../malody as malody
 import ../memson as memson
 
 {.experimental: "codeReordering".}
-
-proc jsonToHook*[T: malody.TimedElement](self: JsonNode): T =
-    ## Hook to convert the provided JsonNode to the appropiate `TimeElement`.
-    echo "json to hook"
-
-    if self.kind != JsonNodeKind.JObject or not self.fields.hasKey "beat":
-        discard
-
-    echo self
-    let beat = self.getBeatSafe()
-
-    if self.hasField("bpm", JsonNodeKind.JFloat):
-        result = malody.TimeSignature(beat = beat, bpm = self.getFloatSafe("bpm"))
-
-    elif self.hasField("type", JsonNodeKind.JInt) and self.hasField("sound", JsonNodeKind.JString):
-        result = malody.SoundCue(
-            beat = beat,
-            `type` = self.getIntSafe("type"),
-            offset = self.getFloatSafe("offset"),
-            vol: self.getFloatSafe("vol")
-        )
-    elif self.hasField("column", JsonNodeKind.JInt):
-        if self.fields.hasKey("endbeat"):
-            result = malody.ColumnHold(
-                beat = beat,
-                column = self.getIntSafe("column"),
-                style = self.getIntSafe("style", -1),
-                endbeat = self.getBeatSafe("endbeat"),
-                hits = self.getIntSafe("hits", 1)
-            )
-        else:
-            result = malody.ColumnNote(
-                beat = beat,
-                column = self.getIntSafe("column"),
-                style = self.getIntSafe("style", -1)
-            )
-    elif self.hasField("x", JsonNodeKind.JInt):
-        if self.hasField("w", JsonNodeKind.JInt):
-            result = malody.SlideNote(
-                beat = beat,
-                w = self.getIntSafe("w"),
-                `type` = self.getIntSafe(self, "type"),
-                seg = if self.fields.hasKey("seg"): jsonTo(self.fields["seg"], seq[VerticalNote]) else: @[]
-            )
-        elif self.hasKey("type", JsonNodeKind.JInt):
-            if self.fields.hasKey("endbeat"):
-                result = malody.CatchHold(
-                    beat = beat,
-                    `type` = self.getIntSafe("type"),
-                    endbeat = self.getBeatSafe("endbeat")
-                )
-            else:
-                result = malody.CatchNote(
-                    beat = beat,
-                    `type` = self.getIntSafe("type")
-                )
-        else:
-            result = malody.VerticalNote(
-                beat = beat,
-                x = self.getIntSafe("x")
-            )
-    elif self.hasField("index", JsonNodeKind.JInt):
-        if self.fields.hasKey("endbeat"):
-            result = malody.IndexHold(
-                beat = beat,
-                index = self.getIntSafe("index"),
-                endbeat = self.getBeatSafe("endbeat"),
-                endindex = self.getIntSafe("endindex")
-            )
-        else:
-            result = malody.IndexNote(
-                beat = beat,
-                index = self.getIntSafe("index")
-            )
-    else:
-        discard
 
 func getBeatSafe(self: JsonNode, field: string = "beat", default: malody.Beat = [-1, 0, 0]): malody.Beat =
     ## Internal helper function to safely get a beat from a JsonNode
@@ -97,6 +20,118 @@ func getBeatSafe(self: JsonNode, field: string = "beat", default: malody.Beat = 
                         result[index] = arr[index].getInt
         except:
             discard
+
+proc toMalodyTimedElement*(self: JsonNode): malody.TimedElement =
+    ## Hook to convert the provided JsonNode to the appropiate `TimeElement`.
+
+    echo "BBBB"
+
+    assert self.kind == JsonNodeKind.JObject:
+        "The kind of `JsonNode` must be `JObject`, but it's actual kind is `" & $self.kind & "`."
+
+    let beat = self.getBeatSafe()
+
+    if self.hasField("bpm", JsonNodeKind.JFloat):
+        result = malody.TimeSignature(beat: beat, bpm: self.getFloatSafe("bpm"))
+
+    elif self.hasField("type", JsonNodeKind.JInt) and self.hasField("sound", JsonNodeKind.JString):
+        echo "sound-cue"
+        result = malody.SoundCue(
+            beat: beat,
+            `type`: malody.getSoundCueType(self.getIntSafe("type")),
+            offset: self.getFloatSafe("offset"),
+            vol: self.getFloatSafe("vol")
+        )
+    elif self.hasField("column", JsonNodeKind.JInt):
+        echo "column-cue"
+        if self.fields.hasKey("endbeat"):
+            result = malody.ColumnHold(
+                beat: beat,
+                column: self.getIntSafe("column"),
+                style: self.getIntSafe("style", -1),
+                endbeat: self.getBeatSafe("endbeat"),
+                hits: self.getIntSafe("hits", 1)
+            )
+        else:
+            result = malody.ColumnNote(
+                beat: beat,
+                column: self.getIntSafe("column"),
+                style: self.getIntSafe("style", -1)
+            )
+    elif self.hasField("x", JsonNodeKind.JInt):
+        if self.hasField("w", JsonNodeKind.JInt):
+            echo "vertical-note 1"
+            var seg: seq[VerticalNote] = @[]
+            if self.fields.hasKey("seg"):
+                seg.fromJson(self.fields["seg"], Joptions(allowMissingKeys: true, allowExtraKeys: true))
+
+            result = malody.SlideNote(
+                beat: beat,
+                w: self.getIntSafe("w"),
+                `type`: getSlideNoteType(self.getIntSafe("type")),
+                seg: seg
+            )
+        elif self.hasField("type", JsonNodeKind.JInt):
+            echo "catch-note"
+            if self.fields.hasKey("endbeat"):
+                result = malody.CatchHold(
+                    beat: beat,
+                    `type`: getCatchNoteType(self.getIntSafe("type")),
+                    endbeat: self.getBeatSafe("endbeat")
+                )
+            else:
+                result = malody.CatchNote(
+                    beat: beat,
+                    `type`: getCatchNoteType(self.getIntSafe("type"))
+                )
+        else:
+            echo "vertical-note 2"
+            result = malody.VerticalNote(
+                beat: beat,
+                x: self.getIntSafe("x")
+            )
+    elif self.hasField("index", JsonNodeKind.JInt):
+        echo "index-note"
+        if self.fields.hasKey("endbeat"):
+            result = malody.IndexHold(
+                beat: beat,
+                index: self.getIntSafe("index"),
+                endbeat: self.getBeatSafe("endbeat"),
+                endindex: self.getIntSafe("endindex")
+            )
+        else:
+            result = malody.IndexNote(
+                beat: beat,
+                index: self.getIntSafe("index")
+            )
+    else:
+        echo "timed-element"
+        result = malody.TimedElement(beat: beat)
+
+proc toMalodyChart*(self: JsonNode): malody.Chart =
+    ## Additional hook to make the hook for `TimedElement` work.
+
+    assert self.kind == JsonNodeKind.JObject,
+        "The kind of `JsonNode` must be `JObject`, but it's actual kind is `" & $self.kind & "`."
+
+    echo "aaaaaa"
+    result.note = @[]
+    result.time = @[]
+
+    #if self.hasField("meta", JsonNodeKind.JObject):
+    #    result.meta = self.fields["meta"].jsonTo(malody.MetaData, Joptions(allowMissingKeys: true, allowExtraKeys: true))
+
+    if self.hasField("note", JsonNodeKind.JArray):
+        for note in self.fields["note"].elems:
+            result.note.add(toMalodyTimedElement(note))
+    else:
+        echo "no note"
+    
+    if self.hasField("time", JsonNodeKind.JArray):
+        for time in self.fields["time"].elems:
+            result.time.add time.jsonTo(malody.TimeSignature, Joptions(allowMissingKeys: true, allowExtraKeys: true))
+    else:
+        echo "no time"
 
 proc toJsonHook*[T: memson.BpmRange](this: T): JsonNode =
     result = newJNull()
@@ -118,25 +153,3 @@ proc toJsonHook*[T: memson.Note](this: T): JsonNode =
         result["animationStartIndex"] = toJson(this.animationStartIndex)
         result["releaseTime"] = toJson(this.releaseTime)
         result["releaseSection"] = toJson(this.releaseSection)
-
-proc toJsonHook*[T: Table[string, fxf.Chart]](this: T): JsonNode =
-    ## Hook to convert the Table of Difficulty and Chart to a proper json-object.
-    ## Regular table hooks convert it with additional artifacting and breaking structure.
-
-    result = newJObject()
-    for key, value in this.pairs:
-        result[$key] = toJson(value)
-
-proc toJsonHook*[T: fxf.Tick](this: T): JsonNode =
-    ## Hook to convert a Tick into a json-object.
-    ## Excludes empty/redundant elements in the result.
-
-    result = newJObject()
-    result["time"] = newJFloat(this.time)
-    if this.snapSize > 0:
-        result["snapSize"] = newJInt(this.snapSize)
-        result["snapIndex"] = newJInt(this.snapIndex)
-    if this.notes != nil and this.notes.len > 0:
-        result["notes"] = toJson(this.notes)
-    if this.holds != nil and this.holds.len > 0:
-        result["holds"] = toJson(this.holds)

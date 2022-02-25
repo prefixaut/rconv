@@ -117,30 +117,28 @@ window.addEventListener('DOMContentLoaded', main);
   <li><a class="reference" href="#ChartMode"
     title="ChartMode {.pure.} = enum
   Key = 0,                  ## &quot;Mania&quot; game mode (SM, PIU, ...) with varying amount of keys (4,5,6,7, ...)k
-  Unused_1 = 1, Unused_2 = 2, Catch = 3, ## osu!catch
+  Unused_1 = 1,             ## Unused enum-property to prevent enum with holes
+  Unused_2 = 2,             ## Unused enum-property to prevent enum with holes
+  Catch = 3,                ## osu!catch
   Pad = 4,                  ## Jubeat
   Taiko = 5,                ## You should know taiko
   Ring = 6,                 ## Reflect Beat
   Slide = 7                  ## Mania but for touchscreen">ChartMode</a></li>
   <li><a class="reference" href="#ElementType"
     title="ElementType {.pure.} = enum
-  Plain, TimeSignature, SoundCue, IndexNote, ## \
-                                              ## Note for the following Modes: Pad
-  ColumnNote,               ## \
-                             ## Note for following Modes: Key, Taiko, Ring
-  CatchNote,                ## \
-                             ## Note for the following Modes: Catch
-  SlideNote                  ## \
-                             ## Note for the following Modes: Slide">ElementType</a></li>
+  Plain,                    ## A plain element - usually only used internally and shouldn't actually exist in any file
+  TimeSignature,            ## Indicates a BPM change/Time Signature change
+  SoundCue,                 ## Defines a Sound/Song to be played
+  IndexNote,                ## Note for the following Modes: Pad
+  ColumnNote,               ## Note for following Modes: Key, Taiko, Ring
+  CatchNote,                ## Note for the following Modes: Catch
+  SlideNote                  ## Note for the following Modes: Slide">ElementType</a></li>
   <li><a class="reference" href="#HoldType"
     title="HoldType {.pure.} = enum
   None,                     ## If it isn't a hold
-  IndexHold,                ## \
-                             ## Hold for the following Modes: Pad
-  ColumnHold,               ## \
-                             ## Hold for the following Modes: Key, Taiko, Ring
-  CatchHold                  ## \
-                             ## Hold for the following Modes: Catch">HoldType</a></li>
+  IndexHold,                ## Hold for the following Modes: Pad
+  ColumnHold,               ## Hold for the following Modes: Key, Taiko, Ring
+  CatchHold                  ## Hold for the following Modes: Catch">HoldType</a></li>
   <li><a class="reference" href="#InvalidModeException"
     title="InvalidModeException = object of CatchableError">InvalidModeException</a></li>
   <li><a class="reference" href="#MetaData"
@@ -163,7 +161,7 @@ window.addEventListener('DOMContentLoaded', main);
   speed: int                 ## The fall speed of the notes">ModeData</a></li>
   <li><a class="reference" href="#SlideNoteType"
     title="SlideNoteType {.pure.} = enum
-  Unused_0 = 0, Unused_1 = 1, Unused_2 = 2, Unused_3, Hold = 4">SlideNoteType</a></li>
+  Unused_0 = 0, Unused_1 = 1, Unused_2 = 2, Unused_3 = 3, Hold = 4">SlideNoteType</a></li>
   <li><a class="reference" href="#SongData"
     title="SongData = ref object
   title*: string             ## Title of the song.
@@ -193,7 +191,7 @@ window.addEventListener('DOMContentLoaded', main);
       cueVol*: float         ## How loud the sound should be played
     
   of IndexNote:
-      index*: TabIndexRange  ## Index of the Note (0-15) (When mode is &quot;Pad&quot;)
+      index*: IndexRange     ## Index of the Note (0-15) (When mode is &quot;Pad&quot;)
     
   of ColumnNote:
       column*: KeyColumnRange ## The column in which this note is placed in
@@ -215,7 +213,7 @@ window.addEventListener('DOMContentLoaded', main);
   case hold*: HoldType
   of IndexHold:
       indexEndBeat*: Beat    ## Beat when the hold is being released
-      indexEnd*: TabIndexRange ## The index where the Hold is being released on
+      indexEnd*: IndexRange  ## The index where the Hold is being released on
     
   of ColumnHold:
       colEndBeat*: Beat      ## Beat when the hold is being released
@@ -289,15 +287,15 @@ window.addEventListener('DOMContentLoaded', main);
 
   </ul>
   <ul class="simple nested-toc-section">newIndexHold
-      <li><a class="reference" href="#newIndexHold%2CBeat%2CTabIndexRange%2CBeat%2CTabIndexRange"
-    title="newIndexHold(beat: Beat = EmptyBeat; index: TabIndexRange;
-             endBeat: Beat = EmptyBeat; endIndex: TabIndexRange): TimedElement">newIndexHold(beat: Beat = EmptyBeat; index: TabIndexRange;
-             endBeat: Beat = EmptyBeat; endIndex: TabIndexRange): TimedElement</a></li>
+      <li><a class="reference" href="#newIndexHold%2CBeat%2CIndexRange%2CBeat%2CIndexRange"
+    title="newIndexHold(beat: Beat = EmptyBeat; index: IndexRange;
+             endBeat: Beat = EmptyBeat; endIndex: IndexRange): TimedElement">newIndexHold(beat: Beat = EmptyBeat; index: IndexRange;
+             endBeat: Beat = EmptyBeat; endIndex: IndexRange): TimedElement</a></li>
 
   </ul>
   <ul class="simple nested-toc-section">newIndexNote
-      <li><a class="reference" href="#newIndexNote%2CBeat%2CTabIndexRange"
-    title="newIndexNote(beat: Beat = EmptyBeat; index: TabIndexRange = 0): TimedElement">newIndexNote(beat: Beat = EmptyBeat; index: TabIndexRange = 0): TimedElement</a></li>
+      <li><a class="reference" href="#newIndexNote%2CBeat%2CIndexRange"
+    title="newIndexNote(beat: Beat = EmptyBeat; index: IndexRange = 0): TimedElement">newIndexNote(beat: Beat = EmptyBeat; index: IndexRange = 0): TimedElement</a></li>
 
   </ul>
   <ul class="simple nested-toc-section">newMetaData
@@ -385,9 +383,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 A beat is the time when something happens Beat[0] is the section index Beat[1] is the snap index Beat[2] is the snap size
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L114"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L117"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L114" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L117" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -410,7 +408,9 @@ class="link-seesrc" target="_blank">Source</a>
 <div id="ChartMode">
 <dt><pre><a href="malody.html#ChartMode"><span class="Identifier">ChartMode</span></a> {.<span class="Identifier">pure</span>.} <span class="Other">=</span> <span class="Keyword">enum</span>
   <span class="Identifier">Key</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">,</span>                  <span class="Comment">## &quot;Mania&quot; game mode (SM, PIU, ...) with varying amount of keys (4,5,6,7, ...)k</span>
-  <span class="Identifier">Unused_1</span> <span class="Other">=</span> <span class="DecNumber">1</span><span class="Other">,</span> <span class="Identifier">Unused_2</span> <span class="Other">=</span> <span class="DecNumber">2</span><span class="Other">,</span> <span class="Identifier">Catch</span> <span class="Other">=</span> <span class="DecNumber">3</span><span class="Other">,</span> <span class="Comment">## osu!catch</span>
+  <span class="Identifier">Unused_1</span> <span class="Other">=</span> <span class="DecNumber">1</span><span class="Other">,</span>             <span class="Comment">## Unused enum-property to prevent enum with holes</span>
+  <span class="Identifier">Unused_2</span> <span class="Other">=</span> <span class="DecNumber">2</span><span class="Other">,</span>             <span class="Comment">## Unused enum-property to prevent enum with holes</span>
+  <span class="Identifier">Catch</span> <span class="Other">=</span> <span class="DecNumber">3</span><span class="Other">,</span>                <span class="Comment">## osu!catch</span>
   <span class="Identifier">Pad</span> <span class="Other">=</span> <span class="DecNumber">4</span><span class="Other">,</span>                  <span class="Comment">## Jubeat</span>
   <span class="Identifier">Taiko</span> <span class="Other">=</span> <span class="DecNumber">5</span><span class="Other">,</span>                <span class="Comment">## You should know taiko</span>
   <span class="Identifier">Ring</span> <span class="Other">=</span> <span class="DecNumber">6</span><span class="Other">,</span>                 <span class="Comment">## Reflect Beat</span>
@@ -427,40 +427,36 @@ class="link-seesrc" target="_blank">Source</a>
 </div>
 <div id="ElementType">
 <dt><pre><a href="malody.html#ElementType"><span class="Identifier">ElementType</span></a> {.<span class="Identifier">pure</span>.} <span class="Other">=</span> <span class="Keyword">enum</span>
-  <span class="Identifier">Plain</span><span class="Other">,</span> <span class="Identifier">TimeSignature</span><span class="Other">,</span> <span class="Identifier">SoundCue</span><span class="Other">,</span> <span class="Identifier">IndexNote</span><span class="Other">,</span> <span class="Comment">## \</span>
-                                              <span class="Comment">## Note for the following Modes: Pad</span>
-  <span class="Identifier">ColumnNote</span><span class="Other">,</span>               <span class="Comment">## \</span>
-                             <span class="Comment">## Note for following Modes: Key, Taiko, Ring</span>
-  <span class="Identifier">CatchNote</span><span class="Other">,</span>                <span class="Comment">## \</span>
-                             <span class="Comment">## Note for the following Modes: Catch</span>
-  <span class="Identifier">SlideNote</span>                  <span class="Comment">## \</span>
-                             <span class="Comment">## Note for the following Modes: Slide</span></pre></dt>
+  <span class="Identifier">Plain</span><span class="Other">,</span>                    <span class="Comment">## A plain element - usually only used internally and shouldn't actually exist in any file</span>
+  <span class="Identifier">TimeSignature</span><span class="Other">,</span>            <span class="Comment">## Indicates a BPM change/Time Signature change</span>
+  <span class="Identifier">SoundCue</span><span class="Other">,</span>                 <span class="Comment">## Defines a Sound/Song to be played</span>
+  <span class="Identifier">IndexNote</span><span class="Other">,</span>                <span class="Comment">## Note for the following Modes: Pad</span>
+  <span class="Identifier">ColumnNote</span><span class="Other">,</span>               <span class="Comment">## Note for following Modes: Key, Taiko, Ring</span>
+  <span class="Identifier">CatchNote</span><span class="Other">,</span>                <span class="Comment">## Note for the following Modes: Catch</span>
+  <span class="Identifier">SlideNote</span>                  <span class="Comment">## Note for the following Modes: Slide</span></pre></dt>
 <dd>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L129"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L132"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L129" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L132" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
 <div id="HoldType">
 <dt><pre><a href="malody.html#HoldType"><span class="Identifier">HoldType</span></a> {.<span class="Identifier">pure</span>.} <span class="Other">=</span> <span class="Keyword">enum</span>
   <span class="Identifier">None</span><span class="Other">,</span>                     <span class="Comment">## If it isn't a hold</span>
-  <span class="Identifier">IndexHold</span><span class="Other">,</span>                <span class="Comment">## \</span>
-                             <span class="Comment">## Hold for the following Modes: Pad</span>
-  <span class="Identifier">ColumnHold</span><span class="Other">,</span>               <span class="Comment">## \</span>
-                             <span class="Comment">## Hold for the following Modes: Key, Taiko, Ring</span>
-  <span class="Identifier">CatchHold</span>                  <span class="Comment">## \</span>
-                             <span class="Comment">## Hold for the following Modes: Catch</span></pre></dt>
+  <span class="Identifier">IndexHold</span><span class="Other">,</span>                <span class="Comment">## Hold for the following Modes: Pad</span>
+  <span class="Identifier">ColumnHold</span><span class="Other">,</span>               <span class="Comment">## Hold for the following Modes: Key, Taiko, Ring</span>
+  <span class="Identifier">CatchHold</span>                  <span class="Comment">## Hold for the following Modes: Catch</span></pre></dt>
 <dd>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L142"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L148"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L142" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L148" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -469,6 +465,7 @@ class="link-seesrc" target="_blank">Source</a>
 <dd>
 
 
+Exception which is thrown when the chart's type can't be converted to the required output format
 &nbsp;&nbsp;<a
 href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L13"
 class="link-seesrc" target="_blank">Source</a>
@@ -493,9 +490,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L69"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L72"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L69" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L72" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -510,22 +507,22 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L105"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L108"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L105" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L108" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
 <div id="SlideNoteType">
 <dt><pre><a href="malody.html#SlideNoteType"><span class="Identifier">SlideNoteType</span></a> {.<span class="Identifier">pure</span>.} <span class="Other">=</span> <span class="Keyword">enum</span>
-  <span class="Identifier">Unused_0</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">,</span> <span class="Identifier">Unused_1</span> <span class="Other">=</span> <span class="DecNumber">1</span><span class="Other">,</span> <span class="Identifier">Unused_2</span> <span class="Other">=</span> <span class="DecNumber">2</span><span class="Other">,</span> <span class="Identifier">Unused_3</span><span class="Other">,</span> <span class="Identifier">Hold</span> <span class="Other">=</span> <span class="DecNumber">4</span></pre></dt>
+  <span class="Identifier">Unused_0</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">,</span> <span class="Identifier">Unused_1</span> <span class="Other">=</span> <span class="DecNumber">1</span><span class="Other">,</span> <span class="Identifier">Unused_2</span> <span class="Other">=</span> <span class="DecNumber">2</span><span class="Other">,</span> <span class="Identifier">Unused_3</span> <span class="Other">=</span> <span class="DecNumber">3</span><span class="Other">,</span> <span class="Identifier">Hold</span> <span class="Other">=</span> <span class="DecNumber">4</span></pre></dt>
 <dd>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L58"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L60"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L58" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L60" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -543,9 +540,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L91"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L94"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L91" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L94" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -559,9 +556,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L120"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L123"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L120" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L123" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -579,7 +576,7 @@ class="link-seesrc" target="_blank">Source</a>
       <span class="Identifier">cueVol</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">float</span>         <span class="Comment">## How loud the sound should be played</span>
     
   <span class="Keyword">of</span> <span class="Identifier">IndexNote</span><span class="Other">:</span>
-      <span class="Identifier">index</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">TabIndexRange</span>  <span class="Comment">## Index of the Note (0-15) (When mode is &quot;Pad&quot;)</span>
+      <span class="Identifier">index</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">IndexRange</span>     <span class="Comment">## Index of the Note (0-15) (When mode is &quot;Pad&quot;)</span>
     
   <span class="Keyword">of</span> <span class="Identifier">ColumnNote</span><span class="Other">:</span>
       <span class="Identifier">column</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">KeyColumnRange</span> <span class="Comment">## The column in which this note is placed in</span>
@@ -601,7 +598,7 @@ class="link-seesrc" target="_blank">Source</a>
   <span class="Keyword">case</span> <span class="Identifier">hold</span><span class="Operator">*</span><span class="Other">:</span> <a href="malody.html#HoldType"><span class="Identifier">HoldType</span></a>
   <span class="Keyword">of</span> <span class="Identifier">IndexHold</span><span class="Other">:</span>
       <span class="Identifier">indexEndBeat</span><span class="Operator">*</span><span class="Other">:</span> <a href="malody.html#Beat"><span class="Identifier">Beat</span></a>    <span class="Comment">## Beat when the hold is being released</span>
-      <span class="Identifier">indexEnd</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">TabIndexRange</span> <span class="Comment">## The index where the Hold is being released on</span>
+      <span class="Identifier">indexEnd</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">IndexRange</span>  <span class="Comment">## The index where the Hold is being released on</span>
     
   <span class="Keyword">of</span> <span class="Identifier">ColumnHold</span><span class="Other">:</span>
       <span class="Identifier">colEndBeat</span><span class="Operator">*</span><span class="Other">:</span> <a href="malody.html#Beat"><span class="Identifier">Beat</span></a>      <span class="Comment">## Beat when the hold is being released</span>
@@ -618,9 +615,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L152"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L158"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L152" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L158" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -652,9 +649,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L255"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L261"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L255" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L261" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -664,9 +661,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L246"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L252"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L246" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L252" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -676,9 +673,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L233"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L239"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L233" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L239" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -691,9 +688,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L356"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L362"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L356" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L362" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -705,9 +702,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L327"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L333"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L327" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L333" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -718,9 +715,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L264"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L270"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L264" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L270" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -732,9 +729,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L348"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L354"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L348" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L354" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -745,36 +742,36 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L321"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L327"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L321" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L327" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
-<div id="newIndexHold,Beat,TabIndexRange,Beat,TabIndexRange">
-<dt><pre><span class="Keyword">func</span> <a href="#newIndexHold%2CBeat%2CTabIndexRange%2CBeat%2CTabIndexRange"><span class="Identifier">newIndexHold</span></a><span class="Other">(</span><span class="Identifier">beat</span><span class="Other">:</span> <a href="malody.html#Beat"><span class="Identifier">Beat</span></a> <span class="Other">=</span> <span class="Identifier">EmptyBeat</span><span class="Other">;</span> <span class="Identifier">index</span><span class="Other">:</span> <span class="Identifier">TabIndexRange</span><span class="Other">;</span>
-                  <span class="Identifier">endBeat</span><span class="Other">:</span> <a href="malody.html#Beat"><span class="Identifier">Beat</span></a> <span class="Other">=</span> <span class="Identifier">EmptyBeat</span><span class="Other">;</span> <span class="Identifier">endIndex</span><span class="Other">:</span> <span class="Identifier">TabIndexRange</span><span class="Other">)</span><span class="Other">:</span> <a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a> {.
+<div id="newIndexHold,Beat,IndexRange,Beat,IndexRange">
+<dt><pre><span class="Keyword">func</span> <a href="#newIndexHold%2CBeat%2CIndexRange%2CBeat%2CIndexRange"><span class="Identifier">newIndexHold</span></a><span class="Other">(</span><span class="Identifier">beat</span><span class="Other">:</span> <a href="malody.html#Beat"><span class="Identifier">Beat</span></a> <span class="Other">=</span> <span class="Identifier">EmptyBeat</span><span class="Other">;</span> <span class="Identifier">index</span><span class="Other">:</span> <span class="Identifier">IndexRange</span><span class="Other">;</span>
+                  <span class="Identifier">endBeat</span><span class="Other">:</span> <a href="malody.html#Beat"><span class="Identifier">Beat</span></a> <span class="Other">=</span> <span class="Identifier">EmptyBeat</span><span class="Other">;</span> <span class="Identifier">endIndex</span><span class="Other">:</span> <span class="Identifier">IndexRange</span><span class="Other">)</span><span class="Other">:</span> <a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a> {.
     <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
 <dd>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L341"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L347"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L341" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L347" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
-<div id="newIndexNote,Beat,TabIndexRange">
-<dt><pre><span class="Keyword">proc</span> <a href="#newIndexNote%2CBeat%2CTabIndexRange"><span class="Identifier">newIndexNote</span></a><span class="Other">(</span><span class="Identifier">beat</span><span class="Other">:</span> <a href="malody.html#Beat"><span class="Identifier">Beat</span></a> <span class="Other">=</span> <span class="Identifier">EmptyBeat</span><span class="Other">;</span> <span class="Identifier">index</span><span class="Other">:</span> <span class="Identifier">TabIndexRange</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">)</span><span class="Other">:</span> <a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a> {.
+<div id="newIndexNote,Beat,IndexRange">
+<dt><pre><span class="Keyword">proc</span> <a href="#newIndexNote%2CBeat%2CIndexRange"><span class="Identifier">newIndexNote</span></a><span class="Other">(</span><span class="Identifier">beat</span><span class="Other">:</span> <a href="malody.html#Beat"><span class="Identifier">Beat</span></a> <span class="Other">=</span> <span class="Identifier">EmptyBeat</span><span class="Other">;</span> <span class="Identifier">index</span><span class="Other">:</span> <span class="Identifier">IndexRange</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">)</span><span class="Other">:</span> <a href="malody.html#TimedElement"><span class="Identifier">TimedElement</span></a> {.
     <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
 <dd>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L316"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L322"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L316" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L322" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -789,9 +786,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L270"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L276"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L270" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L276" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -802,9 +799,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L293"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L299"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L293" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L299" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -817,9 +814,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L333"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L339"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L333" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L339" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -831,9 +828,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L285"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L291"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L285" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L291" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -846,9 +843,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L308"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L314"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L308" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L314" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -859,9 +856,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L299"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L305"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L299" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L305" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -872,9 +869,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L303"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L309"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L303" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L309" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -885,9 +882,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 Converts <tt class="docutils literal"><span class="pre"><span class="Identifier">this</span></span></tt> Chart to a FXF-ChartFile. The actual note-data will be present in the <a class="reference internal" href="#fxf">fxf</a> table. The difficulty is determined by the <a class="reference internal" href="#memson">memson</a> function.
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L363"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/malody.nim#L369"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L363" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/malody.nim#L369" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -901,7 +898,7 @@ class="link-seesrc" target="_blank">Source</a>
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br/>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2022-02-25 23:07:58 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2022-02-25 23:17:12 UTC</small>
       </div>
     </div>
   </div>

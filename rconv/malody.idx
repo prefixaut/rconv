@@ -21,11 +21,11 @@ newChart	rconv/malody.html#newChart,MetaData,seq[TimedElement],seq[TimedElement]
 newTimedElement	rconv/malody.html#newTimedElement,Beat	malody: newTimedElement(beat: Beat = EmptyBeat): TimedElement	
 newTimeSignature	rconv/malody.html#newTimeSignature,Beat,float	malody: newTimeSignature(beat: Beat = EmptyBeat; bpm: float = 0): TimedElement	
 newSoundCue	rconv/malody.html#newSoundCue,Beat,SoundCueType,string,float,float	malody: newSoundCue(beat: Beat = EmptyBeat; type: SoundCueType = SoundCueType.Effect;\n            sound: string = &quot;&quot;; offset: float = 0; vol: float = 0): TimedElement	
-newIndexNote	rconv/malody.html#newIndexNote,Beat,TabIndexRange	malody: newIndexNote(beat: Beat = EmptyBeat; index: TabIndexRange = 0): TimedElement	
+newIndexNote	rconv/malody.html#newIndexNote,Beat,IndexRange	malody: newIndexNote(beat: Beat = EmptyBeat; index: IndexRange = 0): TimedElement	
 newColumnNote	rconv/malody.html#newColumnNote,Beat,KeyColumnRange,int	malody: newColumnNote(beat: Beat = EmptyBeat; column: KeyColumnRange = 0; style: int = 0): TimedElement	
 newCatchNote	rconv/malody.html#newCatchNote,Beat,int,CatchNoteType	malody: newCatchNote(beat: Beat = EmptyBeat; x: int = 0;\n             type: CatchNoteType = CatchNoteType.Hold): TimedElement	
 newSlideNote	rconv/malody.html#newSlideNote,Beat,int,int,SlideNoteType,seq[TimedElement]	malody: newSlideNote(beat: Beat = EmptyBeat; x: int = 0; width: int = 0;\n             type: SlideNoteType = SlideNoteType.Hold;\n             seg: seq[TimedElement] = @[]): TimedElement	
-newIndexHold	rconv/malody.html#newIndexHold,Beat,TabIndexRange,Beat,TabIndexRange	malody: newIndexHold(beat: Beat = EmptyBeat; index: TabIndexRange;\n             endBeat: Beat = EmptyBeat; endIndex: TabIndexRange): TimedElement	
+newIndexHold	rconv/malody.html#newIndexHold,Beat,IndexRange,Beat,IndexRange	malody: newIndexHold(beat: Beat = EmptyBeat; index: IndexRange;\n             endBeat: Beat = EmptyBeat; endIndex: IndexRange): TimedElement	
 newColumnHold	rconv/malody.html#newColumnHold,Beat,KeyColumnRange,int,Beat,int	malody: newColumnHold(beat: Beat = EmptyBeat; column: KeyColumnRange = 0;\n              style: int = 0; endBeat: Beat = EmptyBeat; hits: int = 1): TimedElement	
 newCatchHold	rconv/malody.html#newCatchHold,Beat,int,CatchNoteType,Beat	malody: newCatchHold(beat: Beat = EmptyBeat; x: int = 0;\n             type: CatchNoteType = CatchNoteType.Hold; endBeat: Beat = EmptyBeat): TimedElement	
 toFXF	rconv/malody.html#toFXF,Chart	malody: toFXF(this: Chart): fxf.ChartFile	

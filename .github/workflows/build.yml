@@ -4,19 +4,24 @@ name: 'Build the application'
 on:
   push:
     branches: [ '*' ]
+    tags: [ '*' ]
   pull_request:
     branches: [ master ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         nim: [ '1.6.0', 'stable', 'devel' ]
+        os: [ 'ubuntu-latest', 'windows-latest', 'macos-latest' ]
+
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     # permissions:
     #  contents: write
 
     steps:
+    # Basic Setup
     - uses: actions/checkout@v2
     - name: Setup Nim Environment ${{ matrix.nim }}
       uses: jiro4989/setup-nim-action@v1
@@ -30,6 +35,35 @@ jobs:
         key: ${{ runner.os }}-nimble-${{ matrix.nim }}-${{ hashFiles('*.nimble') }}
       if: runner.os != 'Windows'
 
-    - run: nimble install -Y
-    - run: nim cli
-    - run: nim build
+    # Building & Testing
+    - name: Install dependencies
+      run: nimble install -Y
+    - name: Build CLI
+      run: nim cli
+    - name: Build library
+      run: nim build
+
+    # Releases
+    - name: Create CLI Release Build
+      if: ${{ startsWith(github.ref, 'refs/tags/') }}
+      run: nim cli -d:release
+    - name: Create Library Release Build
+      if: ${{ startsWith(github.ref, 'refs/tags/') }}
+      run: nim build -d:release
+    - name: Release
+      uses: ncipollo/release-action@v1
+      if: ${{ startsWith(github.ref, 'refs/tags/') }}
+      with:
+        artifacts: "dist/*"
+        allowUpdates: true
+        prerelease: ${{ endsWith(github.ref, 'rc') || endsWith(github.ref, 'snapshot') }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build documentation
+      run: nim docs
+    - name: Deploy to GitHub-Pages
+      uses: JamesIves/github-pages-deploy-action@v4.2.3
+      # Only deploy if it's on the master branch
+      if: ${{ github.ref == 'refs/heads/master' }}
+      with:
+        branch: gh-pages # The branch the action should deploy to.
+        folder: docs # The folder the action should deploy.

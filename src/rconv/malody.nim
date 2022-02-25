@@ -134,8 +134,6 @@ type
         ## Note for the following Modes: Pad
         ColumnNote ## \
         ## Note for following Modes: Key, Taiko, Ring
-        VerticalNote ## \
-        ## Note for the following Modes: Catch, Slide
         CatchNote ## \
         ## Note for the following Modes: Catch
         SlideNote ## \
@@ -179,16 +177,16 @@ type
                 colStyle*: int
                 ## Taiko: Type of taiko-note
 
-            of VerticalNote:
-                x*: int
-                ## X-Position of the Note
-
             of CatchNote:
+                catchX*: int
+                ## X-Position of the Note
                 catchType*: CatchNoteType
                 ## Optional type of the note
 
             of SlideNote:
-                w*: int
+                slideX*: int
+                ## X-Position of the Note
+                slideWidth*: int
                 ## Width of the Note
                 slideType*: SlideNoteType
                 ## Optional type of the Note
@@ -224,7 +222,7 @@ func getPriority(this: TimedElement): int =
     result = 1
     # Unknown types get a default score of 1
 
-    if this.kind == ElementType.IndexNote or this.kind == ElementType.ColumnNote or this.kind == ElementType.VerticalNote or this.kind == ElementType.CatchNote:
+    if this.kind == ElementType.IndexNote or this.kind == ElementType.ColumnNote or this.kind == ElementType.CatchNote or this.kind == ElementType.SlideNote:
         # All Notes get a score of 2
         result = 2
     elif this.kind == ElementType.SoundCue:
@@ -326,21 +324,17 @@ func newColumnNote*(beat: Beat = EmptyBeat, column: KeyColumnRange = 0, style: i
     result.column = column
     result.colStyle = style
 
-func newVerticalNote*(beat: Beat = EmptyBeat, x: int = 0): TimedElement =
-    result = TimedElement(kind: ElementType.VerticalNote, hold: HoldType.None)
-    result.beat = beat
-    result.x = x
-
 func newCatchNote*(beat: Beat = EmptyBeat, x: int = 0, `type`: CatchNoteType = CatchNoteType.Hold): TimedElement =
     result = TimedElement(kind: ElementType.CatchNote, hold: HoldType.None)
     result.beat = beat
-    result.x = x
+    result.catchX = x
     result.catchType = `type`
 
-func newSlideNote*(beat: Beat = EmptyBeat, w: int = 0, `type`: SlideNoteType = SlideNoteType.Hold, seg: seq[TimedElement] = @[]): TimedElement =
+func newSlideNote*(beat: Beat = EmptyBeat, x: int = 0, width: int = 0, `type`: SlideNoteType = SlideNoteType.Hold, seg: seq[TimedElement] = @[]): TimedElement =
     result = TimedElement(kind: ElementType.SlideNote, hold: HoldType.None)
     result.beat = beat
-    result.w = w
+    result.slideX = x
+    result.slideWidth = width
     result.slideType = `type`
     result.slideSeg = seg
 
@@ -362,7 +356,7 @@ func newColumnHold*(beat: Beat = EmptyBeat, column: KeyColumnRange = 0, style: i
 func newCatchHold*(beat: Beat = EmptyBeat, x: int = 0, `type`: CatchNoteType = CatchNoteType.Hold, endBeat: Beat = EmptyBeat): TimedElement =
     result = TimedElement(kind: ElementType.CatchNote, hold: HoldType.CatchHold)
     result.beat = beat
-    result.x = x
+    result.catchX = x
     result.catchType = `type`
     result.catchEndBeat = endBeat
 

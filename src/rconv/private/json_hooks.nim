@@ -62,7 +62,8 @@ proc toMalodyTimedElement*(self: JsonNode): malody.TimedElement =
 
             result = malody.newSlideNote(
                 beat = beat,
-                w = self.getIntSafe("w"),
+                x = self.getIntSafe("x"),
+                width = self.getIntSafe("w"),
                 `type` = getSlideNoteType(self.getIntSafe("type")),
                 seg = seg
             )
@@ -79,10 +80,7 @@ proc toMalodyTimedElement*(self: JsonNode): malody.TimedElement =
                     `type` = getCatchNoteType(self.getIntSafe("type"))
                 )
         else:
-            result = malody.newVerticalNote(
-                beat = beat,
-                x = self.getIntSafe("x")
-            )
+            result = malody.newTimedElement(beat = beat)
     elif self.hasField("index", JsonNodeKind.JInt):
         if self.fields.hasKey("endbeat"):
             result = malody.newIndexHold(

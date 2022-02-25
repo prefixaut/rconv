@@ -10,7 +10,7 @@ const
     EmptyBeat*: Beat = [-1, 0, 0]
 
 type
-    InvalidModeException* = object of CatchableError
+    InvalidModeException* = object of CatchableError ## \
     ## Exception which is thrown when the chart's type can't be converted to the
     ## required output format
 
@@ -36,7 +36,9 @@ type
         
         # Type 1 and 2 seem to be deleted types for DDR pads and BMS/merged with "Key"
         Unused_1 = 1
+        ## Unused enum-property to prevent enum with holes
         Unused_2 = 2
+        ## Unused enum-property to prevent enum with holes
 
         Catch = 3
         ## osu!catch
@@ -59,12 +61,13 @@ type
         Unused_0 = 0
         Unused_1 = 1
         Unused_2 = 2
-        Unused_3
+        Unused_3 = 3
         Hold = 4
 
-    KeyColumnRange = range[0..9]
+    KeyColumnRange = range[0..9] ## \
     ## Range of available Columns
-    TabIndexRange = range[0..15]
+    IndexRange = range[0..15] ## \
+    ## Range of available indices/note positions
 
     MetaData* = ref object
         `$ver`*: int
@@ -128,25 +131,28 @@ type
 
     ElementType* {.pure.} = enum
         Plain
+        ## A plain element - usually only used internally and shouldn't actually exist in any file
         TimeSignature
+        ## Indicates a BPM change/Time Signature change
         SoundCue
-        IndexNote ## \
+        ## Defines a Sound/Song to be played
+        IndexNote
         ## Note for the following Modes: Pad
-        ColumnNote ## \
+        ColumnNote
         ## Note for following Modes: Key, Taiko, Ring
-        CatchNote ## \
+        CatchNote
         ## Note for the following Modes: Catch
-        SlideNote ## \
+        SlideNote
         ## Note for the following Modes: Slide
 
     HoldType* {.pure.} = enum
         None
         ## If it isn't a hold
-        IndexHold ## \
+        IndexHold
         ## Hold for the following Modes: Pad
-        ColumnHold ## \
+        ColumnHold
         ## Hold for the following Modes: Key, Taiko, Ring
-        CatchHold ## \
+        CatchHold
         ## Hold for the following Modes: Catch
 
     TimedElement* = ref object of RootObj
@@ -168,7 +174,7 @@ type
                 ## How loud the sound should be played
 
             of IndexNote:
-                index*: TabIndexRange
+                index*: IndexRange
                 ## Index of the Note (0-15) (When mode is "Pad")
 
             of ColumnNote:
@@ -200,7 +206,7 @@ type
             of IndexHold:
                 indexEndBeat*: Beat
                 ## Beat when the hold is being released
-                indexEnd*: TabIndexRange
+                indexEnd*: IndexRange
                 ## The index where the Hold is being released on
 
             of ColumnHold:
@@ -313,7 +319,7 @@ func newSoundCue*(beat: Beat = EmptyBeat, `type`: SoundCueType = SoundCueType.Ef
     result.cueOffset = offset
     result.cueVol = vol
 
-proc newIndexNote*(beat: Beat = EmptyBeat, index: TabIndexRange = 0): TimedElement =
+proc newIndexNote*(beat: Beat = EmptyBeat, index: IndexRange = 0): TimedElement =
     result = TimedElement(kind: ElementType.IndexNote, hold: HoldType.None)
     result.beat = beat
     result.index = index
@@ -338,7 +344,7 @@ func newSlideNote*(beat: Beat = EmptyBeat, x: int = 0, width: int = 0, `type`: S
     result.slideType = `type`
     result.slideSeg = seg
 
-func newIndexHold*(beat: Beat = EmptyBeat, index: TabIndexRange, endBeat: Beat = EmptyBeat, endIndex: TabIndexRange): TimedElement =
+func newIndexHold*(beat: Beat = EmptyBeat, index: IndexRange, endBeat: Beat = EmptyBeat, endIndex: IndexRange): TimedElement =
     result = TimedElement(kind: ElementType.IndexNote, hold: HoldType.IndexHold)
     result.beat = beat
     result.index = index

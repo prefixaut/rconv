@@ -50,9 +50,8 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
         case to:
         of FileType.FXF:
             var raw = parseJson(readFile(file))
-            var mc = raw.toMalodyChart
-            # echo mc
-            var chart: fxf.ChartFile = mc.toFXF
+            var mc = raw.toMalodyChart()
+            var chart: fxf.ChartFile = mc.toFXF()
             result = saveChart(chart, actualOptions, none(string))
         else:
             raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")

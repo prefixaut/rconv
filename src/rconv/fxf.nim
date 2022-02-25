@@ -115,6 +115,7 @@ type
         ## and animation duration can be calculated really easily
 
 func newChartFile*(title: string = "", artist: string = "", audio: string = "", jacket: string = "", offset: int32 = 0, bpmChange: seq[BpmChange] = @[], charts = newChartCollection()): ChartFile =
+    result = ChartFile()
     result.version = Version1
     result.title = title
     result.artist = artist
@@ -126,6 +127,7 @@ func newChartFile*(title: string = "", artist: string = "", audio: string = "", 
     result.charts = charts
 
 func newChartCollection*(basic: Chart = nil, advanced: Chart = nil, extreme: Chart = nil): ChartCollection =
+    result = ChartCollection()
     result.bscPresent = uint8(basic != nil)
     result.basic = basic
     result.advPresent = uint8(advanced != nil)
@@ -134,17 +136,20 @@ func newChartCollection*(basic: Chart = nil, advanced: Chart = nil, extreme: Cha
     result.extreme = extreme
 
 func newChart*(rating: uint32 = 1, ticks: seq[Tick] = @[]): Chart =
+    result = Chart()
     result.rating = rating
     result.numTick = uint32(ticks.len)
     result.ticks = ticks
 
 func newBpmChange*(bpm: float32 = 0, time: float32 = 0, snapSize: uint16 = 0, snapIndex: uint16 = 0): BpmChange =
+    result = BpmChange()
     result.bpm = bpm
     result.time = time
     result.snapSize = snapSize
     result.snapIndex = snapIndex
 
 func newTick*(time: float32 = 0, snapSize: uint16 = 0, snapIndex: uint16 = 0, notes: seq[uint8] = @[], holds: seq[Hold] = @[]): Tick =
+    result = Tick()
     result.time = time
     result.snapSize = snapSize
     result.snapIndex = snapIndex
@@ -154,6 +159,7 @@ func newTick*(time: float32 = 0, snapSize: uint16 = 0, snapIndex: uint16 = 0, no
     result.holds = holds
 
 func newHold*(`from`: NoteRange, to: NoteRange, releaseOn: float32 = 0): Hold =
+    result = Hold()
     result.`from` = `from`
     result.to = to
     result.releaseOn = releaseOn
@@ -237,14 +243,19 @@ proc readFXFHold(stream: Stream): Hold =
 
 proc writeToStream*(chart: ChartFile, stream: Stream): void =
     stream.write(chart.version)
-    stream.write(chart.title, chart.artist, chart.audio, chart.jacket)
-    stream.write(chart.offset, uint32(chart.bpmChange.len))
+    stream.writeUTF8(chart.title, chart.artist, chart.audio, chart.jacket)
+    stream.write(chart.offset)
+    stream.write(uint32(chart.bpmChange.len))
 
     for bpmChange in chart.bpmChange:
-        stream.write(bpmChange.bpm, bpmChange.time)
-        stream.write(bpmChange.snapSize, bpmChange.snapIndex)
+        stream.write(bpmChange.bpm)
+        stream.write(bpmChange.time)
+        stream.write(bpmChange.snapSize)
+        stream.write(bpmChange.snapIndex)
 
-    stream.write(uint8(chart.charts.basic != nil), uint8(chart.charts.advanced != nil), uint8(chart.charts.extreme != nil))
+    stream.write(uint8(chart.charts.basic != nil))
+    stream.write(uint8(chart.charts.advanced != nil))
+    stream.write(uint8(chart.charts.extreme != nil))
 
     if chart.charts.basic != nil:
         chart.charts.basic.writeToStream(stream)
@@ -254,11 +265,13 @@ proc writeToStream*(chart: ChartFile, stream: Stream): void =
         chart.charts.extreme.writeToStream(stream)
 
 proc writeToStream(chart: Chart, stream: Stream): void =
-    stream.write(chart.rating, uint32(chart.ticks.len))
+    stream.write(chart.rating)
+    stream.write(uint32(chart.ticks.len))
 
     for tick in chart.ticks:
         stream.write(tick.time)
-        stream.write(tick.snapSize, tick.snapIndex)
+        stream.write(tick.snapSize)
+        stream.write(tick.snapIndex)
         stream.write(uint8(tick.notes.len))
 
         for note in tick.notes:
@@ -267,5 +280,6 @@ proc writeToStream(chart: Chart, stream: Stream): void =
         stream.write(uint8(tick.holds.len))
 
         for hold in tick.holds:
-            stream.write(uint8(hold.`from`), uint8(hold.to))
+            stream.write(uint8(hold.`from`))
+            stream.write(uint8(hold.to))
             stream.write(hold.releaseOn)

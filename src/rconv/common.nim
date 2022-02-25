@@ -11,6 +11,8 @@ type
 
     ConvertOptions* = object
         ## Options for converting one chart-file to another type
+        bundle*: bool
+        ## All output files should instead be bundles (if the output type supports it).
         songFolders*: bool
         ## If it should create a folder for each song (artist & title).
         jsonPretty*: bool
@@ -107,6 +109,7 @@ const
     debug = true
 
 func newConvertOptions*(
+    bundle: bool = false,
     songFolders: bool = false,
     jsonPretty: bool = false,
     keep: bool = false,
@@ -121,6 +124,7 @@ func newConvertOptions*(
     ## Function to create a new `ConvertOptions` instance.
 
     result = ConvertOptions(
+        bundle: bundle,
         songFolders: songFolders,
         jsonPretty: jsonPretty,
         merge: merge,

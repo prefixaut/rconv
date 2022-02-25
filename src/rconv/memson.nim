@@ -117,7 +117,7 @@ func toFXF*(this: Memson): fxf.ChartFile =
         jacket = "jacket.png",
         audio = "audio.mp3"
     )
-    var chart: fxf.Chart = fxf.newChart(rating = uint32(this.level))
+    var chart: fxf.Chart = fxf.newChart(rating = uint32(this.level) * 10)
 
     var bpm: float32
     var globalTime: float = 0

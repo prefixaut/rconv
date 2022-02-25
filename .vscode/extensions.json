@@ -1,5 +1,6 @@
 {
     "recommendations": [
-        "kosz78.nim"
+        "kosz78.nim",
+        "vadimcn.vscode-lldb"
     ]
 }

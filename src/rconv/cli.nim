@@ -8,6 +8,8 @@ import ./malody as malody
 let cli = newParser:
     help("rconv v0.1.0")
 
+    flag("-b", "--bundle",
+        help="All output files should instead be bundles (if the output type supports it).")
     flag("-c", "--color", 
         help="Enable print messages to be in color.")
     flag("-C", "--clean",
@@ -62,6 +64,7 @@ try:
         params.output = joinPath(getCurrentDir(), params.output)
 
     let convOptions = newConvertOptions(
+        bundle = params.bundle,
         songFolders = params.song_folders,
         jsonpretty = params.json_pretty,
         keep = params.keep,
@@ -92,7 +95,7 @@ try:
 
         for filePath in walkGlob(path):
             try:
-                echo $convert(filePath, none(FileType), to, some(convOptions))
+                discard convert(filePath, none(FileType), to, some(convOptions))
             except malody.InvalidModeException:
                 discard
             except:

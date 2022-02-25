@@ -6,16 +6,19 @@ import ./memson as memson
 
 {.experimental: "codeReordering".}
 
+const
+    EmptyBeat*: Beat = [-1, 0, 0]
+
 type
     InvalidModeException* = object of CatchableError
     ## Exception which is thrown when the chart's type can't be converted to the
     ## required output format
 
-    Chart* = object
+    Chart* = ref object
         ## A Malody chart-File object definition
         meta*: MetaData
         ## Meta data of the chart, such as version, creator and song data
-        time*: seq[TimeSignature]
+        time*: seq[TimedElement]
         ## Time signatures of the chart (BPM changes)
 
         #[
@@ -32,6 +35,8 @@ type
         ## "Mania" game mode (SM, PIU, ...) with varying amount of keys (4,5,6,7, ...)k
         
         # Type 1 and 2 seem to be deleted types for DDR pads and BMS/merged with "Key"
+        Unused_1 = 1
+        Unused_2 = 2
 
         Catch = 3
         ## osu!catch
@@ -45,16 +50,23 @@ type
         ## Mania but for touchscreen
 
     CatchNoteType {.pure.} = enum
+        Unused_0 = 0
+        Unused_1 = 1
+        Unused_2 = 2
         Hold = 3
 
     SlideNoteType* {.pure.} = enum
+        Unused_0 = 0
+        Unused_1 = 1
+        Unused_2 = 2
+        Unused_3
         Hold = 4
 
     KeyColumnRange = range[0..9]
     ## Range of available Columns
     TabIndexRange = range[0..15]
 
-    MetaData* = object
+    MetaData* = ref object
         `$ver`*: int
         ## Version of the chart-format
         creator*: string
@@ -76,7 +88,7 @@ type
         mode_ext*: ModeData
         ## Extra Data specifically for the Mode
 
-    SongData* = object
+    SongData* = ref object
         title*: string
         ## Title of the song.
         ## If the `titleorg` field exists, then this is should be the romanized/latin version
@@ -90,7 +102,7 @@ type
         id*: int
         ## ID combination of the title & artist (only for ranked)
 
-    ModeData* = object
+    ModeData* = ref object
         column*: int
         ## Used in Mode "Key" to determine how many keys/columns it's using
         bar_begin: int
@@ -99,7 +111,7 @@ type
         speed: int
         ## The fall speed of the notes
 
-    Beat* = array[3, int]
+    Beat* = array[3, int] ## \
     ## A beat is the time when something happens
     ## Beat[0] is the section index
     ## Beat[1] is the snap index
@@ -114,86 +126,110 @@ type
         ## Sound which is only played for a certain note.
         ## Usually ignored if the note hasn't been hit (see BMS)
 
-    TimedElement* = object of RootObj
+    ElementType* {.pure.} = enum
+        Plain
+        TimeSignature
+        SoundCue
+        IndexNote ## \
+        ## Note for the following Modes: Pad
+        ColumnNote ## \
+        ## Note for following Modes: Key, Taiko, Ring
+        VerticalNote ## \
+        ## Note for the following Modes: Catch, Slide
+        CatchNote ## \
+        ## Note for the following Modes: Catch
+        SlideNote ## \
+        ## Note for the following Modes: Slide
+
+    HoldType* {.pure.} = enum
+        None
+        ## If it isn't a hold
+        IndexHold ## \
+        ## Hold for the following Modes: Pad
+        ColumnHold ## \
+        ## Hold for the following Modes: Key, Taiko, Ring
+        CatchHold ## \
+        ## Hold for the following Modes: Catch
+
+    TimedElement* = ref object of RootObj
         beat*: Beat
         ## The Beat on which this timed-element occurs
+        case kind*: ElementType            
+            of TimeSignature:
+                sigBpm*: float
+                ## The new BPM it's changing to
 
-    TimeSignature* = object of TimedElement
-        bpm*: float
-        ## The new BPM it's changing to
+            of SoundCue:
+                cueType*: SoundCueType
+                ## Type of Sound-Cue that should be played
+                cueSound*: string
+                ## (Relative) File-Path to the sound-file to play
+                cueOffset*: float
+                ## How much offset in ms it should wait before playing it
+                cueVol*: float
+                ## How loud the sound should be played
 
-    SoundCue* = object of TimedElement
-        `type`*: SoundCueType
-        ## Type of Sound-Cue that should be played
-        sound*: string
-        ## (Relative) File-Path to the sound-file to play
-        offset*: float
-        ## How much offset in ms it should wait before playing it
-        vol*: float
-        ## How loud the sound should be played
+            of IndexNote:
+                index*: TabIndexRange
+                ## Index of the Note (0-15) (When mode is "Pad")
 
-    IndexNote* = object of TimedElement
-        ## Note for the following Modes: Pad
-        index*: TabIndexRange
-        ## Index of the Note (0-15) (When mode is "Pad")
+            of ColumnNote:
+                column*: KeyColumnRange
+                ## The column in which this note is placed in
+                colStyle*: int
+                ## Taiko: Type of taiko-note
 
-    ColumnNote* = object of TimedElement
-        ## Note for following Modes: Key, Taiko, Ring
-        column*: KeyColumnRange
-        ## The column in which this note is placed in
-        style*: int
-        ## Taiko: Type of taiko-note
+            of VerticalNote:
+                x*: int
+                ## X-Position of the Note
 
-    VerticalNote* = object of TimedElement
-        ## Note for the following Modes: Catch, Slide
-        x*: int
-        ## X-Position of the Note
+            of CatchNote:
+                catchType*: CatchNoteType
+                ## Optional type of the note
 
-    CatchNote* = object of VerticalNote
-        ## Note for the following Modes: Catch
-        `type`*: CatchNoteType
-        ## Optional type of the note
+            of SlideNote:
+                w*: int
+                ## Width of the Note
+                slideType*: SlideNoteType
+                ## Optional type of the Note
+                slideSeg*: seq[TimedElement]
+                ## Additional positions of the long note/slides
 
-    SlideNote* = object of VerticalNote
-        ## Note for the following Modes: Slide
-        w*: int
-        ## Width of the Note
-        `type`*: SlideNoteType
-        ## Optional type of the Note
-        seg*: seq[VerticalNote]
-        ## Additional positions of the long note/slides
+            else:
+                discard
 
-    IndexHold* = object of IndexNote
-        ## Hold for the following Modes: Pad
-        endbeat*: Beat
-        ## Beat when the hold is being released
-        endindex*: TabIndexRange
-        ## The index where the Hold is being released on
+        case hold*: HoldType
+            of IndexHold:
+                indexEndBeat*: Beat
+                ## Beat when the hold is being released
+                indexEnd*: TabIndexRange
+                ## The index where the Hold is being released on
 
-    ColumnHold* = object of ColumnNote
-        ## Note for the following Modes: Key, Taiko, Ring
-        endbeat*: Beat
-        ## Beat when the hold is being released
-        hits*: int
-        ## Taiko: Amount of hits the hold needs
+            of ColumnHold:
+                colEndBeat*: Beat
+                ## Beat when the hold is being released
+                colHits*: int
+                ## Taiko: Amount of hits the hold needs
 
-    CatchHold* = object of CatchNote
-        endbeat*: Beat
-        ## Beat when the hold is being released
+            of CatchHold:
+                catchEndBeat*: Beat
+                ## Beat when the hold is being released
+            else:
+                discard
 
-func getPriority(this: malody.TimedElement): int =
+func getPriority(this: TimedElement): int =
     ## Internal helper function to get the priority of a `TimedElement`.
     ## Usually used for sorting.
 
     result = 1
     # Unknown types get a default score of 1
 
-    if this of malody.IndexNote or this of malody.ColumnNote or this of malody.VerticalNote or this of malody.CatchNote:
+    if this.kind == ElementType.IndexNote or this.kind == ElementType.ColumnNote or this.kind == ElementType.VerticalNote or this.kind == ElementType.CatchNote:
         # All Notes get a score of 2
         result = 2
-    elif this of malody.SoundCue:
+    elif this.kind == ElementType.SoundCue:
         result = 3
-    elif this of malody.TimeSignature:
+    elif this.kind == ElementType.TimeSignature:
         result = 4
 
 func getSoundCueType*(id: int): SoundCueType =
@@ -227,6 +263,109 @@ func getCatchNoteType*(id: int): CatchNoteType =
     else:
         discard
 
+func newChart*(meta: MetaData = newMetaData(), time: seq[TimedElement] = @[], note: seq[TimedElement] = @[]): Chart =
+    result = Chart()
+    result.meta = meta
+    result.time = time
+    result.note = note
+
+func newMetaData*(`$ver`: int = 1, creator: string = "", background: string = "", version: string = "", preview: int = 0, id: uint = 0,
+    mode: ChartMode = ChartMode.Key, time: int = 0, song: SongData = newSongData(), mode_ext: ModeData = newModeData()): MetaData =
+
+    result = MetaData()
+    result.`$ver` = `$ver`
+    result.creator = creator
+    result.background = background
+    result.version = version
+    result.preview = preview
+    result.id = id
+    result.mode = mode
+    result.time = time
+    result.song = song
+    result.mode_ext = mode_ext
+
+func newSongData*(title: string = "", titleorg: string = "", artist: string = "", artistorg: string = "", id: int = 0): SongData =
+    result = SongData()
+    result.title = title
+    result.titleorg = titleorg
+    result.artist = artist
+    result.artistorg = artistorg
+    result.id = id
+
+func newModeData*(column: int = 0, bar_begin: int = 0, speed: int = 0): ModeData =
+    result = ModeData()
+    result.column = column
+    result.bar_begin = bar_begin
+    result.speed = speed
+
+func newTimedElement*(beat: Beat = EmptyBeat): TimedElement =
+    result = TimedElement(kind: ElementType.Plain, hold: HoldType.None)
+    result.beat = beat
+
+func newTimeSignature*(beat: Beat = EmptyBeat, bpm: float = 0): TimedElement =
+    result = TimedElement(kind: ElementType.TimeSignature, hold: HoldType.None)
+    result.beat = beat
+    result.sigBpm = bpm
+
+func newSoundCue*(beat: Beat = EmptyBeat, `type`: SoundCueType = SoundCueType.Effect, sound: string = "", offset: float = 0, vol: float = 0): TimedElement =
+    result = TimedElement(kind: ElementType.SoundCue, hold: HoldType.None)
+    result.beat = beat
+    result.cueType = `type`
+    result.cueSound = sound
+    result.cueOffset = offset
+    result.cueVol = vol
+
+proc newIndexNote*(beat: Beat = EmptyBeat, index: TabIndexRange = 0): TimedElement =
+    result = TimedElement(kind: ElementType.IndexNote, hold: HoldType.None)
+    result.beat = beat
+    result.index = index
+
+func newColumnNote*(beat: Beat = EmptyBeat, column: KeyColumnRange = 0, style: int = 0): TimedElement =
+    result = TimedElement(kind: ElementType.ColumnNote, hold: HoldType.None)
+    result.beat = beat
+    result.column = column
+    result.colStyle = style
+
+func newVerticalNote*(beat: Beat = EmptyBeat, x: int = 0): TimedElement =
+    result = TimedElement(kind: ElementType.VerticalNote, hold: HoldType.None)
+    result.beat = beat
+    result.x = x
+
+func newCatchNote*(beat: Beat = EmptyBeat, x: int = 0, `type`: CatchNoteType = CatchNoteType.Hold): TimedElement =
+    result = TimedElement(kind: ElementType.CatchNote, hold: HoldType.None)
+    result.beat = beat
+    result.x = x
+    result.catchType = `type`
+
+func newSlideNote*(beat: Beat = EmptyBeat, w: int = 0, `type`: SlideNoteType = SlideNoteType.Hold, seg: seq[TimedElement] = @[]): TimedElement =
+    result = TimedElement(kind: ElementType.SlideNote, hold: HoldType.None)
+    result.beat = beat
+    result.w = w
+    result.slideType = `type`
+    result.slideSeg = seg
+
+func newIndexHold*(beat: Beat = EmptyBeat, index: TabIndexRange, endBeat: Beat = EmptyBeat, endIndex: TabIndexRange): TimedElement =
+    result = TimedElement(kind: ElementType.IndexNote, hold: HoldType.IndexHold)
+    result.beat = beat
+    result.index = index
+    result.indexEndBeat = endBeat
+    result.indexEnd = endIndex
+
+func newColumnHold*(beat: Beat = EmptyBeat, column: KeyColumnRange = 0, style: int = 0, endBeat: Beat = EmptyBeat, hits: int = 1): TimedElement =
+    result = TimedElement(kind: ElementType.ColumnNote, hold: HoldType.ColumnHold)
+    result.beat = beat
+    result.column = column
+    result.colStyle = style
+    result.colEndBeat = endBeat
+    result.colHits = hits
+
+func newCatchHold*(beat: Beat = EmptyBeat, x: int = 0, `type`: CatchNoteType = CatchNoteType.Hold, endBeat: Beat = EmptyBeat): TimedElement =
+    result = TimedElement(kind: ElementType.CatchNote, hold: HoldType.CatchHold)
+    result.beat = beat
+    result.x = x
+    result.catchType = `type`
+    result.catchEndBeat = endBeat
+
 proc toFXF*(this: Chart): fxf.ChartFile =
     ## Converts `this` Chart to a FXF-ChartFile.
     ## The actual note-data will be present in the `fxf.ChartFile.charts`_ table.
@@ -257,8 +396,8 @@ proc toFXF*(this: Chart): fxf.ChartFile =
 
     for e in this.note:
         beats.incl e.beat
-        if e is IndexHold:
-            holdBeats.incl IndexHold(e).endbeat
+        if e.kind == ElementType.IndexNote and e.hold == HoldType.IndexHold:
+            holdBeats.incl e.indexEndBeat
         tmp.add e
 
     for e in this.time:
@@ -269,7 +408,7 @@ proc toFXF*(this: Chart): fxf.ChartFile =
     # when no other element is present on that beat.
     # Used to properly end hold notes.
     for b in difference(beats, holdBeats):
-        tmp.add TimedElement(beat: b)
+        tmp.add TimedElement(beat: b, kind: ElementType.Plain, hold: HoldType.None)
 
     let timedElements = sorted(tmp, proc (a: TimedElement, b: TimedElement): int =
         result = 0
@@ -299,29 +438,30 @@ proc toFXF*(this: Chart): fxf.ChartFile =
             #    hold.releaseOn = roundedTime
             holdTable.del element.beat
 
-        if element of TimeSignature:
+        if element.kind == ElementType.TimeSignature:
             offset = elementTime
-            bpm = TimeSignature(element).bpm
+            bpm = element.sigBpm
             lastBpmSection = element.beat[0]
             result.bpmChange.add fxf.newBpmChange(
-                bpm = float32(TimeSignature(element).bpm),
+                bpm = float32(element.sigBpm),
                 time = roundedTime,
                 snapIndex = uint16(element.beat[1]),
                 snapSize = uint16(element.beat[2])
             )
             continue
 
-        if element of SoundCue:
-            if SoundCue(element).`type` == SoundCueType.Song:
-                result.audio = SoundCue(element).sound
-                offset = (roundedTime + SoundCue(element).offset) * -1
+        if element.kind == ElementType.SoundCue:
+            if element.cueType == SoundCueType.Song:
+                result.audio = element.cueSound
+                offset = (roundedTime + element.cueOffset) * -1
             continue
 
-        if not (element of IndexNote):
+        if element.kind != ElementType.IndexNote:
             # Skip all other unused elements
             continue
 
         var tick: fxf.Tick
+
         if not beatTable.hasKey element.beat:
             tick = fxf.newTick(
                 time = roundedTime,
@@ -329,17 +469,18 @@ proc toFXF*(this: Chart): fxf.ChartFile =
                 snapSize = uint16(element.beat[2])
             )
             beatTable[element.beat] = tick
+            chart.ticks.add tick
         else:
             tick = beatTable[element.beat]
-        
-        if not (element of IndexHold):
-            tick.notes.add uint8(IndexHold(element).index)
+
+        if element.hold != HoldType.IndexHold:
+            tick.notes.add uint8(element.index)
             continue
-        
-        var hold = fxf.Hold(
-            `from`: IndexHold(element).index,
-            to: IndexHold(element).endindex,
-            releaseOn: -1.0
+
+        var hold = fxf.newHold(
+            `from` = element.index,
+            to = element.indexEnd,
+            releaseOn = -1.0
         )
 
         if not holdTable.hasKey element.beat:

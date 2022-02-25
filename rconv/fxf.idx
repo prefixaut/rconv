@@ -1,0 +1,18 @@
+Version1	rconv/fxf.html#Version1	fxf: Version1	
+InvalidVersionException	rconv/fxf.html#InvalidVersionException	fxf: InvalidVersionException	
+NoteRange	rconv/fxf.html#NoteRange	fxf: NoteRange	
+Hold	rconv/fxf.html#Hold	fxf: Hold	
+Tick	rconv/fxf.html#Tick	fxf: Tick	
+Chart	rconv/fxf.html#Chart	fxf: Chart	
+ChartCollection	rconv/fxf.html#ChartCollection	fxf: ChartCollection	
+BpmChange	rconv/fxf.html#BpmChange	fxf: BpmChange	
+ChartFile	rconv/fxf.html#ChartFile	fxf: ChartFile	
+newChartCollection	rconv/fxf.html#newChartCollection,Chart,Chart,Chart	fxf: newChartCollection(basic: Chart = nil; advanced: Chart = nil;\n                   extreme: Chart = nil): ChartCollection	
+newChartFile	rconv/fxf.html#newChartFile,string,string,string,string,int32,seq[BpmChange]	fxf: newChartFile(title: string = &quot;&quot;; artist: string = &quot;&quot;; audio: string = &quot;&quot;;\n             jacket: string = &quot;&quot;; offset: int32 = 0;\n             bpmChange: seq[BpmChange] = @[]; charts = newChartCollection()): ChartFile	
+newChart	rconv/fxf.html#newChart,uint32,seq[Tick]	fxf: newChart(rating: uint32 = 1; ticks: seq[Tick] = @[]): Chart	
+newBpmChange	rconv/fxf.html#newBpmChange,float32,float32,uint16,uint16	fxf: newBpmChange(bpm: float32 = 0; time: float32 = 0; snapSize: uint16 = 0;\n             snapIndex: uint16 = 0): BpmChange	
+newTick	rconv/fxf.html#newTick,float32,uint16,uint16,seq[uint8],seq[Hold]	fxf: newTick(time: float32 = 0; snapSize: uint16 = 0; snapIndex: uint16 = 0;\n        notes: seq[uint8] = @[]; holds: seq[Hold] = @[]): Tick	
+newHold	rconv/fxf.html#newHold,NoteRange,NoteRange,float32	fxf: newHold(from: NoteRange; to: NoteRange; releaseOn: float32 = 0): Hold	
+asFormattingParams	rconv/fxf.html#asFormattingParams,ChartFile	fxf: asFormattingParams(chart: ChartFile): FormattingParameters	
+readFXFChartFile	rconv/fxf.html#readFXFChartFile,Stream	fxf: readFXFChartFile(stream: Stream): ChartFile	
+writeToStream	rconv/fxf.html#writeToStream,ChartFile,Stream	fxf: writeToStream(chart: ChartFile; stream: Stream): void	

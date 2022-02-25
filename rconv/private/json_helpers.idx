@@ -1,0 +1,4 @@
+hasField	rconv/private/json_helpers.html#hasField,JsonNode,string,JsonNodeKind	json_helpers: hasField(self: JsonNode; field: string; kind: JsonNodeKind): bool	
+getIntSafe	rconv/private/json_helpers.html#getIntSafe,JsonNode,string,int	json_helpers: getIntSafe(self: JsonNode; field: string; default: int = 0): int	
+getFloatSafe	rconv/private/json_helpers.html#getFloatSafe,JsonNode,string,float	json_helpers: getFloatSafe(self: JsonNode; field: string; default: float = 0.0): float	
+getStringSafe	rconv/private/json_helpers.html#getStringSafe,JsonNode,string,string	json_helpers: getStringSafe(self: JsonNode; field: string; default: string = &quot;&quot;): string	

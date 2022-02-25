@@ -1,0 +1,8 @@
+LineReader	rconv/private/line_reader.html#LineReader	line_reader: LineReader	
+LineReaderRef	rconv/private/line_reader.html#LineReaderRef	line_reader: LineReaderRef	
+newLineReader	rconv/private/line_reader.html#newLineReader,string	line_reader: newLineReader(str: string): LineReaderRef	
+nextLine	rconv/private/line_reader.html#nextLine.e,LineReaderRef	line_reader: nextLine(this: LineReaderRef): string	
+line	rconv/private/line_reader.html#line.e,LineReaderRef	line_reader: line(this: LineReaderRef): int	
+col	rconv/private/line_reader.html#col.e,LineReaderRef	line_reader: col(this: LineReaderRef): int	
+isEOF	rconv/private/line_reader.html#isEOF.e,LineReaderRef	line_reader: isEOF(this: LineReaderRef): bool	
+reset	rconv/private/line_reader.html#reset.e,LineReaderRef	line_reader: reset(this: LineReaderRef): void	

@@ -1,0 +1,3 @@
+toString	rconv/private/stream_helpers.html#toString,seq[byte]	stream_helpers: toString(bytes: seq[byte]): string	
+readUTF8Str	rconv/private/stream_helpers.html#readUTF8Str,Stream	stream_helpers: readUTF8Str(stream: Stream): string	
+writeUTF8	rconv/private/stream_helpers.html#writeUTF8,Stream,varargs[string]	stream_helpers: writeUTF8(stream: Stream; strings: varargs[string]): void	

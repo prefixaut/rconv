@@ -46,10 +46,10 @@ jobs:
     # Update documentation
     - name: Build documentation
       run: nim docs
-      if: ${{ github.ref == 'refs/heads/master' }}
+      if: ${{ matrix.nim == '1.6.0' && runner.os == 'Linux' && github.ref == 'refs/heads/master' }}
     - name: Deploy to GitHub-Pages
       uses: JamesIves/github-pages-deploy-action@v4.2.3
-      if: ${{ github.ref == 'refs/heads/master' }}
+      if: ${{ matrix.nim == '1.6.0' && runner.os == 'Linux' && github.ref == 'refs/heads/master' }}
       with:
         branch: gh-pages
         folder: docs

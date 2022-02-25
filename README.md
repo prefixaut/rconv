@@ -34,8 +34,8 @@ This project can be built with the regular [`nim` compiler](https://nim-lang.org
 Additionally, the following convenience tasks are defined in the [`config.nims`](config.nims) file:
 
 * **cli**: Builds the project as a CLI application.
-* **build**: Builds the project as a regular library.
-* **document**: Builds the project's documentation.
+* **lib**: Builds the project as a regular library.
+* **docs**: Builds the project's documentation.
 
 These may then be executed like this:
 

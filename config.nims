@@ -1,17 +1,17 @@
-task cli, "Build the library's CLI for direct use":
+task cli, "Build the CLI":
     switch "out", "rconv"
     switch "outdir", "dist"
     switch "app", "console"
     switch "usenimcache"
     setCommand "c", "src/rconv/cli.nim"
 
-task build, "Build the library":
+task lib, "Build the library":
     switch "outdir", "dist"
     switch "app", "lib"
     switch "usenimcache"
     setCommand "c", "src/rconv.nim"
 
-task document, "Build the documentation":
+task docs, "Build the documentation":
     switch "outdir", "docs"
     switch "project"
     switch "index", "on"

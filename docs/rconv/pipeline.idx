@@ -1,1 +1,0 @@
-convert	rconv/pipeline.html#convert,string,Option[FileType],FileType,Option[ConvertOptions]	pipeline: convert(file: string; fromType: Option[FileType]; to: FileType;\n        options: Option[ConvertOptions]): ConvertResult	

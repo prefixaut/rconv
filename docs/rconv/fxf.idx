@@ -1,7 +1,0 @@
-ChartFile	rconv/fxf.html#ChartFile	fxf: ChartFile	
-Chart	rconv/fxf.html#Chart	fxf: Chart	
-BpmChange	rconv/fxf.html#BpmChange	fxf: BpmChange	
-NoteRange	rconv/fxf.html#NoteRange	fxf: NoteRange	
-Tick	rconv/fxf.html#Tick	fxf: Tick	
-Hold	rconv/fxf.html#Hold	fxf: Hold	
-asFormattingParams	rconv/fxf.html#asFormattingParams,ChartFile	fxf: asFormattingParams(chart: ChartFile): FormattingParameters	

@@ -1,7 +1,4 @@
-import std/[math, strutils, tables]
-
-import ./common
-import ./fxf as fxf
+import std/[strutils, tables]
 
 type
     Difficulty* {.pure.} = enum
@@ -95,10 +92,6 @@ type
         sections*: seq[Section]
         ## The sections of the chart.
 
-    FXFHoldRelease = tuple[fxf: fxf.Hold, memson: memson.Note] ## \
-        ## Tuple to join a fxf and memson hold, to be able to set the
-        ## `releaseOn` field of the fxf hold on time.
-
 func parseDifficulty*(input: string): Difficulty =
     case input.toLower:
     of "basic":
@@ -109,80 +102,3 @@ func parseDifficulty*(input: string): Difficulty =
         result = Difficulty.Extreme
     else:
         result = Difficulty.Edit
-
-func toFXF*(this: Memson): fxf.ChartFile =
-    result = fxf.newChartFile(
-        artist = this.artist,
-        title = this.songTitle,
-        jacket = "jacket.png",
-        audio = "audio.mp3"
-    )
-    var chart: fxf.Chart = fxf.newChart(rating = uint32(this.level) * 10)
-
-    var bpm: float32
-    var globalTime: float = 0
-    var holdRelease = newSeq[FXFHoldRelease]()
-
-    for section in this.sections:
-        if (bpm != section.bpm):
-            bpm = section.bpm
-            var change = fxf.newBpmChange(
-                bpm = bpm,
-                time = float32(round(globalTime * 10) / 10),
-                snapSize = uint16(section.snaps[0].len),
-                snapIndex = uint16(0)
-            )
-            result.bpmChange.add change
-
-        let beat = OneMinute / bpm
-        var indexOffset = 0
-
-        for snap in section.snaps:
-            let snapLength = beat / float(snap.len)
-
-            for snapIndex in 0..<snap.len:
-                let timing = indexOffset + snapIndex
-                let noteTime = round((globalTime + (snapLength * float(snapIndex + 1))) * 10) / 10
-
-                # Handle previously saved holds.
-                # if a hold has to end now, then we give it the proper releaseTime
-                # and remove it from the seq
-                var newFXFHoldRelease = newSeq[FXFHoldRelease]()
-                for r in holdRelease.mitems:
-                    if r.memson.releaseSection == section.index and r.memson.releaseTime == timing:
-                        r.fxf.releaseOn = noteTime
-                    else:
-                        newFXFHoldRelease.add r
-                holdRelease = newFXFHoldRelease    
-
-                var tick = fxf.newTick(
-                    time = noteTime,
-                    snapSize = uint16(snap.len),
-                    snapIndex = uint16(snapIndex)
-                )
-                var hasData = false
-
-                for noteIndex, note in section.notes.pairs:
-                    if note.time != timing:
-                        continue
-
-                    hasData = true
-                    if note.kind == NoteType.Hold:
-                        var hold = fxf.newHold(`from` = note.animationStartIndex, to = noteIndex)
-                        tick.holds.add hold
-                        holdRelease.add (hold, note)
-                    else:
-                        tick.notes.add uint8(noteIndex)
-
-                if hasData:
-                    chart.ticks.add tick
-
-            inc indexOffset, snap.len
-            globalTime = globalTime + beat
-
-    if this.difficulty == Difficulty.Basic:
-        result.charts.basic = chart
-    elif this.difficulty == Difficulty.Advanced:
-        result.charts.advanced = chart
-    else:
-        result.charts.extreme = chart

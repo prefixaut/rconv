@@ -1,4 +1,4 @@
-import std/[json, jsonutils, sets, tables]
+import std/[enumutils, json, jsonutils, sets, tables]
 
 import ./json_helpers
 
@@ -37,8 +37,21 @@ proc toMalodyTimedElement*(self: JsonNode): malody.TimedElement =
             beat = beat,
             `type` = malody.getSoundCueType(self.getIntSafe("type")),
             offset = self.getFloatSafe("offset"),
-            vol = self.getFloatSafe("vol")
+            volume = self.getFloatSafe("vol")
         )
+    elif self.hasField("index", JsonNodeKind.JInt):
+        if self.fields.hasKey("endbeat"):
+            result = malody.newIndexHold(
+                beat = beat,
+                index = self.getIntSafe("index"),
+                endBeat = self.getBeatSafe("endbeat"),
+                endIndex = self.getIntSafe("endindex")
+            )
+        else:
+            result = malody.newIndexNote(
+                beat = beat,
+                index = self.getIntSafe("index")
+            )
     elif self.hasField("column", JsonNodeKind.JInt):
         if self.fields.hasKey("endbeat"):
             result = malody.newColumnHold(
@@ -65,7 +78,7 @@ proc toMalodyTimedElement*(self: JsonNode): malody.TimedElement =
                 x = self.getIntSafe("x"),
                 width = self.getIntSafe("w"),
                 `type` = getSlideNoteType(self.getIntSafe("type")),
-                seg = seg
+                segments = seg
             )
         elif self.hasField("type", JsonNodeKind.JInt):
             if self.fields.hasKey("endbeat"):
@@ -81,20 +94,6 @@ proc toMalodyTimedElement*(self: JsonNode): malody.TimedElement =
                 )
         else:
             result = malody.newTimedElement(beat = beat)
-    elif self.hasField("index", JsonNodeKind.JInt):
-        if self.fields.hasKey("endbeat"):
-            result = malody.newIndexHold(
-                beat = beat,
-                index = self.getIntSafe("index"),
-                endBeat = self.getBeatSafe("endbeat"),
-                endIndex = self.getIntSafe("endindex")
-            )
-        else:
-            let tmp = malody.newIndexNote(
-                beat = beat,
-                index = self.getIntSafe("index")
-            )
-            return tmp
     else:
         result = malody.newTimedElement(beat = beat)
 
@@ -139,3 +138,63 @@ proc toJsonHook*[T: memson.Note](this: T): JsonNode =
         result["animationStartIndex"] = toJson(this.animationStartIndex)
         result["releaseTime"] = toJson(this.releaseTime)
         result["releaseSection"] = toJson(this.releaseSection)
+
+proc toJsonHook*[T: malody.Chart](this: T): JsonNode =
+    result = newJObject()
+    result["meta"] = toJson(this.meta)
+    result["time"] = newJArray()
+    for time in this.time:
+        result["time"].elems.add toJsonHook(time)
+    
+    result["note"] = newJArray()
+    for note in this.note:
+        result["note"].elems.add toJsonHook(note)
+
+proc toJsonHook*[T: malody.TimedElement](this: T): JsonNode =
+    result = newJObject()
+    result["beat"] = toJsonHook(this.beat)
+
+    case this.kind:
+    of malody.ElementType.TimeSignature:
+        result["bpm"] = newJFloat(this.sigBpm)
+
+    of malody.ElementType.SoundCue:
+        result["type"] = newJInt(this.cueType.symbolRank)
+        result["sound"] = newJString(this.cueSound)
+        result["vol"] = newJFloat(this.cueVolume)
+
+    of malody.ElementType.IndexNote:
+        result["index"] = newJInt(this.index)
+        if this.hold == malody.HoldType.IndexHold:
+            result["endbeat"] = toJsonHook(this.indexEndBeat)
+            result["endindex"] = newJInt(this.indexEnd)
+
+    of malody.ElementType.ColumnNote:
+        result["column"] = newJInt(this.column)
+        result["style"] = newJInt(this.colStyle)
+        if this.hold == malody.HoldType.ColumnHold:
+            result["endbeat"] = toJsonHook(this.colEndBeat)
+            result["hits"] = newJInt(this.colHits)
+
+    of malody.ElementType.CatchNote:
+        result["x"] = newJInt(this.catchX)
+        result["type"] = newJInt(this.catchType.symbolRank)
+        if this.hold == malody.HoldType.CatchHold:
+            result["endbeat"] = toJsonHook(this.catchEndBeat)
+
+    of malody.ElementType.SlideNote:
+        result["x"] = newJInt(this.slideX)
+        result["w"] = newJInt(this.slideWidth)
+        result["type"] = newJInt(this.slideType.symbolRank)
+        result["seg"] = newJArray()
+        for e in this.slideSegments:
+            result["seg"].elems.add toJsonHook(e)
+
+    else:
+        discard
+
+proc toJsonHook*[T: malody.Beat](this: T): JsonNode =
+    result = newJArray()
+    result.elems.add newJInt(this[0])
+    result.elems.add newJInt(this[1])
+    result.elems.add newJInt(this[2])

@@ -1,8 +1,4 @@
-import std/[algorithm, math, sets, strformat, tables]
-
 import ./common
-import ./fxf as fxf
-import ./memson as memson
 
 {.experimental: "codeReordering".}
 
@@ -170,7 +166,7 @@ type
                 ## (Relative) File-Path to the sound-file to play
                 cueOffset*: float
                 ## How much offset in ms it should wait before playing it
-                cueVol*: float
+                cueVolume*: float
                 ## How loud the sound should be played
 
             of IndexNote:
@@ -196,7 +192,7 @@ type
                 ## Width of the Note
                 slideType*: SlideNoteType
                 ## Optional type of the Note
-                slideSeg*: seq[TimedElement]
+                slideSegments*: seq[TimedElement]
                 ## Additional positions of the long note/slides
 
             else:
@@ -221,7 +217,7 @@ type
             else:
                 discard
 
-func getPriority(this: TimedElement): int =
+func getPriority*(this: TimedElement): int =
     ## Internal helper function to get the priority of a `TimedElement`.
     ## Usually used for sorting.
 
@@ -311,13 +307,13 @@ func newTimeSignature*(beat: Beat = EmptyBeat, bpm: float = 0): TimedElement =
     result.beat = beat
     result.sigBpm = bpm
 
-func newSoundCue*(beat: Beat = EmptyBeat, `type`: SoundCueType = SoundCueType.Effect, sound: string = "", offset: float = 0, vol: float = 0): TimedElement =
+func newSoundCue*(beat: Beat = EmptyBeat, `type`: SoundCueType = SoundCueType.Effect, sound: string = "", offset: float = 0, volume: float = 0): TimedElement =
     result = TimedElement(kind: ElementType.SoundCue, hold: HoldType.None)
     result.beat = beat
     result.cueType = `type`
     result.cueSound = sound
     result.cueOffset = offset
-    result.cueVol = vol
+    result.cueVolume = volume
 
 proc newIndexNote*(beat: Beat = EmptyBeat, index: IndexRange = 0): TimedElement =
     result = TimedElement(kind: ElementType.IndexNote, hold: HoldType.None)
@@ -336,13 +332,13 @@ func newCatchNote*(beat: Beat = EmptyBeat, x: int = 0, `type`: CatchNoteType = C
     result.catchX = x
     result.catchType = `type`
 
-func newSlideNote*(beat: Beat = EmptyBeat, x: int = 0, width: int = 0, `type`: SlideNoteType = SlideNoteType.Hold, seg: seq[TimedElement] = @[]): TimedElement =
+func newSlideNote*(beat: Beat = EmptyBeat, x: int = 0, width: int = 0, `type`: SlideNoteType = SlideNoteType.Hold, segments: seq[TimedElement] = @[]): TimedElement =
     result = TimedElement(kind: ElementType.SlideNote, hold: HoldType.None)
     result.beat = beat
     result.slideX = x
     result.slideWidth = width
     result.slideType = `type`
-    result.slideSeg = seg
+    result.slideSegments = segments
 
 func newIndexHold*(beat: Beat = EmptyBeat, index: IndexRange, endBeat: Beat = EmptyBeat, endIndex: IndexRange): TimedElement =
     result = TimedElement(kind: ElementType.IndexNote, hold: HoldType.IndexHold)
@@ -366,124 +362,12 @@ func newCatchHold*(beat: Beat = EmptyBeat, x: int = 0, `type`: CatchNoteType = C
     result.catchType = `type`
     result.catchEndBeat = endBeat
 
-proc toFXF*(this: Chart): fxf.ChartFile =
-    ## Converts `this` Chart to a FXF-ChartFile.
-    ## The actual note-data will be present in the `fxf.ChartFile.charts`_ table.
-    ## The difficulty is determined by the `memson.parseDifficulty`_ function.
+func asFormattingParams*(chart: Chart): FormattingParameters =
+    ## Creates formatting-parameters from the provided chart-file
 
-    if (this.meta.mode != ChartMode.Pad):
-        raise newException(InvalidModeException, fmt"The provided Malody-Chart is from the wrong Mode! Mode is {this.meta.mode}, where a {ChartMode.Pad} is required!")
-
-    result = fxf.newChartFile(
-        artist = this.meta.song.artist,
-        title = this.meta.song.title,
-        jacket = this.meta.background,
+    result = newFormattingParameters(
+        title = chart.meta.song.title,
+        artist = chart.meta.song.artist,
+        difficulty = chart.meta.version,
+        extension = FileType.Malody.getFileExtension,
     )
-
-    let diff = memson.parseDifficulty(this.meta.version)
-    var chart: fxf.Chart = fxf.newChart(rating = 1)
-
-    if diff == memson.Difficulty.Basic:
-        result.charts.basic = chart
-    elif diff == memson.Difficulty.Advanced:
-        result.charts.advanced = chart
-    else:
-        result.charts.extreme = chart
-
-    var beats = initHashSet[Beat]()
-    var holdBeats = initHashSet[Beat]()
-    var tmp: seq[TimedElement] = @[]
-
-    for e in this.note:
-        beats.incl e.beat
-        if e.kind == ElementType.IndexNote and e.hold == HoldType.IndexHold:
-            holdBeats.incl e.indexEndBeat
-        tmp.add e
-
-    for e in this.time:
-        beats.incl e.beat
-        tmp.add e
-
-    # Temporary additional timed-element entry which will be added
-    # when no other element is present on that beat.
-    # Used to properly end hold notes.
-    for b in difference(beats, holdBeats):
-        tmp.add TimedElement(beat: b, kind: ElementType.Plain, hold: HoldType.None)
-
-    let timedElements = sorted(tmp, proc (a: TimedElement, b: TimedElement): int =
-        result = 0
-
-        for i in 0..1:
-            let diff = a.beat[i] - b.beat[i]
-            if diff != 0:
-                return diff
-        
-        result = b.getPriority - a.getPriority
-    )
-
-    var bpm: float = 1
-    var offset: float = 0
-    var lastBpmSection: int = 0
-    var holdTable = initTable[Beat, seq[fxf.Hold]]()
-    var beatTable = initTable[Beat, fxf.Tick]()
-
-    for element in timedElements:        
-        let beatSize = OneMinute / bpm
-        let snapLength = beatSize / float(element.beat[2])
-        let elementTime = offset + (beatSize * float(element.beat[0] - lastBpmSection)) + (snapLength * float(element.beat[1]))
-        let roundedTime: float32 = round(elementTime * 10) / 10
-
-        if holdTable.hasKey element.beat:
-            #for hold in holdTable[element.beat]:
-            #    hold.releaseOn = roundedTime
-            holdTable.del element.beat
-
-        if element.kind == ElementType.TimeSignature:
-            offset = elementTime
-            bpm = element.sigBpm
-            lastBpmSection = element.beat[0]
-            result.bpmChange.add fxf.newBpmChange(
-                bpm = float32(element.sigBpm),
-                time = roundedTime,
-                snapIndex = uint16(element.beat[1]),
-                snapSize = uint16(element.beat[2])
-            )
-            continue
-
-        if element.kind == ElementType.SoundCue:
-            if element.cueType == SoundCueType.Song:
-                result.audio = element.cueSound
-                offset = (roundedTime + element.cueOffset) * -1
-            continue
-
-        if element.kind != ElementType.IndexNote:
-            # Skip all other unused elements
-            continue
-
-        var tick: fxf.Tick
-
-        if not beatTable.hasKey element.beat:
-            tick = fxf.newTick(
-                time = roundedTime,
-                snapIndex = uint16(element.beat[1]),
-                snapSize = uint16(element.beat[2])
-            )
-            beatTable[element.beat] = tick
-            chart.ticks.add tick
-        else:
-            tick = beatTable[element.beat]
-
-        if element.hold != HoldType.IndexHold:
-            tick.notes.add uint8(element.index)
-            continue
-
-        var hold = fxf.newHold(
-            `from` = element.index,
-            to = element.indexEnd,
-            releaseOn = -1.0
-        )
-
-        if not holdTable.hasKey element.beat:
-            holdTable[element.beat] = @[]
-        holdTable[element.beat].add hold
-        tick.holds.add hold

@@ -144,12 +144,12 @@ proc parseMemoToMemson*(content: string): Memson =
     ## Parses the provided memo-data to a memson object (memo object representation).
     ## The content has to be a complete memo file to be parsed correctly.
 
+    result = Memson()
     let reader = newLineReader(content)
     var sectionIndex: int = -1
     var minBpm: float = -1
     var maxBpm: float = -1
     var bpm : float = -1
-    var holds = initTable[NoteRange, seq[Note]]()
     var parts = newSeq[SectionPart]()
     var partIndex: int = 0
 
@@ -170,7 +170,7 @@ proc parseMemoToMemson*(content: string): Memson =
 
         if row.toLower.startsWith("level"):
             if parts.len > 0:
-                result.sections.add parseSection(sectionIndex, partIndex, bpm, holds, parts)
+                result.sections.add parseSection(sectionIndex, partIndex, bpm, parts)
                 parts = @[]
                 partIndex = 0
             try:
@@ -182,7 +182,7 @@ proc parseMemoToMemson*(content: string): Memson =
 
         if row.toLower.startsWith("bpm"):
             if parts.len > 0:
-                result.sections.add parseSection(sectionIndex, partIndex, bpm, holds, parts)
+                result.sections.add parseSection(sectionIndex, partIndex, bpm, parts)
                 parts = @[]
                 partIndex = 0
             try:
@@ -210,7 +210,7 @@ proc parseMemoToMemson*(content: string): Memson =
             if tmpIndex > 1:
                 # Build the section from the sub-sections if any exist
                 if parts.len > 0:
-                    result.sections.add parseSection(sectionIndex, partIndex, bpm, holds, parts)
+                    result.sections.add parseSection(sectionIndex, partIndex, bpm, parts)
 
                 # Clear the sub-sections
                 parts = @[]
@@ -233,22 +233,21 @@ proc parseMemoToMemson*(content: string): Memson =
 
     # Build the section from the sub-sections if any exist
     if parts.len > 0:
-        result.sections.add parseSection(sectionIndex, partIndex, bpm, holds, parts)
+        result.sections.add parseSection(sectionIndex, partIndex, bpm, parts)
         partIndex = 0
         inc sectionIndex
     
     if minBpm != maxBpm:
         result.bpmRange = (min: minBpm, max: maxBpm)
 
-proc parseSection(index: int, partIndex: int, bpm: float, holds: var Table[NoteRange, seq[Note]], parts: seq[SectionPart]): Section =
+proc parseSection(index: int, partIndex: int, bpm: float, parts: seq[SectionPart]): Section =
+    result = Section()
     result.index = index
     result.bpm = bpm
     result.partCount = partIndex
-    result.notes = initOrderedTable[NoteRange, Note]()
+    result.notes = initOrderedTable[NoteRange, seq[Note]]()
     result.timings = @[]
     result.snaps = @[]
-
-    var offset = 0
 
     for partIndex, singlePart in parts.pairs:
         # Add the snaps
@@ -264,11 +263,13 @@ proc parseSection(index: int, partIndex: int, bpm: float, holds: var Table[NoteR
 
         var noteIndices = newSeq[int]()
 
+        # Iterate once over all elements to handle Holds directly,
+        # and push regular notes into "noteIndices" for futher processing.
         for noteIndex in NotePosition:
             let noteType = if singlePart.notes.contains(noteIndex): singlePart.notes[noteIndex] else: Token.Empty
 
             # Skip empty/invalid notes
-            if FillerNotes.contains(noteType) or HoldStart.contains(noteType):
+            if FillerNotes.contains(noteType):
                 continue
 
             var holdOffset = holdOffset(noteType)
@@ -286,36 +287,44 @@ proc parseSection(index: int, partIndex: int, bpm: float, holds: var Table[NoteR
                     continue
                 break
 
-            let noteTiming = result.timings.find(TokenMap[noteType])
-            var hold = Note(kind: NoteType.Hold, time: offset + noteTiming, partIndex: partIndex div 4, animationStartIndex: noteIndex)
-            result.notes[noteIndex] = hold
+            let noteTiming = result.timings.find(TokenMap[singlePart.notes[holdEnd]])
+            if not result.notes.hasKey(holdEnd):
+                result.notes[holdEnd] = @[]
+            result.notes[holdEnd].add Note(
+                kind: NoteType.Hold,
+                time: noteTiming,
+                partIndex: partIndex,
+                animationStartIndex: noteIndex,
+                releaseTime: -1
+            )
+            inc result.noteCount
 
-            # Create the seq if there's none set
-            if not holds.contains(noteIndex):
-                holds[noteIndex] = @[]
-            holds[noteIndex].add hold
-
+        # Handle regular notes/hold endings
         for noteIndex in noteIndices:
             let noteType = singlePart.notes[noteIndex]
             let noteTiming = result.timings.find(TokenMap[noteType])
 
-            if holds.contains(noteIndex) and holds[noteIndex].len > 0:
-                # Regular for loop makes the elements immutable, therefore
-                # using this roundabout way with the index
-                for hold in holds[noteIndex].mitems:
-                    hold.releaseSection = index
-                    hold.releaseTime = offset + noteTiming
-                holds.del noteIndex
-            else:
-                result.notes[noteIndex] = Note(kind: NoteType.Note, time: offset + noteTiming, partIndex: partIndex div 4)
+            if not result.notes.hasKey(noteIndex):
+                result.notes[noteIndex] = @[]
 
-        # Increment the offset for the next sub-section
-        inc offset, singlePart.timings.len
-    
+            var releasedHold = false
+            for tmp in result.notes[noteIndex].mitems:
+                if tmp.kind == NoteType.Hold and tmp.releaseTime == -1:
+                    tmp.releaseTime = noteTiming
+                    tmp.releasePart = partIndex
+                    tmp.releaseSection = index
+                    releasedHold = true
+                    break
+
+            if not releasedHold:
+                result.notes[noteIndex].add Note(kind: NoteType.Note, time: noteTiming, partIndex: partIndex)
+                inc result.noteCount
+
     # Sort the notes by the index
     result.notes.sort((a, b) => system.cmp(a[0], b[0]))
 
 proc parseSectionParts(index: int, lineIndex: int, rows: array[4, string]): SectionPart =
+    result = SectionPart()
     result.snaps = @[]
     result.timings = @[]
     result.notes = initTable[NoteRange, Token]()

@@ -25,7 +25,7 @@ func newLineReader*(str: string): LineReaderRef =
     ## Creates a new LineReader instance from the given string
     return LineReaderRef(str: str, len: str.len, cursor: 0, line: 1, col: 1)
 
-method nextLine*(this: LineReaderRef): string {.base, noSideEffect, raises: [] .} =
+method nextLine*(this: LineReaderRef): string {.base, raises: [] .} =
     ## Reads the next line without trailing whitespaces
     ## Skips empty lines all together
     runnableExamples:
@@ -105,7 +105,7 @@ method isEOF*(this: LineReaderRef): bool {.base, inline, noSideEffect, raises: [
     ## Returns if the LineReader has reached the end and can't produce any more lines
     return this.cursor >= this.len
 
-method reset*(this: LineReaderRef): void {.base, noSideEffect, raises: [] .} =
+method reset*(this: LineReaderRef): void {.base, raises: [] .} =
     ## Resets the LineReader to the beginning
     this.cursor = 0
     this.line = 1

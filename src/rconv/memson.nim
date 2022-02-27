@@ -30,7 +30,7 @@ type
     BpmRange* = tuple[min: float, max: float] ## \
         ## The range of BPM the file is in
 
-    Note* = object
+    Note* = ref object
         ## A Note or Hold which has to be pressed.
         time*: int
         ## The timing id when this note has to be pressed.
@@ -43,12 +43,14 @@ type
                 ## On which position the animation for the hold starts on.
                 releaseTime*: int
                 ## The release timing id when the hold has to be released.
+                releasePart*: int
+                ## The part in which the the hold was released.
                 releaseSection*: int
                 ## In which section it has to look for the timing id.
             else:
                 discard
 
-    Section* = object
+    Section* = ref object
         ## Describes a complete section (with all parts).
         index*: int
         ## The index of this section.
@@ -60,12 +62,14 @@ type
         ## Timing ids which defined when a note needs to be pressed.
         snaps*: seq[Snap]
         ## The snaps for the timing.
-        notes*: OrderedTable[NoteRange, Note]
+        noteCount*: uint
+        ## How many notes in total are stored
+        notes*: OrderedTable[NoteRange, seq[Note]]
         ## Notes that need to be played.
         ## Keys are the positions, which start from top-left to bottom-right.
         ## _`NoteRange`
 
-    Snap* = object
+    Snap* = ref object
         ## Describes the amount of notes that can occur in a single beat.
         len*: int
         ## How many notes fit into a Snap.
@@ -74,7 +78,7 @@ type
         row*: RowIndex
         ## The row in which this snap is defined.
 
-    Memson* = object
+    Memson* = ref object
         ## Memson is the in-memory data-structure for memo-files.
         songTitle*: string
         ## The title of the chart's song.

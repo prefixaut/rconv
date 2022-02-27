@@ -12,3 +12,4 @@ requires "nim >= 1.6.0"
 
 requires "argparse >= 2.0.1"
 requires "glob >= 0.11.1"
+requires "https://github.com/disruptek/balls >= 3.7.0"

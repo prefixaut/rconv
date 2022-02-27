@@ -68,17 +68,18 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
                 )
                 var hasData = false
 
-                for noteIndex, note in section.notes.pairs:
-                    if note.time != timing:
-                        continue
+                for noteIndex, multiNotes in section.notes.pairs:
+                    for note in multiNotes:
+                        if note.time != timing:
+                            continue
 
-                    hasData = true
-                    if note.kind == NoteType.Hold:
-                        var hold = fxf.newHold(`from` = note.animationStartIndex, to = noteIndex)
-                        tick.holds.add hold
-                        holdRelease.add (hold, note)
-                    else:
-                        tick.notes.add uint8(noteIndex)
+                        hasData = true
+                        if note.kind == NoteType.Hold:
+                            var hold = fxf.newHold(`from` = note.animationStartIndex, to = noteIndex)
+                            tick.holds.add hold
+                            holdRelease.add (hold, note)
+                        else:
+                            tick.notes.add uint8(noteIndex)
 
                 if hasData:
                     chart.ticks.add tick
@@ -140,11 +141,12 @@ proc toMalody*(this: memson.Memson): malody.Chart =
                 var note: memson.Note
                 var index: int
 
-                for secNotePos, secNote in section.notes:
-                    if secNote.time == timeIndex:
-                        note = secNote
-                        index = secNotePos
-                        break
+                for secNotePos, secMultiNotes in section.notes:
+                    for secNote in secMultiNotes:
+                        if secNote.time == timeIndex:
+                            note = secNote
+                            index = secNotePos
+                            break
 
                 if note.kind == memson.NoteType.Hold:
                     let hold = malody.newIndexHold(beat = beat, index = index, endIndex = index)
@@ -153,18 +155,18 @@ proc toMalody*(this: memson.Memson): malody.Chart =
                 else:
                     result.note.add malody.newIndexNote(beat = beat, index = index)
 
-            snapIndex += 1
+            inc snapIndex
             if snapIndex > snapSize:
                 snapIndex = 1
                 if section.snaps.len > snapPos:
                     snapSize = section.snaps[snapPos].len
                 else:
                     snapSize = 0
-                snapPos += 1
-                beatIndex += 1
-            timeIndex += 1
+                inc snapPos
+                inc beatIndex
+            inc timeIndex
 
-        sectionIndex += 1
+        inc sectionIndex
 
 proc toFXF*(this: malody.Chart): fxf.ChartFile =
     ## Function to map/convert `this` Chart to a FXF-ChartFile.

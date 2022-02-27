@@ -169,6 +169,10 @@ proc parseMemoToMemson*(content: string): Memson =
             continue
 
         if row.toLower.startsWith("level"):
+            if parts.len > 0:
+                result.sections.add parseSection(sectionIndex, partIndex, bpm, holds, parts)
+                parts = @[]
+                partIndex = 0
             try:
                 result.level = parseInt(row.runeSubStr(6).strip)
                 continue
@@ -177,6 +181,10 @@ proc parseMemoToMemson*(content: string): Memson =
                     raise newException(ParseError, fmt"Could not parse Level '{row}' on line {reader.line}!: " & getCurrentExceptionMsg())
 
         if row.toLower.startsWith("bpm"):
+            if parts.len > 0:
+                result.sections.add parseSection(sectionIndex, partIndex, bpm, holds, parts)
+                parts = @[]
+                partIndex = 0
             try:
                 var tmp = row.runeSubStr(4).strip
                 let dashIdx = tmp.find("-")
@@ -228,6 +236,9 @@ proc parseMemoToMemson*(content: string): Memson =
         result.sections.add parseSection(sectionIndex, partIndex, bpm, holds, parts)
         partIndex = 0
         inc sectionIndex
+    
+    if minBpm != maxBpm:
+        result.bpmRange = (min: minBpm, max: maxBpm)
 
 proc parseSection(index: int, partIndex: int, bpm: float, holds: var Table[NoteRange, seq[Note]], parts: seq[SectionPart]): Section =
     result.index = index

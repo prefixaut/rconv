@@ -262,6 +262,7 @@ proc parseSection(index: int, partIndex: int, bpm: float, parts: seq[SectionPart
                 result.timings.add -1
 
         var noteIndices = newSeq[int]()
+        var holdIndices = newSeq[int]()
 
         # Iterate once over all elements to handle Holds directly,
         # and push regular notes into "noteIndices" for futher processing.
@@ -287,9 +288,11 @@ proc parseSection(index: int, partIndex: int, bpm: float, parts: seq[SectionPart
                     continue
                 break
 
+            holdIndices.add holdEnd
             let noteTiming = result.timings.find(TokenMap[singlePart.notes[holdEnd]])
             if not result.notes.hasKey(holdEnd):
                 result.notes[holdEnd] = @[]
+
             result.notes[holdEnd].add Note(
                 kind: NoteType.Hold,
                 time: noteTiming,
@@ -298,6 +301,10 @@ proc parseSection(index: int, partIndex: int, bpm: float, parts: seq[SectionPart
                 releaseTime: -1
             )
             inc result.noteCount
+
+        # Remove all indices which are actually holds!
+        # Otherwise we get double notes and holds don't end properly
+        noteIndices.keepIf (idx) => not holdIndices.contains(idx)
 
         # Handle regular notes/hold endings
         for noteIndex in noteIndices:

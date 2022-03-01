@@ -1,4 +1,4 @@
-import std/[tables, sequtils, strformat, sugar, unittest]
+import std/[macros, sequtils, strformat, sugar, tables, unittest]
 
 import rconv/memo
 import rconv/memson
@@ -13,6 +13,7 @@ proc verifyNote(
 ): void =
     let testName = fmt"{name} Note {index}[{pos}], time: {time}, part: {part}"
     test testName:
+        # TODO: Find a way to connect this new test to the suite of where it's executed
         check:
             notes.hasKey(index)
             notes[index].len > pos
@@ -33,6 +34,7 @@ proc verifyHold(
 ): void = 
     let testName = fmt"{name} Hold {index}[{pos}], time: {time}, part: {part}"
     test testName:
+        # TODO: Find a way to connect this new test to the suite of where it's executed
         check:
             notes.hasKey(index)
             notes[index].len > pos
@@ -45,6 +47,39 @@ proc verifyHold(
                 notes[index][pos].animationStartIndex == start
                 notes[index][pos].releaseTime == release
                 notes[index][pos].releaseSection == releaseSection
+
+macro noteBlock(name, body) =
+    ## Helper macro to add the `name` parameter to the `verifyNote` and `verifyHold` procs
+
+    result = newStmtList()
+    let whiteList = @["verifyNote", "verifyHold"]
+
+    for node in body.children:
+        if node.kind != nnkCall:
+            result.add node
+            continue
+
+        let procName = node[0].strVal
+
+        if not whiteList.contains(procName):
+            result.add node
+            continue
+
+        var args: seq[NimNode] = @[]
+        var isFirst = true
+
+        var nameArg = newNimNode(nnkExprEqExpr)
+        nameArg.add ident("name")
+        nameArg.add newStrLitNode(name.strVal)
+        args.add nameArg
+
+        for arg in node.children:
+            if isFirst:
+                isFirst = false
+                continue
+            args.add arg
+        
+        result.add newCall(node[0], args)
 
 let testFile = """
 Song-Title-BlaFoo
@@ -135,13 +170,14 @@ suite "memo":
             parsed.sections[1].snaps.len == 4
             parsed.sections[1].snaps.all (snap) => snap.len == 4
 
-    verifyNote(name = "Section 2", notes = parsed.sections[1].notes, index = 0, time = 4)
-    verifyNote(name = "Section 2", notes = parsed.sections[1].notes, index = 2, time = 8)
-    verifyNote(name = "Section 2", notes = parsed.sections[1].notes, index = 6, time = 2)
-    verifyNote(name = "Section 2", notes = parsed.sections[1].notes, index = 9, time = 6)
-    verifyNote(name = "Section 2", notes = parsed.sections[1].notes, index = 10, time = 14)
-    verifyNote(name = "Section 2", notes = parsed.sections[1].notes, index = 12, time = 12)
-    verifyNote(name = "Section 2", notes = parsed.sections[1].notes, index = 15, time = 0)
+    noteBlock "Section 2":
+        verifyNote(notes = parsed.sections[1].notes, index = 0, time = 4)
+        verifyNote(notes = parsed.sections[1].notes, index = 2, time = 8)
+        verifyNote(notes = parsed.sections[1].notes, index = 6, time = 2)
+        verifyNote(notes = parsed.sections[1].notes, index = 9, time = 6)
+        verifyNote(notes = parsed.sections[1].notes, index = 10, time = 14)
+        verifyNote(notes = parsed.sections[1].notes, index = 12, time = 12)
+        verifyNote(notes = parsed.sections[1].notes, index = 15, time = 0)
 
     test "Section 2: Timings":
         check:
@@ -173,20 +209,21 @@ suite "memo":
             parsed.sections[2].snaps.all (snap) => snap.len == 4
 
 
-    verifyNote(name = "Section 3", notes = parsed.sections[2].notes, index = 1, time = 8)
-    verifyNote(name = "Section 3", notes = parsed.sections[2].notes, index = 2, time = 8)
-    verifyNote(name = "Section 3", notes = parsed.sections[2].notes, index = 4, time = 2)
-    verifyNote(name = "Section 3", notes = parsed.sections[2].notes, index = 5, time = 6)
-    verifyNote(name = "Section 3", notes = parsed.sections[2].notes, index = 6, time = 6)
-    verifyNote(name = "Section 3", notes = parsed.sections[2].notes, index = 7, time = 2)
-    verifyNote(name = "Section 3", notes = parsed.sections[2].notes, index = 8, time = 10)
-    verifyNote(name = "Section 3", notes = parsed.sections[2].notes, index = 9, time = 0)
-    verifyNote(name = "Section 3", notes = parsed.sections[2].notes, index = 10, time = 0)
-    verifyNote(name = "Section 3", notes = parsed.sections[2].notes, index = 11, time = 10)
-    verifyNote(name = "Section 3", notes = parsed.sections[2].notes, index = 12, time = 4)
-    verifyNote(name = "Section 3", notes = parsed.sections[2].notes, index = 13, time = 12)
-    verifyNote(name = "Section 3", notes = parsed.sections[2].notes, index = 14, time = 12)
-    verifyNote(name = "Section 3", notes = parsed.sections[2].notes, index = 15, time = 4)
+    noteBlock "Section 3":
+        verifyNote(notes = parsed.sections[2].notes, index = 1, time = 8)
+        verifyNote(notes = parsed.sections[2].notes, index = 2, time = 8)
+        verifyNote(notes = parsed.sections[2].notes, index = 4, time = 2)
+        verifyNote(notes = parsed.sections[2].notes, index = 5, time = 6)
+        verifyNote(notes = parsed.sections[2].notes, index = 6, time = 6)
+        verifyNote(notes = parsed.sections[2].notes, index = 7, time = 2)
+        verifyNote(notes = parsed.sections[2].notes, index = 8, time = 10)
+        verifyNote(notes = parsed.sections[2].notes, index = 9, time = 0)
+        verifyNote(notes = parsed.sections[2].notes, index = 10, time = 0)
+        verifyNote(notes = parsed.sections[2].notes, index = 11, time = 10)
+        verifyNote(notes = parsed.sections[2].notes, index = 12, time = 4)
+        verifyNote(notes = parsed.sections[2].notes, index = 13, time = 12)
+        verifyNote(notes = parsed.sections[2].notes, index = 14, time = 12)
+        verifyNote(notes = parsed.sections[2].notes, index = 15, time = 4)
 
     test "Section 3: Timings":
         check:
@@ -220,37 +257,36 @@ suite "memo":
             parsed.sections[3].snaps[2].len == 8
             parsed.sections[3].snaps[3].len == 4
 
-    verifyNote(name = "Section 4", notes = parsed.sections[3].notes, index = 0, time = 19, part = 1)
-    verifyNote(name = "Section 4", notes = parsed.sections[3].notes, index = 1, time = 4)
-    verifyNote(name = "Section 4", notes = parsed.sections[3].notes, index = 2, time = 16, part = 1)
-    verifyNote(name = "Section 4", notes = parsed.sections[3].notes, index = 3, time = 7)
-    verifyHold(
-        name = "Section 4",
-        notes = parsed.sections[3].notes,
-        index = 4,
-        pos = 0,
-        start = 6,
-        time = 0,
-        release = 4,
-        releaseSection = parsed.sections[3].index
-    )
-    verifyNote(name = "Section 4", notes = parsed.sections[3].notes, index = 5, time = 20, part = 2)
-    verifyNote(name = "Section 4", notes = parsed.sections[3].notes, index = 6, time = 8, part = 2)
-    verifyHold(
-        name = "Section 4",
-        notes = parsed.sections[3].notes,
-        index = 7,
-        pos = 0,
-        start = 5,
-        time = 10,
-        release = 16,
-        releaseSection = parsed.sections[3].index,
-        part = 1
-    )
-    verifyNote(name = "Section 4", notes = parsed.sections[3].notes, index = 9, time = 9)
-    verifyNote(name = "Section 4", notes = parsed.sections[3].notes, index = 10, time = 21, part = 1)
-    verifyNote(name = "Section 4", notes = parsed.sections[3].notes, index = 13, time = 13, part = 1)
-    verifyNote(name = "Section 4", notes = parsed.sections[3].notes, index = 14, time = 2)
+    noteBlock "Section 4":
+        verifyNote(notes = parsed.sections[3].notes, index = 0, time = 19, part = 1)
+        verifyNote(notes = parsed.sections[3].notes, index = 1, time = 4)
+        verifyNote(notes = parsed.sections[3].notes, index = 2, time = 16, part = 1)
+        verifyNote(notes = parsed.sections[3].notes, index = 3, time = 7)
+        verifyHold(
+            notes = parsed.sections[3].notes,
+            index = 4,
+            pos = 0,
+            start = 6,
+            time = 0,
+            release = 4,
+            releaseSection = parsed.sections[3].index
+        )
+        verifyNote(notes = parsed.sections[3].notes, index = 5, time = 20, part = 2)
+        verifyNote(notes = parsed.sections[3].notes, index = 6, time = 8, part = 2)
+        verifyHold(
+            notes = parsed.sections[3].notes,
+            index = 7,
+            pos = 0,
+            start = 5,
+            time = 10,
+            release = 16,
+            releaseSection = parsed.sections[3].index,
+            part = 1
+        )
+        verifyNote(notes = parsed.sections[3].notes, index = 9, time = 9)
+        verifyNote(notes = parsed.sections[3].notes, index = 10, time = 21, part = 1)
+        verifyNote(notes = parsed.sections[3].notes, index = 13, time = 13, part = 1)
+        verifyNote(notes = parsed.sections[3].notes, index = 14, time = 2)
 
     test "Section 4: Timings":
         check:
@@ -296,3 +332,6 @@ suite "memo":
             parsed.sections[4].notes.len == 13
             parsed.sections[4].snaps.len == 4
             parsed.sections[4].snaps.all (snap) => snap.len == 4
+    
+    noteBlock "Section 5":
+

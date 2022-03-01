@@ -38,6 +38,8 @@ jobs:
     # Building & Testing
     - name: Install dependencies
       run: nimble install -Y
+    - name: Run tests
+      run: nim test
     - name: Build CLI
       run: nim cli
     - name: Build library

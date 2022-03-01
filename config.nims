@@ -11,6 +11,10 @@ task lib, "Build the library":
     switch "usenimcache"
     setCommand "c", "src/rconv.nim"
 
+task test, "Run the tests":
+    # switch "usenimcache"
+    setCommand "r", "tests/*.nim"
+
 task docs, "Build the documentation":
     switch "outdir", "docs"
     switch "project"

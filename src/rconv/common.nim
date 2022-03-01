@@ -194,6 +194,21 @@ func detectFileType*(file: string): Option[FileType] =
         of "sm":
             result = some(FileType.StepMania)
 
+func getFileExtension*(fileType: FileType): string =
+    ## Get's the file-extension for the provided file-type
+
+    case fileType:
+    of FileType.Memo:
+        result = "memo"
+    of FileType.Memo2:
+        result = "memo2"
+    of FileType.Malody:
+        result = "mc"
+    of FileType.FXF:
+        result = "fxfc"
+    of FileType.StepMania:
+        result = "sm"
+
 func getDefaultChartFormat*(fileType: FileType): string =
     ## Gets the default chart-format for the provided file-type
 
@@ -211,21 +226,6 @@ func getDefaultOptions*(to: FileType): ConvertOptions =
 
     let format = getDefaultChartFormat(to)
     result = newConvertOptions(chartFormat = format)
-
-func getFileExtension*(fileType: FileType): string =
-    ## Get's the file-extension for the provided file-type
-
-    case fileType:
-    of FileType.Memo:
-        result = "memo"
-    of FileType.Memo2:
-        result = "memo2"
-    of FileType.Malody:
-        result = "mc"
-    of FileType.FXF:
-        result = "fxfc"
-    of FileType.StepMania:
-        result = "sm"
 
 macro log*(message: string): untyped =
     ## Internal logging function which will be removed soon

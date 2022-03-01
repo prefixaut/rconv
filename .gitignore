@@ -16,6 +16,12 @@ thumbs.db
 ####
 /resources
 /out
+/nimcache
+/tests/megatest*
+/tests/**/*.exe
+/tests/**/*.js
+/outputGotten.txt
+/testresults
 
 ####
 ## Misc

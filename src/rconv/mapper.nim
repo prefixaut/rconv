@@ -39,6 +39,7 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
                 snapIndex = uint16(0)
             )
             result.bpmChange.add change
+            inc result.numBpm
 
         let beat = OneMinute / bpm
         var indexOffset = 0
@@ -59,7 +60,7 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
                         r.fxf.releaseOn = noteTime
                     else:
                         tmpHoldRelease.add r
-                holdRelease = tmpHoldRelease    
+                holdRelease = tmpHoldRelease
 
                 var tick = fxf.newTick(
                     time = noteTime,
@@ -78,21 +79,27 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
                             var hold = fxf.newHold(`from` = note.animationStartIndex, to = noteIndex)
                             tick.holds.add hold
                             holdRelease.add (hold, note)
+                            inc tick.numHolds
                         else:
                             tick.notes.add uint8(noteIndex)
+                            inc tick.numNotes
 
                 if hasData:
                     chart.ticks.add tick
+                    inc chart.numTick
 
             inc indexOffset, snap.len
             globalTime = globalTime + beat
 
     if this.difficulty == Difficulty.Basic:
         result.charts.basic = chart
+        result.charts.bscPresent = 1
     elif this.difficulty == Difficulty.Advanced:
         result.charts.advanced = chart
+        result.charts.advPresent = 1
     else:
         result.charts.extreme = chart
+        result.charts.extPresent = 1
 
 proc toMalody*(this: memson.Memson): malody.Chart =
     ## Function to map/convert `this` Chart to a Malody Chart.
@@ -219,7 +226,7 @@ proc toFXF*(this: malody.Chart): fxf.ChartFile =
             let diff = a.beat[i] - b.beat[i]
             if diff != 0:
                 return diff
-        
+
         result = b.getPriority - a.getPriority
     )
 
@@ -229,7 +236,7 @@ proc toFXF*(this: malody.Chart): fxf.ChartFile =
     var holdTable = initTable[Beat, seq[fxf.Hold]]()
     var beatTable = initTable[Beat, fxf.Tick]()
 
-    for element in timedElements:        
+    for element in timedElements:
         let beatSize = OneMinute / bpm
         let snapLength = beatSize / float(element.beat[2])
         let elementTime = offset + (beatSize * float(element.beat[0] - lastBpmSection)) + (snapLength * float(element.beat[1]))

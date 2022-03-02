@@ -83,7 +83,7 @@ macro noteBlock(name, notes, body) =
                 isFirst = false
                 continue
             args.add arg
-        
+
         result.add newCall(node[0], args)
 
 let testFile = """
@@ -327,7 +327,7 @@ suite "memo: parsing v1":
             parsed.sections[4].snaps[1].partIndex == 0
             parsed.sections[4].snaps[2].partIndex == 1
             parsed.sections[4].snaps[3].partIndex == 1
-    
+
     noteBlock "Section 5", parsed.sections[4].notes:
         verifyNote(index = 0, time = 12, part = 1)
         verifyNote(index = 1, time = 12, part = 1)
@@ -343,7 +343,7 @@ suite "memo: parsing v1":
         verifyNote(index = 12, time = 2)
         verifyNote(index = 14, time = 8, part = 1)
         verifyNote(index = 15, time = 2)
-    
+
     test "Section 5: Timings":
         check:
             parsed.sections[4].timings[0] == 1

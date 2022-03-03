@@ -26,11 +26,6 @@ BPM: 195
 ⑥口口① |⑥－⑦－|
 BPM: 160
 3
-口⑤⑤口 |①－②－|
-②④④② |③－④－|
-⑥①①⑥ |⑤－⑥－|
-③⑦⑦③ |⑦－－－|
-4
 口③口④ |①ー②ー③ー|
 ①口＜口 |ー④⑤⑥|
 口⑥口口 |⑦ーー⑧ーー⑨ー|
@@ -44,17 +39,7 @@ BPM: 160
 口口口口
 ③⑪⑤⑨
 口口口口
-口口口口
-5
-口口口口 |①－②－|
-口口口④ |③－④－|
-口②③①
-②口口②
-
-⑦⑦⑥⑦
-⑤口口口
-⑤口口⑧ |⑤－⑥－|
-口口⑤口 |⑦－⑧－|
+口口⑪口
 """
 
 suite "memson: convert":
@@ -82,7 +67,7 @@ suite "memson: convert":
             int(chart.bpmChange[1].time * 10) == int(2_461.5 * 10)
             chart.bpmChange[1].bpm == 160.0
             chart.bpmChange[1].snapIndex == 0
-            chart.bpmChange[1].snapSize == 4
+            chart.bpmChange[1].snapSize == 6
 
             # Difficulties/Charts
             chart.charts.bscPresent == 0
@@ -96,7 +81,161 @@ suite "memson: convert":
         check:
             # Rating must be multiplied * 10 in the file
             diff.rating == 80
-            diff.numTick == 34
+            diff.numTick == 19
 
         check:
-            int(diff.ticks[0].time * 10) == int(1_230.7 * 10)
+            diff.ticks[0].numNotes == 1
+            diff.ticks[0].numHolds == 0
+            int(diff.ticks[0].time * 10) == 12_308
+            diff.ticks[0].snapSize == 4
+            diff.ticks[0].snapIndex == 0
+            diff.ticks[0].notes[0] == 15
+
+        check:
+            diff.ticks[1].numNotes == 1
+            diff.ticks[1].numHolds == 0
+            int(diff.ticks[1].time * 10) == 13_846
+            diff.ticks[1].snapSize == 4
+            diff.ticks[1].snapIndex == 2
+            diff.ticks[1].notes[0] == 6
+
+        check:
+            diff.ticks[2].numNotes == 1
+            diff.ticks[2].numHolds == 0
+            int(diff.ticks[2].time * 10) == 15_385
+            diff.ticks[2].snapSize == 4
+            diff.ticks[2].snapIndex == 0
+            diff.ticks[2].notes[0] == 0
+
+        check:
+            diff.ticks[3].numNotes == 1
+            diff.ticks[3].numHolds == 0
+            int(diff.ticks[3].time * 10) == 16_923
+            diff.ticks[3].snapSize == 4
+            diff.ticks[3].snapIndex == 2
+            diff.ticks[3].notes[0] == 9
+
+        check:
+            diff.ticks[4].numNotes == 1
+            diff.ticks[4].numHolds == 0
+            int(diff.ticks[4].time * 10) == 18_462
+            diff.ticks[4].snapSize == 4
+            diff.ticks[4].snapIndex == 0
+            diff.ticks[4].notes[0] == 2
+
+        check:
+            diff.ticks[5].numNotes == 1
+            diff.ticks[5].numHolds == 0
+            int(diff.ticks[5].time * 10) == 21_538
+            diff.ticks[5].snapSize == 4
+            diff.ticks[5].snapIndex == 0
+            diff.ticks[5].notes[0] == 12
+
+        check:
+            diff.ticks[6].numNotes == 1
+            diff.ticks[6].numHolds == 0
+            int(diff.ticks[6].time * 10) == 23_077
+            diff.ticks[6].snapSize == 4
+            diff.ticks[6].snapIndex == 2
+            diff.ticks[6].notes[0] == 10
+
+        check:
+            diff.ticks[7].numNotes == 0
+            diff.ticks[7].numHolds == 1
+            int(diff.ticks[7].time * 10) == 24_615
+            diff.ticks[7].snapSize == 6
+            diff.ticks[7].snapIndex == 0
+            diff.ticks[7].holds[0].`from` == 6
+            diff.ticks[7].holds[0].to == 4
+            int(diff.ticks[7].holds[0].releaseOn * 10) == 27_115
+
+        check:
+            diff.ticks[8].numNotes == 1
+            diff.ticks[8].numHolds == 0
+            int(diff.ticks[8].time * 10) == 25_865
+            diff.ticks[8].snapSize == 6
+            diff.ticks[8].snapIndex == 2
+            diff.ticks[8].notes[0] == 14
+
+        check:
+            diff.ticks[9].numNotes == 1
+            diff.ticks[9].numHolds == 0
+            int(diff.ticks[9].time * 10) == 27_115
+            diff.ticks[9].snapSize == 6
+            diff.ticks[9].snapIndex == 4
+            diff.ticks[9].notes[0] == 1
+
+        check:
+            diff.ticks[10].numNotes == 1
+            diff.ticks[10].numHolds == 0
+            int(diff.ticks[10].time * 10) == 29_303
+            diff.ticks[10].snapSize == 4
+            diff.ticks[10].snapIndex == 1
+            diff.ticks[10].notes[0] == 3
+
+        check:
+            diff.ticks[11].numNotes == 1
+            diff.ticks[11].numHolds == 0
+            int(diff.ticks[11].time * 10) == 30240
+            diff.ticks[11].snapSize == 4
+            diff.ticks[11].snapIndex == 2
+            diff.ticks[11].notes[0] == 6
+
+        check:
+            diff.ticks[12].numNotes == 1
+            diff.ticks[12].numHolds == 0
+            int(diff.ticks[12].time * 10) == 31_178
+            diff.ticks[12].snapSize == 4
+            diff.ticks[12].snapIndex == 3
+            diff.ticks[12].notes[0] == 9
+
+        check:
+            diff.ticks[13].numNotes == 0
+            diff.ticks[13].numHolds == 1
+            int(diff.ticks[13].time * 10) == 32_115
+            diff.ticks[13].snapSize == 8
+            diff.ticks[13].snapIndex == 0
+            diff.ticks[13].holds[0].`from` == 5
+            diff.ticks[13].holds[0].to == 7
+            int(diff.ticks[13].holds[0].releaseOn * 10) == 34_928
+
+        check:
+            diff.ticks[14].numNotes == 1
+            diff.ticks[14].numHolds == 0
+            int(diff.ticks[14].time * 10) == 33_522
+            diff.ticks[14].snapSize == 8
+            diff.ticks[14].snapIndex == 3
+            diff.ticks[14].notes[0] == 13
+
+        check:
+            diff.ticks[15].numNotes == 1
+            diff.ticks[15].numHolds == 0
+            int(diff.ticks[15].time * 10) == 34_928
+            diff.ticks[15].snapSize == 8
+            diff.ticks[15].snapIndex == 6
+            diff.ticks[15].notes[0] == 2
+
+        check:
+            diff.ticks[16].numNotes == 1
+            diff.ticks[16].numHolds == 0
+            int(diff.ticks[16].time * 10) == 36_803
+            diff.ticks[16].snapSize == 4
+            diff.ticks[16].snapIndex == 1
+            diff.ticks[16].notes[0] == 0
+
+        check:
+            diff.ticks[17].numNotes == 2
+            diff.ticks[17].numHolds == 0
+            int(diff.ticks[17].time * 10) == 37_740
+            diff.ticks[17].snapSize == 4
+            diff.ticks[17].snapIndex == 2
+            diff.ticks[17].notes[0] == 5
+            diff.ticks[17].notes[1] == 14
+
+        check:
+            diff.ticks[18].numNotes == 1
+            diff.ticks[18].numHolds == 0
+            int(diff.ticks[18].time * 10) == 38_678
+            diff.ticks[18].snapSize == 4
+            diff.ticks[18].snapIndex == 3
+            diff.ticks[18].notes[0] == 10

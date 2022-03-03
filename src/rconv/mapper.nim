@@ -45,11 +45,14 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
         var indexOffset = 0
 
         for snap in section.snaps:
-            let snapLength = beat / float(snap.len)
+            let snapTime = beat / float(snap.len)
 
             for snapIndex in 0..<snap.len:
                 let timing = indexOffset + snapIndex
-                let noteTime = round((globalTime + (snapLength * float(snapIndex + 1))) * 10) / 10
+                let noteTime = round(globalTime * 10) / 10
+
+                # Update the global-time after the current time has been loaded
+                globalTime = globalTime + snapTime
 
                 # Handle previously saved holds.
                 # if a hold has to end now, then we give it the proper releaseTime
@@ -89,7 +92,6 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
                     inc chart.numTick
 
             inc indexOffset, snap.len
-            globalTime = globalTime + beat
 
     if this.difficulty == Difficulty.Basic:
         result.charts.basic = chart

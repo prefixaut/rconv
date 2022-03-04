@@ -155,10 +155,10 @@ func formatFileName*(this: ConvertOptions, params: FormattingParameters): string
     ## with the provided formatting parameters.
 
     result = this.chartFormat
-        .replaceWord(PlaceholderTitle, params.title)
-        .replaceWord(PlaceholderArtist, params.artist)
-        .replaceWord(PlaceholderDifficulty, params.difficulty)
-        .replaceWord(PlaceholderExtension, params.extension)
+        .replace(PlaceholderTitle, params.title)
+        .replace(PlaceholderArtist, params.artist)
+        .replace(PlaceholderDifficulty, params.difficulty)
+        .replace(PlaceholderExtension, params.extension)
 
     if this.normalize:
         result = normalize(result)
@@ -168,8 +168,8 @@ func formatFolderName*(this: ConvertOptions, params: FormattingParameters): stri
     ## with the provided formatting parameters.
 
     result = this.folderFormat
-        .replaceWord(PlaceholderTitle, params.title)
-        .replaceWord(PlaceholderArtist, params.artist)
+        .replace(PlaceholderTitle, params.title)
+        .replace(PlaceholderArtist, params.artist)
 
     if this.normalize:
         result = normalize(result)

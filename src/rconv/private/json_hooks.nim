@@ -97,11 +97,11 @@ proc toMalodyTimedElement*(self: JsonNode): malody.TimedElement =
     else:
         result = malody.newTimedElement(beat = beat)
 
-proc toMalodyChart*(self: JsonNode): malody.Chart =
+proc toMalodyChart*(self: JsonNode): malody.Chart {.raises:[ValueError].} =
     ## Additional hook to make the hook for `TimedElement` work.
 
-    assert self.kind == JsonNodeKind.JObject,
-        "The kind of `JsonNode` must be `JObject`, but it's actual kind is `" & $self.kind & "`."
+    if self.kind != JsonNodeKind.JObject:
+        raise newException(ValueError, "The kind of `JsonNode` must be `JObject`, but it's actual kind is `" & $self.kind & "`.")
 
     result = malody.newChart()
 

@@ -141,10 +141,15 @@ proc toMalody*(this: memson.Memson): malody.Chart =
         for time in section.timings:
             let beat = [beatIndex, snapIndex, snapSize]
 
+            # Temporary seq, as we can't delete the holdIndex from the holdRelease
+            # since we're already iterating over it
+            var releasesToDelete = newSeq[int]()
             for holdIndex, holdVal in holdRelease.mpairs:
                 if holdVal.memson.releaseSection == sectionIndex and holdVal.memson.releaseTime == timeIndex:
                     holdVal.malody.indexEndBeat = beat
-                    holdRelease.del(holdIndex)
+                    releasesToDelete.add(holdIndex)
+            for idx in releasesToDelete:
+                holdRelease.del(idx)
 
             if time > -1:
                 var note: memson.Note
@@ -157,12 +162,13 @@ proc toMalody*(this: memson.Memson): malody.Chart =
                             index = secNotePos
                             break
 
-                if note.kind == memson.NoteType.Hold:
-                    let hold = malody.newIndexHold(beat = beat, index = index, endIndex = index)
-                    result.note.add hold
-                    holdRelease.add (memson: note, malody: hold)
-                else:
-                    result.note.add malody.newIndexNote(beat = beat, index = index)
+                if note != nil:
+                    if note.kind == memson.NoteType.Hold:
+                        let hold = malody.newIndexHold(beat = beat, index = index, endIndex = index)
+                        result.note.add hold
+                        holdRelease.add (memson: note, malody: hold)
+                    else:
+                        result.note.add malody.newIndexNote(beat = beat, index = index)
 
             inc snapIndex
             if snapIndex > snapSize:

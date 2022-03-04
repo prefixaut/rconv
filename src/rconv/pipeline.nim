@@ -81,14 +81,14 @@ proc saveChart(chart: var fxf.ChartFile, options: ConvertOptions, diff: Option[s
     var folderName = ""
     if options.songFolders:
         folderName = options.formatFolderName(params)
-        outDir &= folderName
+        outDir = joinPath(outDir, folderName)
     let filePath = joinPath(outDir, options.formatFileName(params))
 
     if fileExists(filePath) and options.preserve:
         # TODO: Logging?
         raise newException(PreserveFileException, fmt"Output-File already exists: {filePath}")
 
-    discard existsOrCreateDir(outDir)
+    discard existsOrCreateDir(outDir & DirSep)
 
     if fileExists(filePath) and options.merge:
         try:
@@ -133,14 +133,14 @@ proc saveChart(chart: var malody.Chart, options: ConvertOptions): ConvertResult 
     var folderName = ""
     if options.songFolders:
         folderName = options.formatFolderName(params)
-        outDir &= DirSep & folderName
+        outDir = joinPath(outDir, folderName)
     let filePath = joinPath(outDir, options.formatFileName(params))
 
     if fileExists(filePath) and options.preserve:
         # TODO: Logging?
         raise newException(PreserveFileException, fmt"Output-File already exists: {filePath}")
 
-    discard existsOrCreateDir(outDir)
+    discard existsOrCreateDir(outDir & DirSep)
 
     var str = ""
     if options.jsonPretty:

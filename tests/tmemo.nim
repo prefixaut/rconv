@@ -3,90 +3,89 @@ import std/[macros, sequtils, strformat, sugar, tables, unittest]
 import rconv/memo
 import rconv/memson
 
-proc verifyNote(
-    name: string,
-    notes: OrderedTable[NoteRange, seq[Note]],
-    index: NoteRange,
-    pos: int = 0,
-    time: int,
-    part: int = 0
-): void =
-    let testName = fmt"{name} Note {index}[{pos}], time: {time}, part: {part}"
-    test testName:
-        # TODO: Find a way to connect this new test to the suite of where it's executed
-        check:
-            notes.hasKey(index)
-            notes[index].len > pos
-            notes[index][pos].time == time
-            notes[index][pos].kind == NoteType.Note
-            notes[index][pos].partIndex == part
-
-proc verifyHold(
-    name: string,
-    notes: OrderedTable[NoteRange, seq[Note]],
-    index: NoteRange,
-    pos: int = 0,
-    start: NoteRange,
-    time: int,
-    release: int,
-    releaseSection: int,
-    part: int = 0
-): void =
-    let testName = fmt"{name} Hold {index}[{pos}], time: {time}, part: {part}"
-    test testName:
-        # TODO: Find a way to connect this new test to the suite of where it's executed
-        check:
-            notes.hasKey(index)
-            notes[index].len > pos
-            notes[index][pos].time == time
-            notes[index][pos].kind == NoteType.Hold
-            notes[index][pos].partIndex == part
-
-        if notes[index][pos].kind == NoteType.Hold:
+suite "memo: parsing v1":
+    proc verifyNote(
+        name: string,
+        notes: OrderedTable[NoteRange, seq[Note]],
+        index: NoteRange,
+        pos: int = 0,
+        time: int,
+        part: int = 0
+    ): void =
+        let testName = fmt"{name}: Notes {index}[{pos}], time: {time}, part: {part}"
+        test testName:
             check:
-                notes[index][pos].animationStartIndex == start
-                notes[index][pos].releaseTime == release
-                notes[index][pos].releaseSection == releaseSection
+                notes.hasKey(index)
+                notes[index].len > pos
+                notes[index][pos].time == time
+                notes[index][pos].kind == NoteType.Note
+                notes[index][pos].partIndex == part
 
-macro noteBlock(name, notes, body) =
-    ## Helper macro to add the `name` parameter to the `verifyNote` and `verifyHold` procs
+    proc verifyHold(
+        name: string,
+        notes: OrderedTable[NoteRange, seq[Note]],
+        index: NoteRange,
+        pos: int = 0,
+        start: NoteRange,
+        time: int,
+        release: int,
+        releaseSection: int,
+        part: int = 0
+    ): void =
+        let testName = fmt"{name}: Holds {index}[{pos}], time: {time}, part: {part}"
+        test testName:
+            check:
+                notes.hasKey(index)
+                notes[index].len > pos
+                notes[index][pos].time == time
+                notes[index][pos].kind == NoteType.Hold
+                notes[index][pos].partIndex == part
 
-    result = newStmtList()
-    let whiteList = @["verifyNote", "verifyHold"]
+            if notes[index][pos].kind == NoteType.Hold:
+                check:
+                    notes[index][pos].animationStartIndex == start
+                    notes[index][pos].releaseTime == release
+                    notes[index][pos].releaseSection == releaseSection
 
-    for node in body.children:
-        if node.kind != nnkCall:
-            result.add node
-            continue
+    macro noteBlock(name, notes, body) =
+        ## Helper macro to add the `name` parameter to the `verifyNote` and `verifyHold` procs
 
-        let procName = node[0].strVal
+        result = newStmtList()
+        let whiteList = @["verifyNote", "verifyHold"]
 
-        if not whiteList.contains(procName):
-            result.add node
-            continue
-
-        var args: seq[NimNode] = @[]
-        var isFirst = true
-
-        let nameArg = newNimNode(nnkExprEqExpr)
-        nameArg.add ident("name")
-        nameArg.add newStrLitNode(name.strVal)
-        args.add nameArg
-
-        let notesArg = newNimNode(nnkExprEqExpr)
-        notesArg.add ident("notes")
-        notesArg.add notes
-        args.add notesArg
-
-        for arg in node.children:
-            if isFirst:
-                isFirst = false
+        for node in body.children:
+            if node.kind != nnkCall:
+                result.add node
                 continue
-            args.add arg
 
-        result.add newCall(node[0], args)
+            let procName = node[0].strVal
 
-let testFile = """
+            if not whiteList.contains(procName):
+                result.add node
+                continue
+
+            var args: seq[NimNode] = @[]
+            var isFirst = true
+
+            let nameArg = newNimNode(nnkExprEqExpr)
+            nameArg.add ident("name")
+            nameArg.add newStrLitNode(name.strVal)
+            args.add nameArg
+
+            let notesArg = newNimNode(nnkExprEqExpr)
+            notesArg.add ident("notes")
+            notesArg.add notes
+            args.add notesArg
+
+            for arg in node.children:
+                if isFirst:
+                    isFirst = false
+                    continue
+                args.add arg
+
+            result.add newCall(node[0], args)
+
+    let testFile = """
 Song-Title-BlaFoo
 Artist-Foobar
 
@@ -138,9 +137,8 @@ BPM: 160
 ⑤口口口
 ⑤口口⑧ |⑤－⑥－|
 口口⑤口 |⑦－⑧－|
-"""
+    """
 
-suite "memo: parsing v1":
     let parsed = parseMemoToMemson(testFile)
 
     test "Chart: Meta-Data":

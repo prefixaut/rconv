@@ -3,7 +3,8 @@ import std/unittest
 import rconv/[memo, mapper]
 import rconv/fxf as fxf
 
-let testFile = """
+suite "memson: convert":
+    let testFile = """
 Song-Title-BlaFoo
 Artist-Foobar
 
@@ -40,9 +41,8 @@ BPM: 160
 ③⑪⑤⑨
 口口口口
 口口⑪口
-"""
+    """
 
-suite "memson: convert":
     let parsed = parseMemoToMemson(testFile)
 
     test "to fxf":

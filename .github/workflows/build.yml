@@ -38,10 +38,18 @@ jobs:
     # Building & Testing
     - name: Install dependencies
       run: nimble install -Y
+
     - name: Run tests
-      run: nim test
+      run:
+      # Tests need to be added like this, because when you
+      # try to import/include them properly, they won't compile
+      # update correctly, and will forever fail for no reason.
+      - nim r tests/tmemo.nim
+      - nim r tests/tmemson.nim
+
     - name: Build CLI
       run: nim cli
+
     - name: Build library
       run: nim lib
     

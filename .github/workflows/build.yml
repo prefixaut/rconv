@@ -58,6 +58,8 @@ jobs:
     if: ${{ github.ref == 'refs/heads/master' }}
     needs: [build]
 
+    runs-on: ubuntu-latest
+
     steps:
       # Basic Setup
       - uses: actions/checkout@v2

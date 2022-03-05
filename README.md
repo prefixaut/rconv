@@ -60,18 +60,60 @@ $ rconv [options] <--to=output-type> <input-files>
 
 The CLI requires an output-type (`-t`/`--to`), and the file-paths to the charts you want to convert.
 
-For a full reference of all options, please call to the built in `-h`/`--help` option to display the help page.
+```
+Usage:
+   [options] [files ...]
+
+Arguments:
+  [files ...]      Input-Files to convert. At least one has to be specified
+
+Options:
+  -h, --help
+  -b, --bundle               All output files should instead be bundles (if the output type supports it).
+  -c, --color                Enable print messages to be in color.
+  -C, --clean                If it should clean (delete all contents) of the output folder. Disabled if 'preserve' is enabled.
+  -d, --delete-on-finish     Delete a processed file after handling it.
+  -e, --delay-errors         Process files even if a previous file caused an error.
+  -f, --song-folders         Enable that each song is getting placed into it's own sub-directory.
+  -j, --json-pretty          Output JSON data prettily.
+  -k, --keep                 If it should keep the original meta data when merging a file.
+  -m, --merge                Merge all possible charts into existing files.
+  -o, --output=OUTPUT        The output location for the files. If the directory doesn't exist, they will be created. (default: .)
+  -p, --preserve             Preserve the original output file (don't override it) if it already exists.
+  -P, --progress             Display the current progress.
+  -q, --quiet                Skip all stdout/stderr messages.
+  -r, --resources            Copy all neccessary resources (Sound-File, Jacket) to the output directory. Should only be used in comination with the "song-folders" option.
+  -s, --stats                Show stats on the end of the operation.
+  -t, --to=TO                The output type. Possible values: [fxf, malody, memo]
+  -n, --normalize            Normalize the output-paths (folder/file).
+  -V, --verbose              Print verbose messages on internal operations.
+  -x, --folder-format=FOLDER_FORMAT
+                             The format for song-folders. You may use the following placeholders: '%artist%', '%title%'. (default: %title% (%artist%))
+  -z, --chart-format=CHART_FORMAT
+                             The format for the output file-name. You may use the following placeholders: '%artist%', '%title%', '%difficulty%', and '%ext%'.Defaults to '%artist% - %title%.%ext%' on type 'fxf', otherwise to '%artist% - %title%_%difficulty%.%ext%'
+```
+
+Example:
+
+```sh
+rconv -C -j -f -t malody --out output/nested /somewhere/my-input/sample.memo
+```
 
 ### Usage of Library
 
 As library, you should only have to import the entry file and the file formtats you want to use.
 Each file-format should be imported in an own namespace, as types might overlap (Multiple types called `Chart` for example).
 
+Converting procs are found in the `rconv/mapper` (imported via `rconv`) and are named `to{OtherFormat}`, i.E. `toFXF` or `toMalody`.
+
 ```nim
 import pkg/rconv
 import pkg/rconv/fxf as fxf
+import pkg/rconv/memo as memo
 
-let chart: fxf.ChartFile = convert("/home/user/some-chart.memo", none(FileType), FileType.FXF, none(ConvertOptions))
+let rawMemo = readFile("/home/user/some-chart.memo")
+let memoChart = memo.parseMemoToMemson(rawMemo)
+let fxfChart = memoChart.toFXF
 echo chart
 ```
 

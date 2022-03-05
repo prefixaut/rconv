@@ -39,7 +39,7 @@ let cli = newParser:
     flag("-s", "--stats",
         help="Show stats on the end of the operation.")
     option("-t", "--to", required=true, choices=(@["fxf", "malody", "memo"]),
-        help="The output type. Must be one of the following: 'fxf', 'malody', and 'memo''.")
+        help="The output type.")
     flag("-n", "--normalize",
         help="Normalize the output-paths (folder/file).")
     flag("-V", "--verbose",

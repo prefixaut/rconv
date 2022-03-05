@@ -10,62 +10,121 @@ on:
 
 jobs:
   build:
+    name: Build on ${{ matrix.os }} with nim ${{ matrix.nim }}
+
     strategy:
       matrix:
-        nim: [ '1.6.0', 'stable', 'devel' ]
+        nim: [ '1.6.x', 'stable', 'devel' ]
         os: [ 'ubuntu-latest', 'windows-latest', 'macos-latest' ]
 
-    name: Build on ${{ matrix.os }} with nim ${{ matrix.nim }}
     runs-on: ${{ matrix.os }}
-    # permissions:
-    #  contents: write
 
     steps:
-    # Basic Setup
-    - uses: actions/checkout@v2
-    - name: Setup Nim Environment ${{ matrix.nim }}
-      uses: jiro4989/setup-nim-action@v1
-      with:
-        nim-version: ${{ matrix.nim }}
-    - name: Cache nimble
-      id: cache-nimble
-      uses: actions/cache@v1
-      with:
-        path: ~/.nimble
-        key: ${{ runner.os }}-nimble-${{ matrix.nim }}-${{ hashFiles('*.nimble') }}
-      if: runner.os != 'Windows'
+      # Basic Setup
+      - uses: actions/checkout@v2
+      - name: Setup Nim Environment ${{ matrix.nim }}
+        uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: ${{ matrix.nim }}
+      - name: Cache nimble
+        id: cache-nimble
+        uses: actions/cache@v1
+        with:
+          path: ~/.nimble
+          key: ${{ runner.os }}-nimble-${{ matrix.nim }}-${{ hashFiles('*.nimble') }}
+        if: runner.os != 'Windows'
 
-    # Building & Testing
-    - name: Install dependencies
-      run: nimble install -Y
-    - name: Build CLI
-      run: nim cli
-    - name: Build library
-      run: nim lib
-    
-    # Update documentation
-    - name: Build documentation
-      run: nim docs
-      if: ${{ matrix.nim == '1.6.0' && runner.os == 'Linux' && github.ref == 'refs/heads/master' }}
-    - name: Deploy to GitHub-Pages
-      uses: JamesIves/github-pages-deploy-action@v4.2.3
-      if: ${{ matrix.nim == '1.6.0' && runner.os == 'Linux' && github.ref == 'refs/heads/master' }}
-      with:
-        branch: gh-pages
-        folder: docs
+      # Building & Testing
+      - name: Install dependencies
+        run: nimble install -Y
 
-    # Releases
-    - name: Create CLI Release Build
-      if: ${{ matrix.nim == '1.6.0' && startsWith(github.ref, 'refs/tags/') }}
-      run: nim cli -d:release
-    - name: Create Library Release Build
-      if: ${{ matrix.nim == '1.6.0' && startsWith(github.ref, 'refs/tags/') }}
-      run: nim build -d:release
-    - name: Release
-      uses: ncipollo/release-action@v1
-      if: ${{ matrix.nim == '1.6.0' && startsWith(github.ref, 'refs/tags/') }}
-      with:
-        artifacts: "dist/*"
-        allowUpdates: true
-        prerelease: ${{ endsWith(github.ref, 'rc') || endsWith(github.ref, 'snapshot') }}
-        token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run tests
+        # Tests need to be added like this, because when you
+        # try to import/include them properly, they won't compile
+        # update correctly, and will forever fail for no reason.
+        run: |
+          nim r tests/tmemo.nim
+          nim r tests/tmemson.nim
+
+      - name: Build CLI
+        run: nim cli
+
+      - name: Build library
+        run: nim lib
+
+  update-docs:
+    name: Update documentation
+
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs: [build]
+
+    runs-on: ubuntu-latest
+
+    steps:
+      # Basic Setup
+      - uses: actions/checkout@v2
+      - name: Setup Nim Environment 1.6.x
+        uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: 1.6.x
+      - name: Cache nimble
+        id: cache-nimble
+        uses: actions/cache@v1
+        with:
+          path: ~/.nimble
+          key: ${{ runner.os }}-nimble-${{ matrix.nim }}-${{ hashFiles('*.nimble') }}
+
+      # Update documentation
+      - name: Build documentation
+        run: nim docs
+        if: ${{ runner.os == 'Linux' && github.ref == 'refs/heads/master' }}
+      - name: Deploy to GitHub-Pages
+        uses: JamesIves/github-pages-deploy-action@v4.2.3
+        if: ${{ runner.os == 'Linux' && github.ref == 'refs/heads/master' }}
+        with:
+          branch: gh-pages
+          folder: docs
+
+  release:
+    name: Release ${{ matrix.os }} with nim 1.6.x
+
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    needs: [build]
+
+    strategy:
+      matrix:
+        os: [ 'ubuntu-latest', 'windows-latest', 'macos-latest' ]
+
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+
+    steps:
+      # Basic Setup
+      - uses: actions/checkout@v2
+      - name: Setup Nim Environment 1.6.x
+        uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: 1.6.x
+      - name: Cache nimble
+        id: cache-nimble
+        uses: actions/cache@v1
+        with:
+          path: ~/.nimble
+          key: ${{ runner.os }}-nimble-${{ matrix.nim }}-${{ hashFiles('*.nimble') }}
+        if: runner.os != 'Windows'
+
+      # Releases
+      - name: Create CLI Release Build
+        run: nim cli -d:release
+
+      - name: Create Library Release Build
+        run: nim build -d:release
+
+      - name: Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "dist/*"
+          allowUpdates: true
+          prerelease: ${{ endsWith(github.ref, 'rc') || endsWith(github.ref, 'snapshot') }}
+          token: ${{ secrets.GITHUB_TOKEN }}

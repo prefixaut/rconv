@@ -155,10 +155,10 @@ func formatFileName*(this: ConvertOptions, params: FormattingParameters): string
     ## with the provided formatting parameters.
 
     result = this.chartFormat
-        .replaceWord(PlaceholderTitle, params.title)
-        .replaceWord(PlaceholderArtist, params.artist)
-        .replaceWord(PlaceholderDifficulty, params.difficulty)
-        .replaceWord(PlaceholderExtension, params.extension)
+        .replace(PlaceholderTitle, params.title)
+        .replace(PlaceholderArtist, params.artist)
+        .replace(PlaceholderDifficulty, params.difficulty)
+        .replace(PlaceholderExtension, params.extension)
 
     if this.normalize:
         result = normalize(result)
@@ -168,8 +168,8 @@ func formatFolderName*(this: ConvertOptions, params: FormattingParameters): stri
     ## with the provided formatting parameters.
 
     result = this.folderFormat
-        .replaceWord(PlaceholderTitle, params.title)
-        .replaceWord(PlaceholderArtist, params.artist)
+        .replace(PlaceholderTitle, params.title)
+        .replace(PlaceholderArtist, params.artist)
 
     if this.normalize:
         result = normalize(result)
@@ -194,6 +194,21 @@ func detectFileType*(file: string): Option[FileType] =
         of "sm":
             result = some(FileType.StepMania)
 
+func getFileExtension*(fileType: FileType): string =
+    ## Get's the file-extension for the provided file-type
+
+    case fileType:
+    of FileType.Memo:
+        result = "memo"
+    of FileType.Memo2:
+        result = "memo2"
+    of FileType.Malody:
+        result = "mc"
+    of FileType.FXF:
+        result = "fxfc"
+    of FileType.StepMania:
+        result = "sm"
+
 func getDefaultChartFormat*(fileType: FileType): string =
     ## Gets the default chart-format for the provided file-type
 
@@ -211,21 +226,6 @@ func getDefaultOptions*(to: FileType): ConvertOptions =
 
     let format = getDefaultChartFormat(to)
     result = newConvertOptions(chartFormat = format)
-
-func getFileExtension*(fileType: FileType): string =
-    ## Get's the file-extension for the provided file-type
-
-    case fileType:
-    of FileType.Memo:
-        result = "memo"
-    of FileType.Memo2:
-        result = "memo2"
-    of FileType.Malody:
-        result = "mc"
-    of FileType.FXF:
-        result = "fxfc"
-    of FileType.StepMania:
-        result = "sm"
 
 macro log*(message: string): untyped =
     ## Internal logging function which will be removed soon

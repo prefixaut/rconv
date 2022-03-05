@@ -70,10 +70,12 @@ window.addEventListener('DOMContentLoaded', main);
 <div class="document" id="documentId">
   <div class="container">
     <h1 class="title">Index</h1>
-    Modules: <a href="rconv/common.html">rconv/common</a>, <a href="rconv/fxf.html">rconv/fxf</a>, <a href="rconv/malody.html">rconv/malody</a>, <a href="rconv/memo.html">rconv/memo</a>, <a href="rconv/memson.html">rconv/memson</a>, <a href="rconv/pipeline.html">rconv/pipeline</a>, <a href="rconv/private/json_helpers.html">rconv/private/json_helpers</a>, <a href="rconv/private/line_reader.html">rconv/private/line_reader</a>, <a href="rconv/private/stream_helpers.html">rconv/private/stream_helpers</a>.<br/><p /><h2>API symbols</h2>
+    Modules: <a href="rconv/common.html">rconv/common</a>, <a href="rconv/fxf.html">rconv/fxf</a>, <a href="rconv/malody.html">rconv/malody</a>, <a href="rconv/mapper.html">rconv/mapper</a>, <a href="rconv/memo.html">rconv/memo</a>, <a href="rconv/memson.html">rconv/memson</a>, <a href="rconv/pipeline.html">rconv/pipeline</a>, <a href="rconv/private/json_helpers.html">rconv/private/json_helpers</a>, <a href="rconv/private/line_reader.html">rconv/private/line_reader</a>, <a href="rconv/private/stream_helpers.html">rconv/private/stream_helpers</a>.<br/><p /><h2>API symbols</h2>
 <dl><dt><a name="asFormattingParams" href="#asFormattingParams"><span>asFormattingParams:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="fxf: asFormattingParams(chart: ChartFile): FormattingParameters" href="rconv/fxf.html#asFormattingParams%2CChartFile">fxf: asFormattingParams(chart: ChartFile): FormattingParameters</a></li>
+          <li><a class="reference external"
+          data-doc-search-tag="malody: asFormattingParams(chart: Chart): FormattingParameters" href="rconv/malody.html#asFormattingParams%2CChart">malody: asFormattingParams(chart: Chart): FormattingParameters</a></li>
           </ul></dd>
 <dt><a name="Beat" href="#Beat"><span>Beat:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -198,6 +200,10 @@ window.addEventListener('DOMContentLoaded', main);
 <dt><a name="getIntSafe" href="#getIntSafe"><span>getIntSafe:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="json_helpers: getIntSafe(self: JsonNode; field: string; default: int = 0): int" href="rconv/private/json_helpers.html#getIntSafe%2CJsonNode%2Cstring%2Cint">json_helpers: getIntSafe(self: JsonNode; field: string; default: int = 0): int</a></li>
+          </ul></dd>
+<dt><a name="getPriority" href="#getPriority"><span>getPriority:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="malody: getPriority(this: TimedElement): int" href="rconv/malody.html#getPriority%2CTimedElement">malody: getPriority(this: TimedElement): int</a></li>
           </ul></dd>
 <dt><a name="getSlideNoteType" href="#getSlideNoteType"><span>getSlideNoteType:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -383,9 +389,9 @@ window.addEventListener('DOMContentLoaded', main);
 <li><a class="reference external"
           data-doc-search-tag="malody: newSlideNote(beat: Beat = EmptyBeat; x: int = 0; width: int = 0;
              type: SlideNoteType = SlideNoteType.Hold;
-             seg: seq[TimedElement] = @[]): TimedElement" href="rconv/malody.html#newSlideNote%2CBeat%2Cint%2Cint%2CSlideNoteType%2Cseq%5BTimedElement%5D">malody: newSlideNote(beat: Beat = EmptyBeat; x: int = 0; width: int = 0;
+             segments: seq[TimedElement] = @[]): TimedElement" href="rconv/malody.html#newSlideNote%2CBeat%2Cint%2Cint%2CSlideNoteType%2Cseq%5BTimedElement%5D">malody: newSlideNote(beat: Beat = EmptyBeat; x: int = 0; width: int = 0;
              type: SlideNoteType = SlideNoteType.Hold;
-             seg: seq[TimedElement] = @[]): TimedElement</a></li>
+             segments: seq[TimedElement] = @[]): TimedElement</a></li>
           </ul></dd>
 <dt><a name="newSongData" href="#newSongData"><span>newSongData:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -396,8 +402,8 @@ window.addEventListener('DOMContentLoaded', main);
 <dt><a name="newSoundCue" href="#newSoundCue"><span>newSoundCue:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
           data-doc-search-tag="malody: newSoundCue(beat: Beat = EmptyBeat; type: SoundCueType = SoundCueType.Effect;
-            sound: string = &quot;&quot;; offset: float = 0; vol: float = 0): TimedElement" href="rconv/malody.html#newSoundCue%2CBeat%2CSoundCueType%2Cstring%2Cfloat%2Cfloat">malody: newSoundCue(beat: Beat = EmptyBeat; type: SoundCueType = SoundCueType.Effect;
-            sound: string = &quot;&quot;; offset: float = 0; vol: float = 0): TimedElement</a></li>
+            sound: string = &quot;&quot;; offset: float = 0; volume: float = 0): TimedElement" href="rconv/malody.html#newSoundCue%2CBeat%2CSoundCueType%2Cstring%2Cfloat%2Cfloat">malody: newSoundCue(beat: Beat = EmptyBeat; type: SoundCueType = SoundCueType.Effect;
+            sound: string = &quot;&quot;; offset: float = 0; volume: float = 0): TimedElement</a></li>
           </ul></dd>
 <dt><a name="newTick" href="#newTick"><span>newTick:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -513,9 +519,9 @@ window.addEventListener('DOMContentLoaded', main);
           </ul></dd>
 <dt><a name="toFXF" href="#toFXF"><span>toFXF:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
-          data-doc-search-tag="malody: toFXF(this: Chart): fxf.ChartFile" href="rconv/malody.html#toFXF%2CChart">malody: toFXF(this: Chart): fxf.ChartFile</a></li>
+          data-doc-search-tag="mapper: toFXF(this: memson.Memson): fxf.ChartFile" href="rconv/mapper.html#toFXF">mapper: toFXF(this: memson.Memson): fxf.ChartFile</a></li>
           <li><a class="reference external"
-          data-doc-search-tag="memson: toFXF(this: Memson): fxf.ChartFile" href="rconv/memson.html#toFXF%2CMemson">memson: toFXF(this: Memson): fxf.ChartFile</a></li>
+          data-doc-search-tag="mapper: toFXF(this: malody.Chart): fxf.ChartFile" href="rconv/mapper.html#toFXF_2">mapper: toFXF(this: malody.Chart): fxf.ChartFile</a></li>
           </ul></dd>
 <dt><a name="toJsonHook" href="#toJsonHook"><span>toJsonHook:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -524,6 +530,16 @@ window.addEventListener('DOMContentLoaded', main);
           data-doc-search-tag="pipeline: toJsonHook[T: OrderedTable[NoteRange, Note]](this: T): JsonNode" href="rconv/pipeline.html#toJsonHook%2CT_2">pipeline: toJsonHook[T: OrderedTable[NoteRange, Note]](this: T): JsonNode</a></li>
           <li><a class="reference external"
           data-doc-search-tag="pipeline: toJsonHook[T: memson.Note](this: T): JsonNode" href="rconv/pipeline.html#toJsonHook%2CT_3">pipeline: toJsonHook[T: memson.Note](this: T): JsonNode</a></li>
+          <li><a class="reference external"
+          data-doc-search-tag="pipeline: toJsonHook[T: malody.Chart](this: T): JsonNode" href="rconv/pipeline.html#toJsonHook%2CT_4">pipeline: toJsonHook[T: malody.Chart](this: T): JsonNode</a></li>
+          <li><a class="reference external"
+          data-doc-search-tag="pipeline: toJsonHook[T: malody.TimedElement](this: T): JsonNode" href="rconv/pipeline.html#toJsonHook%2CT_5">pipeline: toJsonHook[T: malody.TimedElement](this: T): JsonNode</a></li>
+          <li><a class="reference external"
+          data-doc-search-tag="pipeline: toJsonHook[T: malody.Beat](this: T): JsonNode" href="rconv/pipeline.html#toJsonHook%2CT_6">pipeline: toJsonHook[T: malody.Beat](this: T): JsonNode</a></li>
+          </ul></dd>
+<dt><a name="toMalody" href="#toMalody"><span>toMalody:</span></a></dt><dd><ul class="simple">
+<li><a class="reference external"
+          data-doc-search-tag="mapper: toMalody(this: memson.Memson): malody.Chart" href="rconv/mapper.html#toMalody">mapper: toMalody(this: memson.Memson): malody.Chart</a></li>
           </ul></dd>
 <dt><a name="toMalodyChart" href="#toMalodyChart"><span>toMalodyChart:</span></a></dt><dd><ul class="simple">
 <li><a class="reference external"
@@ -554,7 +570,7 @@ window.addEventListener('DOMContentLoaded', main);
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br/>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2022-02-25 23:17:13 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2022-03-05 15:33:26 UTC</small>
       </div>
     </div>
   </div>

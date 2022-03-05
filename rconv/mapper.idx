@@ -1,0 +1,3 @@
+toFXF	rconv/mapper.html#toFXF	mapper: toFXF(this: memson.Memson): fxf.ChartFile	
+toMalody	rconv/mapper.html#toMalody	mapper: toMalody(this: memson.Memson): malody.Chart	
+toFXF	rconv/mapper.html#toFXF_2	mapper: toFXF(this: malody.Chart): fxf.ChartFile	

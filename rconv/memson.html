@@ -99,12 +99,6 @@ window.addEventListener('DOMContentLoaded', main);
   </div>
   <ul class="simple simple-toc" id="toc-list">
 <li>
-  <a class="reference reference-toplevel" href="#6" id="56">Imports</a>
-  <ul class="simple simple-toc-section">
-    
-  </ul>
-</li>
-<li>
   <a class="reference reference-toplevel" href="#7" id="57">Types</a>
   <ul class="simple simple-toc-section">
       <li><a class="reference" href="#BpmRange"
@@ -113,7 +107,7 @@ window.addEventListener('DOMContentLoaded', main);
     title="Difficulty {.pure.} = enum
   Basic = &quot;basic&quot;, Advanced = &quot;advanced&quot;, Extreme = &quot;extreme&quot;, Edit = &quot;edit&quot;">Difficulty</a></li>
   <li><a class="reference" href="#Memson"
-    title="Memson = object
+    title="Memson = ref object
   songTitle*: string         ## The title of the chart's song.
   artist*: string            ## The artist of the chart's song.
   difficulty*: Difficulty    ## The difficulty of the chart.
@@ -123,13 +117,14 @@ window.addEventListener('DOMContentLoaded', main);
                              ## May only be set if BPM changes occur in the chart.
   sections*: seq[Section]    ## The sections of the chart.">Memson</a></li>
   <li><a class="reference" href="#Note"
-    title="Note = object
+    title="Note = ref object
   time*: int                 ## The timing id when this note has to be pressed.
   partIndex*: int            ## In which part this note was originally defined.
   case kind*: NoteType       ## Which kind this Note is (Note or Hold)
   of NoteType.Hold:
       animationStartIndex*: int ## On which position the animation for the hold starts on.
       releaseTime*: int      ## The release timing id when the hold has to be released.
+      releasePart*: int      ## The part in which the the hold was released.
       releaseSection*: int   ## In which section it has to look for the timing id.
     
   else:
@@ -142,17 +137,18 @@ window.addEventListener('DOMContentLoaded', main);
   <li><a class="reference" href="#RowIndex"
     title="RowIndex = range[0 .. 3]">RowIndex</a></li>
   <li><a class="reference" href="#Section"
-    title="Section = object
+    title="Section = ref object
   index*: int                ## The index of this section.
   bpm*: float                ## What BPM this section is using.
   partCount*: int            ## How many parts this section originally consisted of.
   timings*: seq[int]         ## Timing ids which defined when a note needs to be pressed.
   snaps*: seq[Snap]          ## The snaps for the timing.
-  notes*: OrderedTable[NoteRange, Note] ## Notes that need to be played.
-                                        ## Keys are the positions, which start from top-left to bottom-right.
-                                        ## _`NoteRange`">Section</a></li>
+  noteCount*: uint           ## How many notes in total are stored
+  notes*: OrderedTable[NoteRange, seq[Note]] ## Notes that need to be played.
+                                             ## Keys are the positions, which start from top-left to bottom-right.
+                                             ## _`NoteRange`">Section</a></li>
   <li><a class="reference" href="#Snap"
-    title="Snap = object
+    title="Snap = ref object
   len*: int                  ## How many notes fit into a Snap.
   partIndex*: int            ## In which part of the original section this snap is defined.
   row*: RowIndex             ## The row in which this snap is defined.">Snap</a></li>
@@ -165,11 +161,6 @@ window.addEventListener('DOMContentLoaded', main);
       <ul class="simple nested-toc-section">parseDifficulty
       <li><a class="reference" href="#parseDifficulty%2Cstring"
     title="parseDifficulty(input: string): Difficulty">parseDifficulty(input: string): Difficulty</a></li>
-
-  </ul>
-  <ul class="simple nested-toc-section">toFXF
-      <li><a class="reference" href="#toFXF%2CMemson"
-    title="toFXF(this: Memson): fxf.ChartFile">toFXF(this: Memson): fxf.ChartFile</a></li>
 
   </ul>
 
@@ -188,12 +179,7 @@ class="link-seesrc" target="_blank">Source</a>
   <div id="tocRoot"></div>
   
   <p class="module-desc"></p>
-  <div class="section" id="6">
-<h1><a class="toc-backref" href="#6">Imports</a></h1>
-<dl class="item">
-<a class="reference external" href="common.html">common</a>, <a class="reference external" href="fxf.html">fxf</a>
-</dl></div>
-<div class="section" id="7">
+  <div class="section" id="7">
 <h1><a class="toc-backref" href="#7">Types</a></h1>
 <dl class="item">
 <div id="BpmRange">
@@ -203,9 +189,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 The range of BPM the file is in
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L33"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L30"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L33" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L30" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -216,14 +202,14 @@ class="link-seesrc" target="_blank">Source</a>
 
 Difficulty for jubeat like games. Will be removed/replaced with a more generic solution soonish 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L7"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L4"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L7" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L4" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
 <div id="Memson">
-<dt><pre><a href="memson.html#Memson"><span class="Identifier">Memson</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
+<dt><pre><a href="memson.html#Memson"><span class="Identifier">Memson</span></a> <span class="Other">=</span> <span class="Keyword">ref</span> <span class="Keyword">object</span>
   <span class="Identifier">songTitle</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span>         <span class="Comment">## The title of the chart's song.</span>
   <span class="Identifier">artist</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">string</span>            <span class="Comment">## The artist of the chart's song.</span>
   <span class="Identifier">difficulty</span><span class="Operator">*</span><span class="Other">:</span> <a href="memson.html#Difficulty"><span class="Identifier">Difficulty</span></a>    <span class="Comment">## The difficulty of the chart.</span>
@@ -237,20 +223,21 @@ class="link-seesrc" target="_blank">Source</a>
 
 Memson is the in-memory data-structure for memo-files.
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L80"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L81"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L80" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L81" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
 <div id="Note">
-<dt><pre><a href="memson.html#Note"><span class="Identifier">Note</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
+<dt><pre><a href="memson.html#Note"><span class="Identifier">Note</span></a> <span class="Other">=</span> <span class="Keyword">ref</span> <span class="Keyword">object</span>
   <span class="Identifier">time</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>                 <span class="Comment">## The timing id when this note has to be pressed.</span>
   <span class="Identifier">partIndex</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>            <span class="Comment">## In which part this note was originally defined.</span>
   <span class="Keyword">case</span> <span class="Identifier">kind</span><span class="Operator">*</span><span class="Other">:</span> <a href="memson.html#NoteType"><span class="Identifier">NoteType</span></a>       <span class="Comment">## Which kind this Note is (Note or Hold)</span>
   <span class="Keyword">of</span> <span class="Identifier">NoteType</span><span class="Other">.</span><span class="Identifier">Hold</span><span class="Other">:</span>
       <span class="Identifier">animationStartIndex</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Comment">## On which position the animation for the hold starts on.</span>
       <span class="Identifier">releaseTime</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>      <span class="Comment">## The release timing id when the hold has to be released.</span>
+      <span class="Identifier">releasePart</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>      <span class="Comment">## The part in which the the hold was released.</span>
       <span class="Identifier">releaseSection</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>   <span class="Comment">## In which section it has to look for the timing id.</span>
     
   <span class="Keyword">else</span><span class="Other">:</span>
@@ -261,9 +248,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 A Note or Hold which has to be pressed.
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L36"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L33"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L36" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L33" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -278,9 +265,9 @@ All positions a note can be placed on. Posion description:<pre>0  1  2  3
 12 13 14 15</pre>
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L20"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L17"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L20" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L17" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -291,9 +278,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 The types of notes that exist (regular note, or a hold)
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L15"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L12"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L15" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L12" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -304,35 +291,36 @@ class="link-seesrc" target="_blank">Source</a>
 
 Range of how many row-indices may exist (4).
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L30"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L27"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L30" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L27" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
 <div id="Section">
-<dt><pre><a href="memson.html#Section"><span class="Identifier">Section</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
+<dt><pre><a href="memson.html#Section"><span class="Identifier">Section</span></a> <span class="Other">=</span> <span class="Keyword">ref</span> <span class="Keyword">object</span>
   <span class="Identifier">index</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>                <span class="Comment">## The index of this section.</span>
   <span class="Identifier">bpm</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">float</span>                <span class="Comment">## What BPM this section is using.</span>
   <span class="Identifier">partCount</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>            <span class="Comment">## How many parts this section originally consisted of.</span>
   <span class="Identifier">timings</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">int</span><span class="Other">]</span>         <span class="Comment">## Timing ids which defined when a note needs to be pressed.</span>
   <span class="Identifier">snaps</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><a href="memson.html#Snap"><span class="Identifier">Snap</span></a><span class="Other">]</span>          <span class="Comment">## The snaps for the timing.</span>
-  <span class="Identifier">notes</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">OrderedTable</span><span class="Other">[</span><a href="memson.html#NoteRange"><span class="Identifier">NoteRange</span></a><span class="Other">,</span> <a href="memson.html#Note"><span class="Identifier">Note</span></a><span class="Other">]</span> <span class="Comment">## Notes that need to be played.</span>
-                                        <span class="Comment">## Keys are the positions, which start from top-left to bottom-right.</span>
-                                        <span class="Comment">## _`NoteRange`</span>
+  <span class="Identifier">noteCount</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">uint</span>           <span class="Comment">## How many notes in total are stored</span>
+  <span class="Identifier">notes</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">OrderedTable</span><span class="Other">[</span><a href="memson.html#NoteRange"><span class="Identifier">NoteRange</span></a><span class="Other">,</span> <span class="Identifier">seq</span><span class="Other">[</span><a href="memson.html#Note"><span class="Identifier">Note</span></a><span class="Other">]</span><span class="Other">]</span> <span class="Comment">## Notes that need to be played.</span>
+                                             <span class="Comment">## Keys are the positions, which start from top-left to bottom-right.</span>
+                                             <span class="Comment">## _`NoteRange`</span>
   </pre></dt>
 <dd>
 
 Describes a complete section (with all parts).
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L54"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L53"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L54" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L53" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
 <div id="Snap">
-<dt><pre><a href="memson.html#Snap"><span class="Identifier">Snap</span></a> <span class="Other">=</span> <span class="Keyword">object</span>
+<dt><pre><a href="memson.html#Snap"><span class="Identifier">Snap</span></a> <span class="Other">=</span> <span class="Keyword">ref</span> <span class="Keyword">object</span>
   <span class="Identifier">len</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>                  <span class="Comment">## How many notes fit into a Snap.</span>
   <span class="Identifier">partIndex</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>            <span class="Comment">## In which part of the original section this snap is defined.</span>
   <span class="Identifier">row</span><span class="Operator">*</span><span class="Other">:</span> <a href="memson.html#RowIndex"><span class="Identifier">RowIndex</span></a>             <span class="Comment">## The row in which this snap is defined.</span>
@@ -341,9 +329,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 Describes the amount of notes that can occur in a single beat.
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L71"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L72"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L71" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L72" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -358,21 +346,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L102"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L99"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L102" class="link-seesrc" target="_blank" >Edit</a>
-
-</dd>
-</div>
-<div id="toFXF,Memson">
-<dt><pre><span class="Keyword">func</span> <a href="#toFXF%2CMemson"><span class="Identifier">toFXF</span></a><span class="Other">(</span><span class="Identifier">this</span><span class="Other">:</span> <a href="memson.html#Memson"><span class="Identifier">Memson</span></a><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">fxf</span><span class="Other">.</span><span class="Identifier">ChartFile</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
-<dd>
-
-
-&nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L113"
-class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L113" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L99" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -386,7 +362,7 @@ class="link-seesrc" target="_blank">Source</a>
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br/>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2022-02-25 23:17:12 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2022-03-05 15:33:25 UTC</small>
       </div>
     </div>
   </div>

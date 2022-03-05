@@ -8,4 +8,3 @@ Section	rconv/memson.html#Section	memson: Section
 Snap	rconv/memson.html#Snap	memson: Snap	
 Memson	rconv/memson.html#Memson	memson: Memson	
 parseDifficulty	rconv/memson.html#parseDifficulty,string	memson: parseDifficulty(input: string): Difficulty	
-toFXF	rconv/memson.html#toFXF,Memson	memson: toFXF(this: Memson): fxf.ChartFile	

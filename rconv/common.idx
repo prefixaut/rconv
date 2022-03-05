@@ -22,7 +22,7 @@ newFormattingParameters	rconv/common.html#newFormattingParameters,string,string,
 formatFileName	rconv/common.html#formatFileName,ConvertOptions,FormattingParameters	common: formatFileName(this: ConvertOptions; params: FormattingParameters): string	
 formatFolderName	rconv/common.html#formatFolderName,ConvertOptions,FormattingParameters	common: formatFolderName(this: ConvertOptions; params: FormattingParameters): string	
 detectFileType	rconv/common.html#detectFileType,string	common: detectFileType(file: string): Option[FileType]	
+getFileExtension	rconv/common.html#getFileExtension,FileType	common: getFileExtension(fileType: FileType): string	
 getDefaultChartFormat	rconv/common.html#getDefaultChartFormat,FileType	common: getDefaultChartFormat(fileType: FileType): string	
 getDefaultOptions	rconv/common.html#getDefaultOptions,FileType	common: getDefaultOptions(to: FileType): ConvertOptions	
-getFileExtension	rconv/common.html#getFileExtension,FileType	common: getFileExtension(fileType: FileType): string	
 log	rconv/common.html#log.m,string	common: log(message: string): untyped	

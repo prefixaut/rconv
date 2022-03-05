@@ -118,7 +118,7 @@ echo chart
     </tr>
     <tr>
         <td style="text-align: center;">Malody</td>
-        <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">✔️</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">➖</td>
         <td style="text-align: center;">✔️</td>

@@ -112,6 +112,7 @@ proc toMalody*(this: memson.Memson): malody.Chart =
             title = this.songTitle
         ),
         mode = malody.ChartMode.Pad,
+        version = $this.difficulty
     ))
 
     var bpm: float32
@@ -124,8 +125,7 @@ proc toMalody*(this: memson.Memson): malody.Chart =
 
     for section in this.sections:
         snapPos = 1
-        snapIndex = 1
-        # echo "section " & $sectionIndex & ": " & $section
+        snapIndex = 0
 
         if section.snaps.len > 0:
             snapSize = section.snaps[0].len
@@ -152,27 +152,19 @@ proc toMalody*(this: memson.Memson): malody.Chart =
                 holdRelease.del(idx)
 
             if time > -1:
-                var note: memson.Note
-                var index: int
-
                 for secNotePos, secMultiNotes in section.notes:
                     for secNote in secMultiNotes:
                         if secNote.time == timeIndex:
-                            note = secNote
-                            index = secNotePos
-                            break
-
-                if note != nil:
-                    if note.kind == memson.NoteType.Hold:
-                        let hold = malody.newIndexHold(beat = beat, index = index, endIndex = index)
-                        result.note.add hold
-                        holdRelease.add (memson: note, malody: hold)
-                    else:
-                        result.note.add malody.newIndexNote(beat = beat, index = index)
+                            if secNote.kind == memson.NoteType.Hold:
+                                let hold = malody.newIndexHold(beat = beat, index = secNotePos, endIndex = secNote.animationStartIndex)
+                                result.note.add hold
+                                holdRelease.add (memson: secNote, malody: hold)
+                            else:
+                                result.note.add malody.newIndexNote(beat = beat, index = secNotePos)
 
             inc snapIndex
-            if snapIndex > snapSize:
-                snapIndex = 1
+            if snapIndex >= snapSize:
+                snapIndex = 0
                 if section.snaps.len > snapPos:
                     snapSize = section.snaps[snapPos].len
                 else:

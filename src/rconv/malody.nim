@@ -203,7 +203,7 @@ type
                 indexEndBeat*: Beat
                 ## Beat when the hold is being released
                 indexEnd*: IndexRange
-                ## The index where the Hold is being released on
+                ## The index where the animation for the hold starts on
 
             of ColumnHold:
                 colEndBeat*: Beat

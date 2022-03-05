@@ -264,15 +264,24 @@ func getCatchNoteType*(id: int): CatchNoteType =
         discard
 
 func newChart*(meta: MetaData = newMetaData(), time: seq[TimedElement] = @[], note: seq[TimedElement] = @[]): Chart =
-    result = Chart()
+    new result
     result.meta = meta
     result.time = time
     result.note = note
 
-func newMetaData*(`$ver`: int = 1, creator: string = "", background: string = "", version: string = "", preview: int = 0, id: uint = 0,
-    mode: ChartMode = ChartMode.Key, time: int = 0, song: SongData = newSongData(), mode_ext: ModeData = newModeData()): MetaData =
-
-    result = MetaData()
+func newMetaData*(
+    `$ver`: int = 1,
+    creator: string = "",
+    background: string = "",
+    version: string = "",
+    preview: int = 0,
+    id: uint = 0,
+    mode: ChartMode = ChartMode.Key,
+    time: int = 0,
+    song: SongData = newSongData(),
+    mode_ext: ModeData = newModeData()
+): MetaData =
+    new result
     result.`$ver` = `$ver`
     result.creator = creator
     result.background = background
@@ -283,9 +292,15 @@ func newMetaData*(`$ver`: int = 1, creator: string = "", background: string = ""
     result.time = time
     result.song = song
     result.mode_ext = mode_ext
-
-func newSongData*(title: string = "", titleorg: string = "", artist: string = "", artistorg: string = "", id: int = 0): SongData =
-    result = SongData()
+    
+func newSongData*(
+    title: string = "",
+    titleorg: string = "",
+    artist: string = "",
+    artistorg: string = "",
+    id: int = 0
+): SongData =
+    new result
     result.title = title
     result.titleorg = titleorg
     result.artist = artist
@@ -293,71 +308,97 @@ func newSongData*(title: string = "", titleorg: string = "", artist: string = ""
     result.id = id
 
 func newModeData*(column: int = 0, bar_begin: int = 0, speed: int = 0): ModeData =
-    result = ModeData()
+    new result
     result.column = column
     result.bar_begin = bar_begin
     result.speed = speed
 
 func newTimedElement*(beat: Beat = EmptyBeat): TimedElement =
-    result = TimedElement(kind: ElementType.Plain, hold: HoldType.None)
-    result.beat = beat
+    result = TimedElement(beat: beat, kind: ElementType.Plain, hold: HoldType.None)
 
 func newTimeSignature*(beat: Beat = EmptyBeat, bpm: float = 0): TimedElement =
-    result = TimedElement(kind: ElementType.TimeSignature, hold: HoldType.None)
-    result.beat = beat
+    result = TimedElement(beat: beat, kind: ElementType.TimeSignature, hold: HoldType.None)
     result.sigBpm = bpm
 
-func newSoundCue*(beat: Beat = EmptyBeat, `type`: SoundCueType = SoundCueType.Effect, sound: string = "", offset: float = 0, volume: float = 0): TimedElement =
-    result = TimedElement(kind: ElementType.SoundCue, hold: HoldType.None)
-    result.beat = beat
+func newSoundCue*(
+    beat: Beat = EmptyBeat,
+    `type`: SoundCueType = SoundCueType.Effect,
+    sound: string = "",
+    offset: float = 0,
+    volume: float = 0
+): TimedElement =
+    result = TimedElement(beat: beat, kind: ElementType.SoundCue, hold: HoldType.None)
     result.cueType = `type`
     result.cueSound = sound
     result.cueOffset = offset
     result.cueVolume = volume
 
 proc newIndexNote*(beat: Beat = EmptyBeat, index: IndexRange = 0): TimedElement =
-    result = TimedElement(kind: ElementType.IndexNote, hold: HoldType.None)
-    result.beat = beat
+    result = TimedElement(beat: beat, kind: ElementType.IndexNote, hold: HoldType.None)
     result.index = index
 
-func newColumnNote*(beat: Beat = EmptyBeat, column: KeyColumnRange = 0, style: int = 0): TimedElement =
-    result = TimedElement(kind: ElementType.ColumnNote, hold: HoldType.None)
-    result.beat = beat
+func newColumnNote*(
+    beat: Beat = EmptyBeat,
+    column: KeyColumnRange = 0,
+    style: int = 0
+): TimedElement =
+    result = TimedElement(beat: beat, kind: ElementType.ColumnNote, hold: HoldType.None)
     result.column = column
     result.colStyle = style
 
-func newCatchNote*(beat: Beat = EmptyBeat, x: int = 0, `type`: CatchNoteType = CatchNoteType.Hold): TimedElement =
-    result = TimedElement(kind: ElementType.CatchNote, hold: HoldType.None)
-    result.beat = beat
+func newCatchNote*(
+    beat: Beat = EmptyBeat,
+    x: int = 0,
+    `type`: CatchNoteType = CatchNoteType.Hold
+): TimedElement =
+    result = TimedElement(beat: beat, kind: ElementType.CatchNote, hold: HoldType.None)
     result.catchX = x
     result.catchType = `type`
 
-func newSlideNote*(beat: Beat = EmptyBeat, x: int = 0, width: int = 0, `type`: SlideNoteType = SlideNoteType.Hold, segments: seq[TimedElement] = @[]): TimedElement =
-    result = TimedElement(kind: ElementType.SlideNote, hold: HoldType.None)
-    result.beat = beat
+func newSlideNote*(
+    beat: Beat = EmptyBeat,
+    x: int = 0,
+    width: int = 0,
+    `type`: SlideNoteType = SlideNoteType.Hold,
+    segments: seq[TimedElement] = @[]
+): TimedElement =
+    result = TimedElement(beat: beat, kind: ElementType.SlideNote, hold: HoldType.None)
     result.slideX = x
     result.slideWidth = width
     result.slideType = `type`
     result.slideSegments = segments
 
-func newIndexHold*(beat: Beat = EmptyBeat, index: IndexRange, endBeat: Beat = EmptyBeat, endIndex: IndexRange): TimedElement =
-    result = TimedElement(kind: ElementType.IndexNote, hold: HoldType.IndexHold)
-    result.beat = beat
+func newIndexHold*(
+    beat: Beat = EmptyBeat,
+    index: IndexRange,
+    endBeat: Beat = EmptyBeat,
+    endIndex: IndexRange
+): TimedElement =
+    result = TimedElement(beat: beat, kind: ElementType.IndexNote, hold: IndexHold)
     result.index = index
     result.indexEndBeat = endBeat
     result.indexEnd = endIndex
 
-func newColumnHold*(beat: Beat = EmptyBeat, column: KeyColumnRange = 0, style: int = 0, endBeat: Beat = EmptyBeat, hits: int = 1): TimedElement =
-    result = TimedElement(kind: ElementType.ColumnNote, hold: HoldType.ColumnHold)
-    result.beat = beat
+func newColumnHold*(
+    beat: Beat = EmptyBeat,
+    column: KeyColumnRange = 0,
+    style: int = 0,
+    endBeat: Beat = EmptyBeat,
+    hits: int = 1
+): TimedElement =
+    result = TimedElement(beat: beat, kind: ElementType.ColumnNote, hold: HoldType.ColumnHold)
     result.column = column
     result.colStyle = style
     result.colEndBeat = endBeat
     result.colHits = hits
 
-func newCatchHold*(beat: Beat = EmptyBeat, x: int = 0, `type`: CatchNoteType = CatchNoteType.Hold, endBeat: Beat = EmptyBeat): TimedElement =
-    result = TimedElement(kind: ElementType.CatchNote, hold: HoldType.CatchHold)
-    result.beat = beat
+func newCatchHold*(
+    beat: Beat = EmptyBeat,
+    x: int = 0,
+    `type`: CatchNoteType = CatchNoteType.Hold,
+    endBeat: Beat = EmptyBeat
+): TimedElement =
+    result = TimedElement(beat: beat, kind: ElementType.CatchNote, hold: HoldType.CatchHold)
     result.catchX = x
     result.catchType = `type`
     result.catchEndBeat = endBeat

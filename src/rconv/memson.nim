@@ -71,7 +71,7 @@ type
 
     Snap* = ref object
         ## Describes the amount of notes that can occur in a single beat.
-        len*: int
+        length*: int
         ## How many notes fit into a Snap.
         partIndex*: int
         ## In which part of the original section this snap is defined.
@@ -95,6 +95,68 @@ type
         ## May only be set if BPM changes occur in the chart.
         sections*: seq[Section]
         ## The sections of the chart.
+
+func newMemson*(
+    songTitle: string = "",
+    artist: string = "",
+    difficulty: Difficulty = Difficulty.Basic,
+    level: int = 1,
+    bpm: float = 0.0,
+    bpmRange: BpmRange,
+    sections: seq[Section] = @[]
+): Memson =
+    new result
+    result.songTitle = songTitle
+    result.artist = artist
+    result.difficulty = difficulty
+    result.level = level
+    result.bpm = bpm
+    result.bpmRange = bpmRange
+    result.sections = sections
+
+func newSection*(
+    index: int = 1,
+    bpm: float = 0.0,
+    partCount: int = 1,
+    timings: seq[int] = @[],
+    snaps: seq[Snap] = @[],
+    noteCount: uint = 0, notes: OrderedTable[NoteRange, seq[Note]] = initOrderedTable[NoteRange, seq[Note]]()
+): Section =
+    new result
+    result.index = index
+    result.bpm = bpm
+    result.partCount = partCount
+    result.timings = timings
+    result.snaps = snaps
+    result.noteCount = noteCount
+    result.notes = notes
+
+func newSnap*(length: int = 1, partIndex: int = 0, row = 0): Snap =
+    new result
+    result.length = length
+    result.partIndex = partIndex
+    result.row = row
+
+func newNote*(time: int = 0, partIndex: int = 0): Note =
+    result = Note(kind: NoteType.Note)
+    result.time = time
+    result.partIndex = partIndex
+
+func newHold*(
+    time: int = 0,
+    partIndex: int = 0,
+    animationStartIndex: int = 0,
+    releaseTime: int = 0,
+    releasePart: int = 0,
+    releaseSection: int = 1
+): Note =
+    result = Note(kind: NoteType.Hold)
+    result.time = time
+    result.partIndex = partIndex
+    result.animationStartIndex = animationStartIndex
+    result.releaseTime = releaseTime
+    result.releasePart = releasePart
+    result.releaseSection = releaseSection
 
 func parseDifficulty*(input: string): Difficulty =
     case input.toLower:

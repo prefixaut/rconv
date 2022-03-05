@@ -35,7 +35,7 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
             var change = fxf.newBpmChange(
                 bpm = bpm,
                 time = float32(round(globalTime * 10) / 10),
-                snapSize = uint16(section.snaps[0].len),
+                snapSize = uint16(section.snaps[0].length),
                 snapIndex = uint16(0)
             )
             result.bpmChange.add change
@@ -45,9 +45,9 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
         var indexOffset = 0
 
         for snap in section.snaps:
-            let snapTime = beat / float(snap.len)
+            let snapTime = beat / float(snap.length)
 
-            for snapIndex in 0..<snap.len:
+            for snapIndex in 0..<snap.length:
                 let timing = indexOffset + snapIndex
                 let noteTime = round(globalTime * 10) / 10
 
@@ -67,7 +67,7 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
 
                 var tick = fxf.newTick(
                     time = noteTime,
-                    snapSize = uint16(snap.len),
+                    snapSize = uint16(snap.length),
                     snapIndex = uint16(snapIndex)
                 )
                 var hasData = false
@@ -91,7 +91,7 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
                     chart.ticks.add tick
                     inc chart.numTick
 
-            inc indexOffset, snap.len
+            inc indexOffset, snap.length
 
     if this.difficulty == Difficulty.Basic:
         result.charts.basic = chart
@@ -128,7 +128,7 @@ proc toMalody*(this: memson.Memson): malody.Chart =
         snapIndex = 0
 
         if section.snaps.len > 0:
-            snapSize = section.snaps[0].len
+            snapSize = section.snaps[0].length
         else:
             snapSize = 0
 
@@ -166,7 +166,7 @@ proc toMalody*(this: memson.Memson): malody.Chart =
             if snapIndex >= snapSize:
                 snapIndex = 0
                 if section.snaps.len > snapPos:
-                    snapSize = section.snaps[snapPos].len
+                    snapSize = section.snaps[snapPos].length
                 else:
                     snapSize = 0
                 inc snapPos

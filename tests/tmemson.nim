@@ -1,7 +1,9 @@
-import std/unittest
+import std/[sequtils, sugar, unittest]
 
 import rconv/[memo, mapper]
 import rconv/fxf as fxf
+import rconv/malody as malody
+import rconv/private/test_utils
 
 suite "memson: convert":
     let testFile = """
@@ -239,3 +241,50 @@ BPM: 160
             diff.ticks[18].snapSize == 4
             diff.ticks[18].snapIndex == 3
             diff.ticks[18].notes[0] == 10
+
+    test "to malody":
+        let chart = parsed.toMalody
+
+        check:
+            chart.meta.`$ver` == 1
+            chart.meta.version == "extreme"
+            chart.meta.mode == malody.ChartMode.Pad
+            chart.meta.song.title == "Song-Title-BlaFoo"
+            chart.meta.song.artist == "Artist-Foobar"
+
+        check:
+            chart.time.len == 2
+            chart.time.all(elem =>
+                elem.kind == malody.ElementType.TimeSignature and elem.hold == malody.HoldType.None)
+
+            chart.time[0].beat == [0, 0, 4]
+            chart.time[0].sigBpm == 195.0
+
+            chart.time[1].beat == [8, 0, 6]
+            chart.time[1].sigBpm == 160.0
+
+        check:
+            chart.note.len == 20
+
+        testMalodyIndexNote(chart.note[0], [4, 0, 4], 15)
+        testMalodyIndexNote(chart.note[1], [4, 2, 4], 6)
+        testMalodyIndexNote(chart.note[2], [5, 0, 4], 0)
+        testMalodyIndexNote(chart.note[3], [5, 2, 4], 9)
+        testMalodyIndexNote(chart.note[4], [6, 0, 4], 2)
+        testMalodyIndexNote(chart.note[5], [7, 0, 4], 12)
+        testMalodyIndexNote(chart.note[6], [7, 2, 4], 10)
+
+        testMalodyIndexHold(chart.note[7], [8, 0, 6], 4, [8, 4, 6], 6)
+        testMalodyIndexNote(chart.note[8], [8, 2, 6], 14)
+        testMalodyIndexNote(chart.note[9], [8, 4, 6], 1)
+        testMalodyIndexNote(chart.note[10], [9, 1, 4], 3)
+        testMalodyIndexNote(chart.note[11], [9, 2, 4], 6)
+        testMalodyIndexNote(chart.note[12], [9, 3, 4], 9)
+        testMalodyIndexHold(chart.note[13], [10, 0, 8], 7, [10, 6, 8], 5)
+        testMalodyIndexNote(chart.note[14], [10, 3, 8], 13)
+        testMalodyIndexNote(chart.note[15], [10, 6, 8], 2)
+        testMalodyIndexNote(chart.note[16], [11, 1, 4], 0)
+        testMalodyIndexNote(chart.note[17], [11, 2, 4], 5)
+        testMalodyIndexNote(chart.note[18], [11, 2, 4], 14)
+        testMalodyIndexNote(chart.note[19], [11, 3, 4], 10)
+

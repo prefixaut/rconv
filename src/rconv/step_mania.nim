@@ -1,19 +1,19 @@
-import std/strutils
+import std/[enumutils, strutils]
 
 import ./private/line_reader
 
 type
     NoteType* {.pure.} = enum
         ## The type of notes that can be present in a SM file
-        Empty = 0
+        Empty = "0"
         ## No note
-        Note = 1
+        Note = "1"
         ## Regular Note
-        Hold = 2
+        Hold = "2"
         ## Hold start/head
-        HoldEnd = 3
+        HoldEnd = "3"
         ## Hold/Roll end/tail
-        Roll = 4
+        Roll = "4"
         ## Roll start/head
         Mine = "M"
         ## A single Mine
@@ -52,12 +52,21 @@ type
         ## 10k
 
     Difficulty* {.pure.} = enum
+        ## The difficulty of a chart.
+        ## The same difficulty may only be defined once with the same game-mode, except for the Edit.
+        ## Edit-Difficulties may be present unlimited amount of times.
         Beginner = "Beginner"
         Easy = "Easy"
         Medium = "Medium"
         Hard = "Hard"
         Challange = "Challange"
         Edit = "Edit"
+
+    Color* = array[4, float] ## \
+    ## A rgba color representation
+
+    RadarValues* = array[5, float] ## \
+    ## Radar values from SM 3.9 (Stream, Voltage, Air, Freeze & Chaos)
 
     BpmChange* = ref object
         ## A bpm-change in a song
@@ -101,12 +110,6 @@ type
         count*: int
         ## How many ticks it should change to
 
-    Color* = array[4, float] ## \
-    ## A rgba color representation
-
-    RadarValues* = array[5, float] ## \
-    ## Radar values from SM 3.9 (Stream, Voltage, Air, Freeze & Chaos)
-
     BackgroundChange* = ref object
         ## A background change which occurrs at a specified time
         beat*: float32
@@ -132,18 +135,25 @@ type
         color2*: Color
         ## Second color passed to the script files
 
-    Attack* = ref object
-        ## An attack is a modifier which occurs at a time for a certain time
-        time*: float
+    Attack* = ref object of RootObj
         ## The time when the attack occurs
         length*: float
         ## For how long the attack is active
         mods*: seq[string]
         ## The modifiers which will be applied
 
+    TimedAttack* = ref object of Attack
+        ## An attack is a modifier which occurs at a time for a certain time
+        time*: float
+
     Note* = ref object
         ## A single note to be played
+        attack*: Attack
+        ## The attack to apply when the note is played
+        keysound*: int
+        ## Keysound which has to be played when hit
         case kind*: NoteType:
+            ## The kind of the note
             of Hold:
                 holdEndBeat*: int
                 ## On which beat the hold has to end
@@ -184,13 +194,13 @@ type
         ## The Song-Title
         subtitle*: string
         ## The Sub-Title of the Song (Usually extras like "xyz Remix" or memes)
-        arist*: string
+        artist*: string
         ## Artist of the Song
-        titleTranslated*: string
+        titleTransliterated*: string
         ## If the title is in a foreign language, then this one should be the translated one (to english usually)
-        subtitleTranslated*: string
+        subtitleTransliterated*: string
         ## If the subtitle is in a foreign language, then this one should be the translated one (to english usually)
-        aristTranslated*: string
+        artistTransliterated*: string
         ## If the arist is in a foreign language, then this one should be the translated one (to english usually)
         genre*: string
         ## Genre of the Song
@@ -232,7 +242,7 @@ type
         ## Animations to play during the song
         fgChanges*: seq[BackgroundChange]
         ## Background-Changes for the foreground-layer
-        attacks*: seq[Attack]
+        attacks*: seq[TimedAttack]
         ## Modifier changes in the song
         stops*: seq[Stop]
         ## Stops/breaks in the song
@@ -246,6 +256,8 @@ type
         ## The tick-counts for holds
         charts*: seq[Chart]
         ## The charts available for this song
+        keySoundCharts*: seq[Chart]
+        ## The charts for the keysounds
 
 func newBpmChange*(beat: float32 = 0.0, bpm: float32 = 0.0): BpmChange =
     new result
@@ -299,7 +311,12 @@ func newBackgroundChange*(
     result.color1 = color1
     result.color2 = color2
 
-func newAttack*(time: float32 = 0.0, length: float32 = 0.0, mods: seq[string] = @[]): Attack =
+func newAttack*(length: float32 = 0.0, mods: seq[string] = @[]): Attack =
+    new result
+    result.length = length
+    result.mods = mods
+
+func newTimedAttack*(time: float32 = 0.0, length: float32 = 0.0, mods: seq[string] = @[]): TimedAttack =
     new result
     result.time = time
     result.length = length
@@ -310,11 +327,12 @@ func newTickCount*(beat: float32 = 0.0, count: int = 4): TickCount =
     result.beat = beat
     result.count = count
 
-func newNote*(kind: NoteType = NoteType.Note): Note =
-    new result
-    result.kind = kind
+func newNote*(kind: NoteType = NoteType.Note, attack: Attack = nil, keysound: int = -1): Note =
+    result = Note(kind: kind)
+    result.attack = attack
+    result.keysound = keysound
 
-func newBeat*(snapSize: int = 1, notes: seq[Note] = @[]): Beat =
+func newBeat*(snapSize: int = 0, notes: seq[Note] = @[]): Beat =
     new result
     result.snapSize = snapSize
     result.notes = notes
@@ -360,20 +378,22 @@ func newChartFile*(
     bgChanges3: seq[BackgroundChange] = @[],
     animations: seq[BackgroundChange] = @[],
     fgChanges: seq[BackgroundChange] = @[],
+    attacks: seq[TimedAttack] = @[],
     stops: seq[Stop] = @[],
     delays: seq[Delay] = @[],
     bpms: seq[BpmChange] = @[],
     displayBpm: string = "",
     tickCounts: seq[TickCount] = @[],
-    charts: seq[Chart] = @[]
+    charts: seq[Chart] = @[],
+    keySoundCharts: seq[Chart] = @[]
 ): ChartFile =
     new result
     result.title = title
     result.subtitle = subtitle
-    result.arist = arist
-    result.titleTranslated = titleTranslated
-    result.subtitleTranslated = subtitleTranslated
-    result.aristTranslated = aristTranslated
+    result.artist = arist
+    result.titleTransliterated = titleTranslated
+    result.subtitleTransliterated = subtitleTranslated
+    result.artistTransliterated = aristTranslated
     result.genre = genre
     result.credit = credit
     result.music = music
@@ -394,12 +414,14 @@ func newChartFile*(
     result.bgChanges3 = bgChanges3
     result.animations = animations
     result.fgChanges = fgChanges
+    result.attacks = attacks
     result.stops = stops
     result.delays = delays
     result.bpms = bpms
     result.displayBpm = displayBpm
     result.tickCounts = tickCounts
     result.charts = charts
+    result.keySoundCharts = keySoundCharts
 
 func isYes(str: string): bool =
     return str.toLower in ["yes", "1", "es", "omes"]
@@ -417,13 +439,16 @@ func parseIntrumentTracks(data: string): seq[InstrumentTrack] =
         if spl.len >= 2:
             result.add(newInstrumentTrack(instrument = spl[0], file = spl[1]))
 
-func parseColor(data: string): Color =
-    var spl = data.split(",")
+proc parseColor(data: string): Color =
+    if data.strip.len == 0:
+        return [0.0, 0.0, 0.0, 0.0]
+
+    var spl = data.replace("^", ",").split(",")
     for i in spl.len..4:
         spl.add "0"
     result = [parseFloat(spl[0]), parseFloat(spl[1]), parseFloat(spl[2]), parseFloat(spl[3])]
 
-func parseBackgroundChanges(data: string): seq[BackgroundChange] =
+proc parseBackgroundChanges(data: string): seq[BackgroundChange] =
     result = @[]
     for elem in data.splitByComma:
         var spl = elem.split("=")
@@ -463,7 +488,11 @@ func parseTimeSignatures(data: string): seq[TimeSignature] =
         let spl = elem.split("=")
         result.add newTimeSignature(beat = parseFloat(spl[0]), numerator = parseInt(spl[1]), denominator = parseInt(spl[2]))
 
-func parseAttacks(data: string): seq[Attack] =
+func parseAttack(data: string): Attack =
+    let spl = data.split(":")
+    result = newAttack(parseFloat(spl[1]), spl[0].splitByComma)
+
+func parseTimedAttacks(data: string): seq[TimedAttack] =
     result = @[]
     for elem in data.splitByComma:
         var start = 0.0
@@ -482,12 +511,13 @@ func parseAttacks(data: string): seq[Attack] =
             of "end":
                 eend = parseFloat(spl[1])
             of "mods":
-                mods.add spl[1]
+                for tmp in spl[1].splitByComma:
+                    mods.add tmp
 
             if eend > 0:
                 len = eend - start
             
-            result.add newAttack(time = start, length = len, mods = mods)
+            result.add newTimedAttack(time = start, length = len, mods = mods)
 
 func parseDelays(data: string): seq[Delay] =
     result = @[]
@@ -501,23 +531,109 @@ func parseTickCounts(data: string): seq[TickCount] =
         let spl = elem.split("=")
         result.add newTickCount(parseFloat(spl[0]), parseInt(spl[1]))
 
-func parseChart(data: string): Chart =
-    result = Chart()
+func parseRadarValues(data: string): RadarValues =
+    let spl = data.splitByComma
+    result = [parseFloat(spl[0]), parseFloat(spl[1]), parseFloat(spl[2]), parseFloat(spl[3]), parseFloat(spl[4])]
 
-proc putFileMetaData(chart: ChartFile, meta: string, data: string): void =
-    case meta.toLower:
+func columnCount(mode: GameMode): int =
+    result = 4
+
+    case mode:
+    of GameMode.DanceSingle:
+        result = 4
+    of GameMode.PumpSingle:
+        result = 5
+    of GameMode.DanceSolo, GameMode.PumpHalfdouble:
+        result = 6
+    of GameMode.DanceCouple, GameMode.DanceDouble, GameMode.DanceRoutine:
+        result = 8
+    of GameMode.PumpCouple, GameMode.PumpDouble:
+        result = 10
+    else:
+        discard
+
+func parseBeats(data: string, columns: int): seq[Beat] =
+    result = @[]
+
+    var beat = newBeat()
+    var lastNote: Note = nil
+    var noteIndex = 0
+    var inAttack = false
+    var attackData = ""
+    var inKeysound = false
+    var keysoundData = ""
+
+    for str in data:
+        if inAttack:
+            if str == '}':
+                inAttack = false
+                lastNote.attack = parseAttack(attackData)
+                continue
+            attackData &= str
+            continue
+        elif str == '{':
+            inAttack = true
+            continue
+
+        if inKeysound:
+            if str == ']':
+                inKeysound = false
+                lastNote.keySound = parseInt(keysoundData)
+                continue
+            keysoundData &= str
+            continue
+        elif str == '[':
+            inKeysound = true
+            continue
+
+        if str == ',':
+            result.add beat
+            beat = newBeat()
+            noteIndex = 0
+            continue
+
+        lastNote = newNote(parseEnum[NoteType]($str))
+        beat.notes.add lastNote
+        inc noteIndex
+
+        if noteIndex >= columns:
+            inc beat.snapSize
+            noteIndex = 0
+
+    inc beat.snapSize
+    result.add beat
+
+func parseChart(data: string): Chart =
+    let meta = data.split(":", 5)
+    let mode = parseEnum[GameMode](meta[0])
+    let diff = parseEnum[Difficulty](meta[2])
+    let columns = columnCount(mode)
+
+    result = Chart()
+    result.gameMode = mode
+    result.chartArtist = meta[1]
+    result.difficulty = diff
+    result.difficultyLevel = parseInt(meta[3])
+    result.radarValues = parseRadarValues(meta[4])
+    result.beats = parseBeats(meta[5], columns)
+
+func putFileData(chart: var ChartFile, tag: string, data: string): void =
+    if data.strip.len == 0:
+        return
+
+    case tag.toLower:
     of "title":
         chart.title = data
     of "subtitle":
         chart.subtitle = data
     of "artist":
-        chart.arist = data
+        chart.artist = data
     of "titletranslit":
-        chart.titleTranslated = data
+        chart.titleTransliterated = data
     of "subtitletranslit":
-        chart.subtitleTranslated = data
+        chart.subtitleTransliterated = data
     of "artisttranslit":
-        chart.aristTranslated = data
+        chart.artistTransliterated = data
     of "genre":
         chart.genre = data
     of "credit":
@@ -563,48 +679,49 @@ proc putFileMetaData(chart: ChartFile, meta: string, data: string): void =
     of "timesignatures":
         chart.timeSignatures = parseTimeSignatures(data)
     of "attacks":
-        chart.attacks = parseAttacks(data)
+        chart.attacks = parseTimedAttacks(data)
     of "delays":
         chart.delays = parseDelays(data)
     of "tickcounts":
         chart.tickCounts = parseTickCounts(data)
     of "notes":
         chart.charts.add parseChart(data)
+    of "notes2":
+        chart.keySoundCharts.add parseChart(data)
 
 proc parseStepMania*(data: string): ChartFile =
     result = newChartFile()
 
     var reader = newLineReader(data)
     var inMeta = false
-    var meta = ""
-    var metaData = ""
-    var chart: Chart = nil
-    var inNotes = false
+    var tag = ""
+    var data = ""
 
     while not reader.isEOF():
         let line = reader.nextLine()
-        
+
         if inMeta:
-            let `end` = line.find(";")
-            if `end` > -1:
-                metaData &= line.substr(`end`)
+            let eend = line.find(";")
+            if eend > -1:
+                data &= line.substr(0, eend - 1)
+                putFileData(result, tag, data)
 
-                putFileMetaData(result, meta, metaData)
-
-                meta = ""
-                metaData = ""
+                tag = ""
+                data = ""
                 inMeta = false
             else:
-                metaData &= line
+                data &= line
             continue
 
         if line.startsWith("#"):
             let sep = line.find(":")
-            let `end` = line.find(";")
-            if `end` > -1:
-                putFileMetaData(result, line.substr(1, sep), line.substr(sep + 1, `end`))
+            let eend = line.find(";")
+            tag = line.substr(1, sep - 1).strip
+
+            if eend > -1:
+                putFileData(result, tag, line.substr(sep + 1, eend - 1))
+                tag = ""
             else:
-                meta = line.substr(1, sep)
-                metaData = line.substr(sep + 1)
+                data = line.substr(sep + 1)
                 inMeta = true
             continue

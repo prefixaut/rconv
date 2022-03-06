@@ -1,6 +1,6 @@
-import std/[enumutils, strutils]
+import std/[enumutils, strutils, sequtils, sugar, options]
 
-import ./private/line_reader
+import ./private/[line_reader, parser_helpers]
 
 type
     NoteType* {.pure.} = enum
@@ -70,26 +70,26 @@ type
 
     BpmChange* = ref object
         ## A bpm-change in a song
-        beat*: float32
+        beat*: float
         ## At which beat the change occurs
-        bpm*: float32
+        bpm*: float
         ## To what BPM it should change
 
     Stop* = ref object
-        beat*: float32
+        beat*: float
         ## At which beat the stop occurs
-        duration*: float32
+        duration*: float
         ## For how long the stop holds on
 
     Delay* = ref object
-        beat*: float32
+        beat*: float
         ## At which beat the delay occurs
-        duration*: float32
+        duration*: float
         ## For how long the delay holds on
 
     TimeSignature* = ref object
         ## A time-signature change (ie. 3/4 or 7/8)
-        beat*: float32
+        beat*: float
         ## At which point the time-signature changes
         numerator*: int
         ## The numerator of the signature
@@ -105,18 +105,18 @@ type
 
     TickCount* = ref object
         ## Specifies how many checkpoints a hold has in a beat.
-        beat*: float32
+        beat*: float
         ## At which beat the tick-count changes
         count*: int
         ## How many ticks it should change to
 
     BackgroundChange* = ref object
         ## A background change which occurrs at a specified time
-        beat*: float32
+        beat*: float
         ## The beat on which the change occurs
         path*: string
         ## The file path (or if it's a folder path, uses "default.lua") to the script file
-        updateRate*: float32
+        updateRate*: float
         ## How often the change is updated
         crossFade*: bool
         ## If it should use the cross-fade effect (overruled by `effect`)
@@ -136,15 +136,57 @@ type
         ## Second color passed to the script files
 
     Attack* = ref object of RootObj
-        ## The time when the attack occurs
+        ## An attack is a modifier which occurs at a time/note for a certain time
         length*: float
         ## For how long the attack is active
         mods*: seq[string]
         ## The modifiers which will be applied
 
     TimedAttack* = ref object of Attack
-        ## An attack is a modifier which occurs at a time for a certain time
+        ## An attack which happens at the specified time
         time*: float
+        ## The time when the attack occurs
+
+    Combo* = ref object
+        ## Changes the combo count for hits/misses
+        beat*: float
+        ## When the combo-change should occur
+        hit*: int
+        ## How much a single hit should count to the combo
+        miss*: int
+        ## How many misses a single miss should count
+
+    Speed* = ref object
+        ## Modifies the speed of the chart by ratio
+        beat*: float
+        ## The beat where the speed-change occurs on
+        ratio*: float
+        ## The ratio that will be applied
+        duration*: float
+        ## How long it should take for the ratio to be applied (will be applied gradually)
+        inSeconds*: bool
+        ## If the duration is specified in seconds or in beats
+
+    Scroll* = ref object
+        ## Modifies the scroll speed bt a factor
+        beat*: float
+        ## The beat where the scroll-speed occurs on
+        factor*: float
+        ## The factor of how much the scoll changes compared to the regular speed
+
+    FakeSection* = ref object
+        ## Marker for a section to make all notes fakes
+        beat*: float
+        ## The beat from when the fake-section should begin from
+        duration*: float
+        ## How long the fake-section should last (in beats)
+
+    Label* = ref object
+        ## Label for a certain beat
+        beat*: float
+        ## The beat on which the label is placed on
+        content*: string
+        ## The text/content of the label
 
     Note* = ref object
         ## A single note to be played
@@ -206,12 +248,6 @@ type
         ## Genre of the Song
         credit*: string
         ## Credits of the Song (Usually the charter)
-        music*: string
-        ## Path to the music file
-        instrumentTracks: seq[InstrumentTrack]
-        ## A special track for different Instruments
-        keySounds*: seq[string]
-        ## Keysound files to load
         banner*: string
         ## Path to the banner image
         background*: string
@@ -220,18 +256,18 @@ type
         ## Path to the lyrics file
         cdTitle*: string
         ## Path to the cd-title image
-        menuColor*: string
-        ## The menu-color
-        sampleStart*: float32
+        music*: string
+        ## Path to the music file
+        instrumentTracks*: seq[InstrumentTrack]
+        ## A special track for different Instruments
+        sampleStart*: float
         ## Timestamp where the preview/sample starts from
-        sampleLength*: float32
+        sampleLength*: float
         ## How long the preview/sample should last
+        displayBpm*: string
+        ## Custom string to properly display the BPM
         selectable*: bool
         ## If this chart is selectable in the game
-        offset*: float32
-        ## Sound/Music offset in ms
-        timeSignatures*: seq[TimeSignature]
-        ## Changes of Time-Signatures
         bgChanges*: seq[BackgroundChange]
         ## Background-Changes for the background-layer 1
         bgChanges2*: seq[BackgroundChange]
@@ -242,53 +278,119 @@ type
         ## Animations to play during the song
         fgChanges*: seq[BackgroundChange]
         ## Background-Changes for the foreground-layer
-        attacks*: seq[TimedAttack]
-        ## Modifier changes in the song
+        keySounds*: seq[string]
+        ## Keysound files to load
+        offset*: float
+        ## Sound/Music offset in ms
         stops*: seq[Stop]
         ## Stops/breaks in the song
-        delays*: seq[Delay]
-        ## The delays of the song (?)
         bpms*: seq[BpmChange]
         ## BPM changes
-        displayBpm*: string
-        ## Custom string to properly display the BPM
+        timeSignatures*: seq[TimeSignature]
+        ## Changes of Time-Signatures
+        attacks*: seq[TimedAttack]
+        ## Modifier changes in the song
+        delays*: seq[Delay]
+        ## The delays of the song (?)
         tickCounts*: seq[TickCount]
         ## The tick-counts for holds
         charts*: seq[Chart]
         ## The charts available for this song
         keySoundCharts*: seq[Chart]
         ## The charts for the keysounds
+        combos*: seq[Combo]
+        ## Combo changes
+        speeds*: seq[Speed]
+        ## Speed changes in the song
+        scrolls*: seq[Scroll]
+        ## Scroll-Speed changes in the song
+        fakes*: seq[FakeSection]
+        ## Fake sections in the song
+        labels*: seq[Label]
+        ## Labels for the song
 
-func newBpmChange*(beat: float32 = 0.0, bpm: float32 = 0.0): BpmChange =
+func newBpmChange*(beat: float, bpm: float): BpmChange =
     new result
     result.beat = beat
     result.bpm = bpm
 
-func newStop*(beat: float32 = 0.0, duration: float32 = 0.0): Stop =
+func newBpmChange*(beat: Option[float], bpm: Option[float]): BpmChange =
+    result = newBpmChange(beat.get(0.0), bpm.get(0.0))
+
+func newStop*(beat: float, duration: float): Stop =
     new result
     result.beat = beat
     result.duration = duration
 
-func newDelay*(beat: float32 = 0.0, duration: float32 = 0.0): Delay =
+func newStop*(beat: Option[float], duration: Option[float]): Stop =
+    result = newStop(beat.get(0.0), duration.get(0.0))
+
+func newDelay*(beat: float, duration: float): Delay =
     new result
     result.beat = beat
     result.duration = duration
 
-func newTimeSignature*(beat: float32 = 0.0, numerator: int = 4, denominator: int = 4): TimeSignature =
+func newDelay*(beat: Option[float], duration: Option[float]): Delay =
+    result = newDelay(beat.get(0.0), duration.get(0.0))
+
+func newTimeSignature*(beat: float, numerator: int, denominator: int): TimeSignature =
     new result
     result.beat = beat
     result.numerator = numerator
     result.denominator = denominator
+
+func newTimeSignature*(beat: Option[float], numerator: Option[int], denominator: Option[int]): TimeSignature =
+    result = newTimeSignature(beat.get(0.0), numerator.get(4), denominator.get(4))
 
 func newInstrumentTrack*(instrument: string = "", file: string = ""): InstrumentTrack =
     new result
     result.instrument = instrument
     result.file = file
 
+func newCombo*(beat: float, hit: int, miss: int): Combo =
+    new result
+    result.beat = beat
+    result.hit = hit
+    result.miss = miss
+
+func newCombo*(beat: Option[float], hit: Option[int], miss: Option[int]): Combo =
+    result = newCombo(beat.get(0.0), hit.get(1), miss.get(1))
+
+func newSpeed*(beat: float, ratio: float, duration: float, inSeconds: bool): Speed =
+    new result
+    result.beat = beat
+    result.ratio = ratio
+    result.duration = duration
+    result.inSeconds = inSeconds
+
+func newSpeed*(beat: Option[float], ration: Option[float], duration: Option[float], inSeconds: Option[bool]): Speed =
+    result = newSpeed(beat.get(0.0), ration.get(1.0), duration.get(0.0), inSeconds.get(false))
+
+func newScroll*(beat: float, factor: float): Scroll =
+    new result
+    result.beat = beat
+    result.factor = factor
+
+func newScroll*(beat: Option[float], factor: Option[float]): Scroll =
+    result = newScroll(beat.get(0.0), factor.get(1.0))
+
+func newFakeSection*(beat: float, duration: float): FakeSection =
+    new result
+    result.beat = beat
+    result.duration = duration
+
+func newFakeSection*(beat: Option[float], duration: Option[float]): FakeSection =
+    result = newFakeSection(beat.get(0.0), duration.get(0.0))
+
+func newLabel*(beat: float = 0.0, content: string = ""): Label =
+    new result
+    result.beat = beat
+    result.content = content
+
 func newBackgroundChange*(
-    beat: float32 = 0.0,
+    beat: float = 0.0,
     path: string = "",
-    updateRate: float32 = 0.0,
+    updateRate: float = 0.0,
     crossFade: bool = false,
     stretchRewind: bool = false,
     stretchNoLoop: bool = false,
@@ -311,21 +413,27 @@ func newBackgroundChange*(
     result.color1 = color1
     result.color2 = color2
 
-func newAttack*(length: float32 = 0.0, mods: seq[string] = @[]): Attack =
+func newAttack*(length: float = 0.0, mods: seq[string] = @[]): Attack =
     new result
     result.length = length
     result.mods = mods
 
-func newTimedAttack*(time: float32 = 0.0, length: float32 = 0.0, mods: seq[string] = @[]): TimedAttack =
+func newTimedAttack*(time: float, length: float, mods: seq[string] = @[]): TimedAttack =
     new result
     result.time = time
     result.length = length
     result.mods = mods
 
-func newTickCount*(beat: float32 = 0.0, count: int = 4): TickCount =
+func newTimedAttack*(time: Option[float], length: Option[float], mods: seq[string] = @[]): TimedAttack =
+    result = newTimedAttack(time.get(0.0), length.get(0.0), mods)
+
+func newTickCount*(beat: float, count: int): TickCount =
     new result
     result.beat = beat
     result.count = count
+
+func newTickCount*(beat: Option[float], count: Option[int]): TickCount =
+    result = newTickCount(beat.get(0.0), count.get(4))
 
 func newNote*(kind: NoteType = NoteType.Note, attack: Attack = nil, keysound: int = -1): Note =
     result = Note(kind: kind)
@@ -355,45 +463,49 @@ func newChartFile*(
     title: string = "",
     subtitle: string = "",
     arist: string = "",
-    titleTranslated: string = "",
-    subtitleTranslated: string = "",
-    aristTranslated: string = "",
+    titleTransliterated: string = "",
+    subtitleTransliterated: string = "",
+    artistTransliterated: string = "",
     genre: string = "",
     credit: string = "",
-    music: string = "",
-    instrumentTracks: seq[InstrumentTrack] = @[],
-    keySounds: seq[string] = @[],
     banner: string = "",
     background: string = "",
     lyricsPath: string = "",
     cdTitle: string = "",
-    menuColor: string = "",
-    sampleStart: float32 = 0.0,
-    sampleLength: float32 = 0.0,
+    music: string = "",
+    instrumentTracks: seq[InstrumentTrack] = @[],
+    sampleStart: float = 0.0,
+    sampleLength: float = 0.0,
+    displayBpm: string = "",
     selectable: bool = true,
-    offset: float32 = 0.0,
-    timeSignatures: seq[TimeSignature] = @[],
     bgChanges: seq[BackgroundChange] = @[],
     bgChanges2: seq[BackgroundChange] = @[],
     bgChanges3: seq[BackgroundChange] = @[],
     animations: seq[BackgroundChange] = @[],
     fgChanges: seq[BackgroundChange] = @[],
-    attacks: seq[TimedAttack] = @[],
+    keySounds: seq[string] = @[],
+    offset: float = 0.0,
     stops: seq[Stop] = @[],
-    delays: seq[Delay] = @[],
     bpms: seq[BpmChange] = @[],
-    displayBpm: string = "",
+    timeSignatures: seq[TimeSignature] = @[],
+    attacks: seq[TimedAttack] = @[],
+    delays: seq[Delay] = @[],
     tickCounts: seq[TickCount] = @[],
     charts: seq[Chart] = @[],
-    keySoundCharts: seq[Chart] = @[]
+    keySoundCharts: seq[Chart] = @[],
+    combos: seq[Combo] = @[],
+    speeds: seq[Speed] = @[],
+    scrolls: seq[Scroll] = @[],
+    fakes: seq[FakeSection] = @[],
+    labels: seq[Label] = @[],
 ): ChartFile =
     new result
     result.title = title
     result.subtitle = subtitle
     result.artist = arist
-    result.titleTransliterated = titleTranslated
-    result.subtitleTransliterated = subtitleTranslated
-    result.artistTransliterated = aristTranslated
+    result.titleTransliterated = titleTransliterated
+    result.subtitleTransliterated = subtitleTransliterated
+    result.artistTransliterated = artistTransliterated
     result.genre = genre
     result.credit = credit
     result.music = music
@@ -403,7 +515,6 @@ func newChartFile*(
     result.background = background
     result.lyricsPath = lyricsPath
     result.cdTitle = cdTitle
-    result.menuColor = menuColor
     result.sampleStart = sampleStart
     result.sampleLength = sampleLength
     result.selectable = selectable
@@ -422,14 +533,20 @@ func newChartFile*(
     result.tickCounts = tickCounts
     result.charts = charts
     result.keySoundCharts = keySoundCharts
+    result.combos = combos
+    result.speeds = speeds
+    result.scrolls = scrolls
+    result.fakes = fakes
+    result.labels = labels
 
 func isYes(str: string): bool =
     return str.toLower in ["yes", "1", "es", "omes"]
 
 func splitByComma(data: string): seq[string] =
+    result = @[]
     if data.contains(","):
-        result = data.split(",")
-    else:
+        result = data.split(",").filter(s => s.strip.len > 0)
+    elif not data.isEmptyOrWhitespace:
         result = @[data]
 
 func parseIntrumentTracks(data: string): seq[InstrumentTrack] =
@@ -437,7 +554,7 @@ func parseIntrumentTracks(data: string): seq[InstrumentTrack] =
     for elem in data.splitByComma:
         let spl = elem.split("=")
         if spl.len >= 2:
-            result.add(newInstrumentTrack(instrument = spl[0], file = spl[1]))
+            result.add(newInstrumentTrack(spl[0], spl[1]))
 
 proc parseColor(data: string): Color =
     if data.strip.len == 0:
@@ -446,23 +563,25 @@ proc parseColor(data: string): Color =
     var spl = data.replace("^", ",").split(",")
     for i in spl.len..4:
         spl.add "0"
-    result = [parseFloat(spl[0]), parseFloat(spl[1]), parseFloat(spl[2]), parseFloat(spl[3])]
+    result = [
+        parseFloatSafe(spl[0]).get(0.0),
+        parseFloatSafe(spl[1]).get(0.0),
+        parseFloatSafe(spl[2]).get(0.0),
+        parseFloatSafe(spl[3]).get(0.0)
+    ]
 
 proc parseBackgroundChanges(data: string): seq[BackgroundChange] =
     result = @[]
     for elem in data.splitByComma:
-        var spl = elem.split("=")
-        ## Fill up the seq to have 11 elements
-        for i in spl.len..11:
-            spl.add ""
+        var spl = elem.splitMin("=", 11)
 
         result.add newBackgroundChange(
-            beat = parseFloat(spl[0]),
+            beat = parseFloatSafe(spl[0]).get(0.0),
             path = spl[1],
-            updateRate = parseFloat(spl[2]),
-            crossFade = spl[3].toLower == "1",
-            stretchRewind = spl[4].toLower == "1",
-            stretchNoLoop = spl[5].toLower == "1",
+            updateRate = parseFloatSafe(spl[2]).get(0.0),
+            crossFade = parseBoolSafe(spl[3]).get(false),
+            stretchRewind = parseBoolSafe(spl[4]).get(false),
+            stretchNoLoop = parseBoolSafe(spl[5]).get(false),
             effect = spl[6],
             file2 = spl[7],
             transition = spl[8],
@@ -473,31 +592,31 @@ proc parseBackgroundChanges(data: string): seq[BackgroundChange] =
 func parseStops(data: string): seq[Stop] =
     result = @[]
     for elem in data.splitByComma:
-        let spl = elem.split("=")
-        result.add newStop(beat = parseFloat(spl[0]), duration = parseFloat(spl[1]))
+        let spl = elem.splitMin("=", 2)
+        result.add newStop(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]))
 
 func parseBpms(data: string): seq[BpmChange] =
     result = @[]
     for elem in data.splitByComma:
-        let spl = elem.split("=")
-        result.add newBpmChange(beat = parseFloat(spl[0]), bpm = parseFloat(spl[1]))
+        let spl = elem.splitMin("=", 2)
+        result.add newBpmChange(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]))
 
 func parseTimeSignatures(data: string): seq[TimeSignature] =
     result = @[]
     for elem in data.splitByComma:
-        let spl = elem.split("=")
-        result.add newTimeSignature(beat = parseFloat(spl[0]), numerator = parseInt(spl[1]), denominator = parseInt(spl[2]))
+        let spl = elem.split("=", 3)
+        result.add newTimeSignature(parseFloatSafe(spl[0]), parseIntSafe(spl[1]), parseIntSafe(spl[2]))
 
 func parseAttack(data: string): Attack =
-    let spl = data.split(":")
-    result = newAttack(parseFloat(spl[1]), spl[0].splitByComma)
+    let spl = data.splitMin(":", 2)
+    result = newAttack(parseFloatSafe(spl[1]).get(0.0), spl[0].splitByComma)
 
 func parseTimedAttacks(data: string): seq[TimedAttack] =
     result = @[]
     for elem in data.splitByComma:
-        var start = 0.0
-        var len = 0.0
-        var eend = 0.0
+        var time = none[float]()
+        var length = none[float]()
+        var eend = none[float]()
         var mods: seq[string] = @[]
 
         for part in elem.split(":"):
@@ -505,35 +624,73 @@ func parseTimedAttacks(data: string): seq[TimedAttack] =
 
             case spl[0].toLower:
             of "time":
-                start = parseFloat(spl[1])
+                time = parseFloatSafe(spl[1])
             of "len":
-                len = parseFloat(spl[1])
+                length = parseFloatSafe(spl[1])
             of "end":
-                eend = parseFloat(spl[1])
+                eend = parseFloatSafe(spl[1])
             of "mods":
                 for tmp in spl[1].splitByComma:
                     mods.add tmp
 
-            if eend > 0:
-                len = eend - start
-            
-            result.add newTimedAttack(time = start, length = len, mods = mods)
+            if eend.isSome and time.isSome:
+                length = some(eend.get - time.get)
+
+            result.add newTimedAttack(time, length, mods)
 
 func parseDelays(data: string): seq[Delay] =
     result = @[]
     for elem in data.splitByComma:
-        let spl = elem.split("=")
-        result.add newDelay(beat = parseFloat(spl[0]), duration = parseFloat(spl[1]))
+        let spl = elem.splitMin("=", 2)
+        result.add newDelay(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]))
 
 func parseTickCounts(data: string): seq[TickCount] =
     result = @[]
     for elem in data.splitByComma:
-        let spl = elem.split("=")
-        result.add newTickCount(parseFloat(spl[0]), parseInt(spl[1]))
+        let spl = elem.splitMin("=", 2)
+        result.add newTickCount(parseFloatSafe(spl[0]), parseIntSafe(spl[1]))
+
+func parseCombos(data: string): seq[Combo] =
+    result = @[]
+    for elem in data.splitByComma:
+        let spl = elem.splitMin("=", 3)
+        result.add newCombo(parseFloatSafe(spl[0]), parseIntSafe(spl[1]), parseIntSafe(spl[2]))
+
+func parseSpeeds(data: string): seq[Speed] =
+    result = @[]
+    for elem in data.splitByComma:
+        let spl = elem.splitMin("=", 4)
+        result.add newSpeed(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]), parseFloatSafe(spl[2]), parseBoolSafe(spl[3]))
+
+func parseScrolls(data: string): seq[Scroll] =
+    result = @[]
+    for elem in data.splitByComma:
+        let spl = elem.splitMin("=", 2)
+        result.add newScroll(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]))
+
+func parseFakeSections(data: string): seq[FakeSection] =
+    result = @[]
+    for elem in data.splitByComma:
+        let spl = elem.splitMin("=", 2)
+        result.add newFakeSection(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]))
+
+func parseLabels(data: string): seq[Label] =
+    result = @[]
+    for elem in data.splitByComma:
+        let spl = elem.splitMin("=", 2)
+        if spl.len > 1:
+            result.add newLabel(parseFloat(spl[0]), spl[1])
 
 func parseRadarValues(data: string): RadarValues =
-    let spl = data.splitByComma
-    result = [parseFloat(spl[0]), parseFloat(spl[1]), parseFloat(spl[2]), parseFloat(spl[3]), parseFloat(spl[4])]
+    var spl = data.splitMin(",", 5, "0")
+
+    result = [
+        parseFloatSafe(spl[0]).get(0.0),
+        parseFloatSafe(spl[1]).get(0.0),
+        parseFloatSafe(spl[2]).get(0.0),
+        parseFloatSafe(spl[3]).get(0.0),
+        parseFloatSafe(spl[4]).get(0.0)
+    ]
 
 func columnCount(mode: GameMode): int =
     result = 4
@@ -638,10 +795,6 @@ func putFileData(chart: var ChartFile, tag: string, data: string): void =
         chart.genre = data
     of "credit":
         chart.credit = data
-    of "music":
-        chart.music = data
-    of "instrumenttracks":
-        chart.instrumentTracks = parseIntrumentTracks(data)
     of "banner":
         chart.banner = data
     of "background":
@@ -650,6 +803,10 @@ func putFileData(chart: var ChartFile, tag: string, data: string): void =
         chart.lyricsPath = data
     of "cdtitle":
         chart.cdTitle = data
+    of "music":
+        chart.music = data
+    of "instrumenttracks":
+        chart.instrumentTracks = parseIntrumentTracks(data)
     of "samplestart":
         chart.sampleStart = parseFloat(data)
     of "samplelength":
@@ -680,7 +837,7 @@ func putFileData(chart: var ChartFile, tag: string, data: string): void =
         chart.timeSignatures = parseTimeSignatures(data)
     of "attacks":
         chart.attacks = parseTimedAttacks(data)
-    of "delays":
+    of "delays", "warps":
         chart.delays = parseDelays(data)
     of "tickcounts":
         chart.tickCounts = parseTickCounts(data)
@@ -688,6 +845,18 @@ func putFileData(chart: var ChartFile, tag: string, data: string): void =
         chart.charts.add parseChart(data)
     of "notes2":
         chart.keySoundCharts.add parseChart(data)
+    of "combos":
+        chart.combos = parseCombos(data)
+    of "speeds":
+        chart.speeds = parseSpeeds(data)
+    of "scrolls":
+        chart.scrolls = parseScrolls(data)
+    of "fakes":
+        chart.fakes = parseFakeSections(data)
+    of "labels":
+        chart.labels = parseLabels(data)
+    else:
+        discard
 
 proc parseStepMania*(data: string): ChartFile =
     result = newChartFile()

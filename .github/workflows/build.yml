@@ -39,18 +39,13 @@ jobs:
         run: nimble install -Y
 
       - name: Run tests
-        # Tests need to be added like this, because when you
-        # try to import/include them properly, they won't compile
-        # update correctly, and will forever fail for no reason.
-        run: |
-          nim r tests/tmemo.nim
-          nim r tests/tmemson.nim
+        run: nimble test
 
       - name: Build CLI
-        run: nim cli
+        run: nimble build
 
       - name: Build library
-        run: nim lib
+        run: nimble clib
 
   update-docs:
     name: Update documentation
@@ -76,7 +71,7 @@ jobs:
 
       # Update documentation
       - name: Build documentation
-        run: nim docs
+        run: nimble docs
         if: ${{ runner.os == 'Linux' && github.ref == 'refs/heads/master' }}
       - name: Deploy to GitHub-Pages
         uses: JamesIves/github-pages-deploy-action@v4.2.3

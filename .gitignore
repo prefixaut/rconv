@@ -9,6 +9,7 @@ thumbs.db
 ####
 /dist
 /docs
+/bin
 /*.json
 
 ####

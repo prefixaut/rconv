@@ -17,3 +17,6 @@ template testMalodyIndexHold*(note: malody.TimedElement, beatToTest: malody.Beat
         note.index == indexToTest
         note.indexEnd == endIndexToTest
         note.indexEndBeat == endBeatToTest
+
+template checkFloats*(val1: float, val2: float, ratio: int): bool =
+    check int(val1 * ratio) == int(val2 * ratio)

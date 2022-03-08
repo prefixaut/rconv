@@ -611,32 +611,22 @@ func parseAttack(data: string): Attack =
     let spl = data.splitMin(":", 2)
     result = newAttack(parseFloatSafe(spl[1]).get(0.0), spl[0].splitByComma)
 
-func parseTimedAttacks(data: string): seq[TimedAttack] =
+proc parseTimedAttacks(data: string): seq[TimedAttack] =
     result = @[]
-    for elem in data.splitByComma:
-        var time = none[float]()
-        var length = none[float]()
-        var eend = none[float]()
-        var mods: seq[string] = @[]
+    let spl = data.split(":")
+    let max = int(spl.len div 3) - 1
 
-        for part in elem.split(":"):
-            let spl = part.split("=")
+    for idx in 0..max:
+        let offset = idx * 3
+        let time = parseFloatSafe(spl[offset].split("=")[1])
+        let lenOrEndSpl = spl[offset + 1].split("=")
+        let lenOrEndVal = parseFloatSafe(lenOrEndSpl[1])
+        let mods = spl[offset + 2].split("=")[1].splitByComma
+        let length = if lenOrEndSpl[0].toLower.strip == "len":
+            lenOrendVal
+            else: some(lenOrEndVal.get() - time.get())
 
-            case spl[0].toLower:
-            of "time":
-                time = parseFloatSafe(spl[1])
-            of "len":
-                length = parseFloatSafe(spl[1])
-            of "end":
-                eend = parseFloatSafe(spl[1])
-            of "mods":
-                for tmp in spl[1].splitByComma:
-                    mods.add tmp
-
-            if eend.isSome and time.isSome:
-                length = some(eend.get - time.get)
-
-            result.add newTimedAttack(time, length, mods)
+        result.add newTimedAttack(time, length, mods)
 
 func parseDelays(data: string): seq[Delay] =
     result = @[]
@@ -774,7 +764,7 @@ func parseChart(data: string): Chart =
     result.radarValues = parseRadarValues(meta[4])
     result.beats = parseBeats(meta[5], columns)
 
-func putFileData(chart: var ChartFile, tag: string, data: string): void =
+proc putFileData(chart: var ChartFile, tag: string, data: string): void =
     if data.strip.len == 0:
         return
 
@@ -820,7 +810,7 @@ func putFileData(chart: var ChartFile, tag: string, data: string): void =
     of "bgchanges2":
         chart.bgChanges2 = parseBackgroundChanges(data)
     of "bgchanges3":
-        chart.bgChanges2 = parseBackgroundChanges(data)
+        chart.bgChanges3 = parseBackgroundChanges(data)
     of "animations":
         chart.animations = parseBackgroundChanges(data)
     of "fgchanges":

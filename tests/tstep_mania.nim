@@ -1,6 +1,7 @@
 import std/[unittest]
 
 import rconv/step_mania
+import rconv/private/test_utils
 
 suite "step-mania":
     let testFile = """
@@ -23,21 +24,30 @@ drums=drumdum.mp3;
 #SAMPLELENGTH:62.195;
 #DISPLAYBPM:120-666;
 #SELECTABLE:YES;
-#BGCHANGES:;
-#BGCHANGES2:;
-#BGCHANGES3:;
-#ANIMATIONS:;
-#FGCHANGES:;
-#KEYSOUNDS:;
+#BGCHANGES:0.000=something.jpg=1.000=1=0=1=bloom=otherScript.lua=CrossFade=0.5^0.2^0.9^1.0=0.3^0.2^0.6^0.8
+,420.000=ayo.png=2.000=0=1=1=====;
+#BGCHANGES2:69.333=image.gif=3.500=1=0=0=invert=label.png;
+#BGCHANGES3:420.000=ayo.png=2.000=0=1=1=====,
+0.000=something.jpg=1.000=1=0=1=bloom=otherScript.lua=CrossFade=0.5^0.2^0.9^1.0=0.3^0.2^0.6^0.8
+,69.333=image.gif=3.500=1=0=0=invert=label.png;
+#ANIMATIONS:0.000=something.jpg=1.000=1=0=1=bloom=otherScript.lua=CrossFade=0.5^0.2^0.9^1.0=0.3^0.2^0.6^0.8;
+#FGCHANGES:69.333=image.gif=3.500=1=0=0=invert=label.png,
+0.000=something.jpg=1.000=1=0=1=bloom=otherScript.lua=CrossFade=0.5^0.2^0.9^1.0=0.3^0.2^0.6^0.8;
+#KEYSOUNDS:pf_24_c#+.ogg,ba_op1.ogg,dr_hho.ogg,dr_rs.ogg,dr_bd8.ogg,dr_cs8.ogg,sq_a.ogg,pc_c.ogg,pf_op11.ogg;
 #OFFSET:-0.246;
-#STOPS:;
+#STOPS:46.250000=0.030000,
+46.500000=0.030000,
+46.750000=0.030000;
 #BPMS:0.000=210.000
 ,5.000=230.000
 ,40.333=120.500
 ,90.000=90.750
 ;
-#TIMESIGNATURES:;
-#ATTACKS:;
+#TIMESIGNATURES:3.500=8=5,5.100=3=4,8.900=8=10;
+#ATTACKS:TIME=1.618:END=3.166:MODS=*32 Invert, *32 No Flip
+:TIME=2.004:END=3.166:MODS=*32 No Invert, *32 No Flip
+:TIME=2.392:LEN=0.1:MODS=*64 30% Mini
+:TIME=2.489:LEN=0.1:MODS=*64 60% Mini;
 #DELAYS:;
 #TICKCOUNTS:;
 #NOTES:;
@@ -49,7 +59,28 @@ drums=drumdum.mp3;
 #LABELS:;
 """
 
+    let testChange1 = newBackgroundChange(0.0, "something.jpg", 1.0, true, false, true, "bloom", "otherScript.lua", "CrossFade", [0.5, 0.2, 0.9, 1.0], [0.3, 0.2, 0.6, 0.8])
+    let testChange2 = newBackgroundChange(420.0, "ayo.png", 2.0, false, true, true)
+    let testChange3 = newBackgroundChange(69.333, "image.gif", 3.500, true, false, false, "invert", "label.png")
+
     test "parse":
+        proc checkBgChange(
+            change: BackgroundChange,
+            expected: BackgroundChange
+        ): void =
+            check:
+                change.beat == expected.beat
+                change.path == expected.path
+                change.updateRate == expected.updateRate
+                change.crossFade == expected.crossFade
+                change.stretchRewind == expected.stretchRewind
+                change.stretchNoLoop == expected.stretchNoLoop
+                change.effect == expected.effect
+                change.file2 == expected.file2
+                change.transition == expected.transition
+                change.color1 == expected.color1
+                change.color2 == expected.color2
+
         let chart = parseStepMania(testFile)
 
         check:
@@ -75,3 +106,68 @@ drums=drumdum.mp3;
             chart.sampleLength == 62.195
             chart.displayBpm == "120-666"
             chart.selectable == true
+            chart.bgChanges.len == 2
+
+        checkBgChange(chart.bgChanges[0], testChange1)
+        checkBgChange(chart.bgChanges[1], testChange2)
+        check chart.bgChanges2.len == 1
+        checkBgChange(chart.bgChanges2[0], testChange3)
+        check chart.bgChanges3.len == 3
+        checkBgChange(chart.bgChanges3[0], testChange2)
+        checkBgChange(chart.bgChanges3[1], testChange1)
+        checkBgChange(chart.bgChanges3[2], testChange3)
+        check chart.animations.len == 1
+        checkBgChange(chart.animations[0], testChange1)
+        check chart.fgChanges.len == 2
+        checkBgChange(chart.fgChanges[0], testChange3)
+        checkBgChange(chart.fgChanges[1], testChange1)
+
+        check:
+            chart.keySounds == [
+                "pf_24_c#+.ogg",
+                "ba_op1.ogg",
+                "dr_hho.ogg",
+                "dr_rs.ogg",
+                "dr_bd8.ogg",
+                "dr_cs8.ogg",
+                "sq_a.ogg",
+                "pc_c.ogg",
+                "pf_op11.ogg"
+            ]
+            chart.offset == -0.246
+            chart.stops.len == 3
+            chart.bpms.len == 4
+            chart.bpms[0].beat == 0.0
+            chart.bpms[0].bpm == 210.0
+            chart.bpms[1].beat == 5.0
+            chart.bpms[1].bpm == 230.0
+            chart.bpms[2].beat == 40.333
+            chart.bpms[2].bpm == 120.5
+            chart.bpms[3].beat == 90.0
+            chart.bpms[3].bpm == 90.75
+            chart.timeSignatures.len == 3
+            chart.timeSignatures[0].beat == 3.5
+            chart.timeSignatures[0].numerator == 8
+            chart.timeSignatures[0].denominator == 5
+            chart.timeSignatures[1].beat == 5.1
+            chart.timeSignatures[1].numerator == 3
+            chart.timeSignatures[1].denominator == 4
+            chart.timeSignatures[2].beat == 8.9
+            chart.timeSignatures[2].numerator == 8
+            chart.timeSignatures[2].denominator == 10
+
+            chart.attacks.len == 4
+#[
+        checkFloats(chart.attacks[0].time, 1.618, 1000)
+        checkFloats(chart.attacks[0].length, 1.548, 1000)
+        check chart.attacks[0].mods == @["*32 Invert", "*32 No Flip"]
+        checkFloats(chart.attacks[1].time, 2.004, 1000)
+        checkFloats(chart.attacks[1].length, 1.162, 1000)
+        check chart.attacks[1].mods == @["*32 No Invert", "*32 No Flip"]
+        checkFloats(chart.attacks[2].time, 2.392, 1000)
+        checkFloats(chart.attacks[2].length, 0.1, 1000)
+        check chart.attacks[2].mods == @["*64 30% Mini"]
+        checkFloats(chart.attacks[3].time, 2.489, 1000)
+        checkFloats(chart.attacks[3].length, 0.1, 1000)
+        check chart.attacks[3].mods == @["*64 60% Mini"]
+]#

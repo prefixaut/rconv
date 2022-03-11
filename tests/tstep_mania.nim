@@ -48,9 +48,43 @@ drums=drumdum.mp3;
 :TIME=2.004:END=3.166:MODS=*32 No Invert, *32 No Flip
 :TIME=2.392:LEN=0.1:MODS=*64 30% Mini
 :TIME=2.489:LEN=0.1:MODS=*64 60% Mini;
-#DELAYS:;
-#TICKCOUNTS:;
-#NOTES:;
+#DELAYS:65.134=4.262,84.001=43.232
+,930.32=12.000;
+#TICKCOUNTS:45.23=12,84.999=24;
+#NOTES:
+     dance-single:
+     cool-dood:
+     Challenge:
+     20:
+     0.2,0.3,0.5,0.7,0.9:
+0000
+0000
+0000
+0000
+,
+0000
+0000
+0000
+0000
+,
+2011
+0011
+0000
+0011
+0111
+0000
+0011
+0000
+,
+0000
+0011
+0011
+0000
+0111
+0011
+0000
+3011
+;
 #NOTES2:;
 #COMBOS:;
 #SPEEDS:;
@@ -80,6 +114,39 @@ drums=drumdum.mp3;
                 change.transition == expected.transition
                 change.color1 == expected.color1
                 change.color2 == expected.color2
+
+        proc checkNote(
+            note: Note,
+            column: int,
+            snap: int,
+            kind: NoteType = NoteType.Note
+        ): void =
+            check:
+                note.kind == kind
+                note.column == column
+                note.snap == snap
+
+        proc checkHold(
+            note: Note,
+            column: int,
+            snap: int,
+            releaseBeat: int,
+            releaseSnap: int,
+            kind: NoteType = NoteType.Hold
+        ): void =
+            check:
+                note.kind == kind
+                note.column == column
+                note.snap == snap
+
+            if kind == NoteType.Hold:
+                check:
+                    note.holdEndBeat == releaseBeat
+                    note.holdEndSnap == releaseSnap
+            elif kind == NoteType.Roll:
+                check:
+                    note.rollEndBeat == releaseBeat
+                    note.rollEndSnap == releaseSnap
 
         let chart = parseStepMania(testFile)
 
@@ -157,17 +224,61 @@ drums=drumdum.mp3;
             chart.timeSignatures[2].denominator == 10
 
             chart.attacks.len == 4
-#[
-        checkFloats(chart.attacks[0].time, 1.618, 1000)
-        checkFloats(chart.attacks[0].length, 1.548, 1000)
+
+        check:
+            int(chart.attacks[0].time * 1000) == int(1.618 * 1000)
+            int(chart.attacks[0].length * 1000) == int(1.548 * 1000)
         check chart.attacks[0].mods == @["*32 Invert", "*32 No Flip"]
-        checkFloats(chart.attacks[1].time, 2.004, 1000)
-        checkFloats(chart.attacks[1].length, 1.162, 1000)
+        check:
+            int(chart.attacks[1].time * 1000) == int(2.004 * 1000)
+            int(chart.attacks[1].length * 1000) == int(1.162 * 1000)
         check chart.attacks[1].mods == @["*32 No Invert", "*32 No Flip"]
-        checkFloats(chart.attacks[2].time, 2.392, 1000)
-        checkFloats(chart.attacks[2].length, 0.1, 1000)
+        check:
+            int(chart.attacks[2].time * 1000) == int(2.392 * 1000)
+            int(chart.attacks[2].length * 1000) == int(0.1 * 1000)
         check chart.attacks[2].mods == @["*64 30% Mini"]
-        checkFloats(chart.attacks[3].time, 2.489, 1000)
-        checkFloats(chart.attacks[3].length, 0.1, 1000)
+        check:
+            int(chart.attacks[3].time * 1000) == int(2.489 * 1000)
+            int(chart.attacks[3].length * 1000) == int(0.1 * 1000)
         check chart.attacks[3].mods == @["*64 60% Mini"]
-]#
+
+        check:
+            chart.delays.len == 3
+            int(chart.delays[0].beat * 1000) == int(65.134 * 1000)
+            int(chart.delays[0].duration * 1000) == int(4.262 * 1000)
+            int(chart.delays[1].beat * 1000) == int(84.001 * 1000)
+            int(chart.delays[1].duration * 1000) == int(43.232 * 1000)
+            int(chart.delays[2].beat * 1000) == int(930.32 * 1000)
+            int(chart.delays[2].duration * 1000) == int(12.000 * 1000)
+
+            chart.tickCounts.len == 2
+            int(chart.tickCounts[0].beat * 1000) == int(45.23 * 1000)
+            chart.tickCounts[0].count == 12
+            int(chart.tickCounts[1].beat * 1000) == int(84.999 * 1000)
+            chart.tickCounts[1].count == 24
+
+            chart.charts.len == 1
+
+        let diff = chart.charts[0]
+        check:
+            diff.gameMode == GameMode.DanceSingle
+            diff.chartArtist == "cool-dood"
+            diff.difficulty == Difficulty.Challenge
+            diff.difficultyLevel == 20
+            diff.radarValues == [0.2, 0.3, 0.5, 0.7, 0.9]
+
+            diff.beats.len == 2
+            diff.beats[0].index == 2
+            diff.beats[0].snapSize == 8
+            diff.beats[0].notes.len == 12
+
+        checkHold(diff.beats[0].notes[0], 0, 0, 3, 7)
+        checkNote(diff.beats[0].notes[1], 2, 0)
+        checkNote(diff.beats[0].notes[2], 3, 0)
+        checkNote(diff.beats[0].notes[3], 2, 1)
+        checkNote(diff.beats[0].notes[4], 3, 1)
+
+        check:
+            diff.beats[1].index == 3
+            diff.beats[1].snapSize == 8
+            diff.beats[1].notes.len == 11

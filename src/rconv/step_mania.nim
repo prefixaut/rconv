@@ -55,12 +55,12 @@ type
         ## The difficulty of a chart.
         ## The same difficulty may only be defined once with the same game-mode, except for the Edit.
         ## Edit-Difficulties may be present unlimited amount of times.
-        Beginner = "Beginner"
-        Easy = "Easy"
-        Medium = "Medium"
-        Hard = "Hard"
-        Challange = "Challange"
-        Edit = "Edit"
+        Beginner = "beginner"
+        Easy = "easy"
+        Medium = "medium"
+        Hard = "hard"
+        Challenge = "challenge"
+        Edit = "edit"
 
     Color* = array[4, float] ## \
     ## A rgba color representation
@@ -147,7 +147,7 @@ type
         time*: float
         ## The time when the attack occurs
 
-    Combo* = ref object
+    ComboChange* = ref object
         ## Changes the combo count for hits/misses
         beat*: float
         ## When the combo-change should occur
@@ -156,7 +156,7 @@ type
         miss*: int
         ## How many misses a single miss should count
 
-    Speed* = ref object
+    SpeedChange* = ref object
         ## Modifies the speed of the chart by ratio
         beat*: float
         ## The beat where the speed-change occurs on
@@ -167,7 +167,7 @@ type
         inSeconds*: bool
         ## If the duration is specified in seconds or in beats
 
-    Scroll* = ref object
+    ScollSpeedChange* = ref object
         ## Modifies the scroll speed bt a factor
         beat*: float
         ## The beat where the scroll-speed occurs on
@@ -190,6 +190,10 @@ type
 
     Note* = ref object
         ## A single note to be played
+        column*: int
+        ## On which column the Note is placed on
+        snap*: int
+        ## On which snap this note is
         attack*: Attack
         ## The attack to apply when the note is played
         keysound*: int
@@ -211,6 +215,8 @@ type
 
     Beat* = ref object
         ## A single beat which is divided into more snaps
+        index*: int
+        ## The index of the beat
         snapSize*: int
         ## The amount of snaps that exist in this beat
         notes*: seq[Note]
@@ -229,6 +235,7 @@ type
         radarValues*: RadarValues
         ## The radar values of the chart
         beats*: seq[Beat]
+        ## The individual beats of the chart
 
     ChartFile* = ref object
         ## A chart-file which represents a single song with multiple charts (difficulties/game-modes)
@@ -298,11 +305,11 @@ type
         ## The charts available for this song
         keySoundCharts*: seq[Chart]
         ## The charts for the keysounds
-        combos*: seq[Combo]
+        combos*: seq[ComboChange]
         ## Combo changes
-        speeds*: seq[Speed]
+        speeds*: seq[SpeedChange]
         ## Speed changes in the song
-        scrolls*: seq[Scroll]
+        scrolls*: seq[ScollSpeedChange]
         ## Scroll-Speed changes in the song
         fakes*: seq[FakeSection]
         ## Fake sections in the song
@@ -347,32 +354,32 @@ func newInstrumentTrack*(instrument: string = "", file: string = ""): Instrument
     result.instrument = instrument
     result.file = file
 
-func newCombo*(beat: float, hit: int, miss: int): Combo =
+func newComboChange*(beat: float, hit: int, miss: int): ComboChange =
     new result
     result.beat = beat
     result.hit = hit
     result.miss = miss
 
-func newCombo*(beat: Option[float], hit: Option[int], miss: Option[int]): Combo =
-    result = newCombo(beat.get(0.0), hit.get(1), miss.get(1))
+func newComboChange*(beat: Option[float], hit: Option[int], miss: Option[int]): ComboChange =
+    result = newComboChange(beat.get(0.0), hit.get(1), miss.get(1))
 
-func newSpeed*(beat: float, ratio: float, duration: float, inSeconds: bool): Speed =
+func newSpeedChange*(beat: float, ratio: float, duration: float, inSeconds: bool): SpeedChange =
     new result
     result.beat = beat
     result.ratio = ratio
     result.duration = duration
     result.inSeconds = inSeconds
 
-func newSpeed*(beat: Option[float], ration: Option[float], duration: Option[float], inSeconds: Option[bool]): Speed =
-    result = newSpeed(beat.get(0.0), ration.get(1.0), duration.get(0.0), inSeconds.get(false))
+func newSpeedChange*(beat: Option[float], ration: Option[float], duration: Option[float], inSeconds: Option[bool]): SpeedChange =
+    result = newSpeedChange(beat.get(0.0), ration.get(1.0), duration.get(0.0), inSeconds.get(false))
 
-func newScroll*(beat: float, factor: float): Scroll =
+func newScollSpeedChange*(beat: float, factor: float): ScollSpeedChange =
     new result
     result.beat = beat
     result.factor = factor
 
-func newScroll*(beat: Option[float], factor: Option[float]): Scroll =
-    result = newScroll(beat.get(0.0), factor.get(1.0))
+func newScollSpeedChange*(beat: Option[float], factor: Option[float]): ScollSpeedChange =
+    result = newScollSpeedChange(beat.get(0.0), factor.get(1.0))
 
 func newFakeSection*(beat: float, duration: float): FakeSection =
     new result
@@ -435,13 +442,16 @@ func newTickCount*(beat: float, count: int): TickCount =
 func newTickCount*(beat: Option[float], count: Option[int]): TickCount =
     result = newTickCount(beat.get(0.0), count.get(4))
 
-func newNote*(kind: NoteType = NoteType.Note, attack: Attack = nil, keysound: int = -1): Note =
+func newNote*(kind: NoteType, column: int, snap: int, attack: Attack = nil, keysound: int = -1): Note =
     result = Note(kind: kind)
+    result.column = column
+    result.snap = snap
     result.attack = attack
     result.keysound = keysound
 
-func newBeat*(snapSize: int = 0, notes: seq[Note] = @[]): Beat =
+func newBeat*(index: int, snapSize: int = 0, notes: seq[Note] = @[]): Beat =
     new result
+    result.index = index
     result.snapSize = snapSize
     result.notes = notes
 
@@ -493,9 +503,9 @@ func newChartFile*(
     tickCounts: seq[TickCount] = @[],
     charts: seq[Chart] = @[],
     keySoundCharts: seq[Chart] = @[],
-    combos: seq[Combo] = @[],
-    speeds: seq[Speed] = @[],
-    scrolls: seq[Scroll] = @[],
+    combos: seq[ComboChange] = @[],
+    speeds: seq[SpeedChange] = @[],
+    scrolls: seq[ScollSpeedChange] = @[],
     fakes: seq[FakeSection] = @[],
     labels: seq[Label] = @[],
 ): ChartFile =
@@ -542,12 +552,15 @@ func newChartFile*(
 func isYes(str: string): bool =
     return str.toLower in ["yes", "1", "es", "omes"]
 
-func splitByComma(data: string): seq[string] =
+func splitByComma(data: string, doStrip: bool = false): seq[string] =
     result = @[]
     if data.contains(","):
         result = data.split(",").filter(s => s.strip.len > 0)
     elif not data.isEmptyOrWhitespace:
         result = @[data]
+
+    if doStrip:
+        result = result.map(s => s.strip)
 
 func parseIntrumentTracks(data: string): seq[InstrumentTrack] =
     result = @[]
@@ -621,10 +634,11 @@ proc parseTimedAttacks(data: string): seq[TimedAttack] =
         let time = parseFloatSafe(spl[offset].split("=")[1])
         let lenOrEndSpl = spl[offset + 1].split("=")
         let lenOrEndVal = parseFloatSafe(lenOrEndSpl[1])
-        let mods = spl[offset + 2].split("=")[1].splitByComma
+        let mods = spl[offset + 2].split("=")[1].splitByComma(true)
         let length = if lenOrEndSpl[0].toLower.strip == "len":
             lenOrendVal
-            else: some(lenOrEndVal.get() - time.get())
+            # Annoying extra steps, to prevent rounding/fraction errors
+            else: some(((lenOrEndVal.get() * 1000) - (time.get() * 1000)) / 1000)
 
         result.add newTimedAttack(time, length, mods)
 
@@ -640,23 +654,23 @@ func parseTickCounts(data: string): seq[TickCount] =
         let spl = elem.splitMin("=", 2)
         result.add newTickCount(parseFloatSafe(spl[0]), parseIntSafe(spl[1]))
 
-func parseCombos(data: string): seq[Combo] =
+func parseComboChanges(data: string): seq[ComboChange] =
     result = @[]
     for elem in data.splitByComma:
         let spl = elem.splitMin("=", 3)
-        result.add newCombo(parseFloatSafe(spl[0]), parseIntSafe(spl[1]), parseIntSafe(spl[2]))
+        result.add newComboChange(parseFloatSafe(spl[0]), parseIntSafe(spl[1]), parseIntSafe(spl[2]))
 
-func parseSpeeds(data: string): seq[Speed] =
+func parseSpeedChanges(data: string): seq[SpeedChange] =
     result = @[]
     for elem in data.splitByComma:
         let spl = elem.splitMin("=", 4)
-        result.add newSpeed(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]), parseFloatSafe(spl[2]), parseBoolSafe(spl[3]))
+        result.add newSpeedChange(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]), parseFloatSafe(spl[2]), parseBoolSafe(spl[3]))
 
-func parseScrolls(data: string): seq[Scroll] =
+func parseScollSpeedChanges(data: string): seq[ScollSpeedChange] =
     result = @[]
     for elem in data.splitByComma:
         let spl = elem.splitMin("=", 2)
-        result.add newScroll(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]))
+        result.add newScollSpeedChange(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]))
 
 func parseFakeSections(data: string): seq[FakeSection] =
     result = @[]
@@ -702,9 +716,14 @@ func columnCount(mode: GameMode): int =
 func parseBeats(data: string, columns: int): seq[Beat] =
     result = @[]
 
-    var beat = newBeat()
-    var lastNote: Note = nil
-    var noteIndex = 0
+    var beatIndex = 0
+    var snapIndex = 0
+    var columnIndex = 0
+
+    var beat = newBeat(0)
+    var previousNote: Note = nil
+    var longNotes = newSeq[Note](columns);
+
     var inAttack = false
     var attackData = ""
     var inKeysound = false
@@ -714,7 +733,7 @@ func parseBeats(data: string, columns: int): seq[Beat] =
         if inAttack:
             if str == '}':
                 inAttack = false
-                lastNote.attack = parseAttack(attackData)
+                previousNote.attack = parseAttack(attackData)
                 continue
             attackData &= str
             continue
@@ -725,7 +744,7 @@ func parseBeats(data: string, columns: int): seq[Beat] =
         if inKeysound:
             if str == ']':
                 inKeysound = false
-                lastNote.keySound = parseInt(keysoundData)
+                previousNote.keySound = parseInt(keysoundData)
                 continue
             keysoundData &= str
             continue
@@ -734,26 +753,49 @@ func parseBeats(data: string, columns: int): seq[Beat] =
             continue
 
         if str == ',':
-            result.add beat
-            beat = newBeat()
-            noteIndex = 0
+            beat.snapSize = snapIndex
+            if beat.notes.len > 0:
+                result.add beat
+
+            inc beatIndex
+            beat = newBeat(beatIndex)
+            snapIndex = 0
+            columnIndex = 0
             continue
 
-        lastNote = newNote(parseEnum[NoteType]($str))
-        beat.notes.add lastNote
-        inc noteIndex
+        var kind = parseEnum[NoteType]($str)
 
-        if noteIndex >= columns:
-            inc beat.snapSize
-            noteIndex = 0
+        if kind == NoteType.HoldEnd:
+            var hold = longNotes[columnIndex]
+            if hold != nil:
+                if hold.kind == NoteType.Hold:
+                    hold.holdEndBeat = beatIndex
+                    hold.holdEndSnap = snapIndex
+                    longNotes[columnIndex] = nil
+                elif hold.kind == NoteType.Roll:
+                    hold.rollEndBeat = beatIndex
+                    hold.rollEndSnap = snapIndex
+                    longNotes[columnIndex] = nil
+        elif kind != NoteType.Empty:
+            previousNote = newNote(kind, columnIndex, snapIndex)
+            beat.notes.add previousNote
 
-    inc beat.snapSize
-    result.add beat
+            if kind == NoteType.Hold or kind == NoteType.Roll:
+                longNotes[columnIndex] = previousNote
+
+        inc columnIndex
+        if columnIndex >= columns:
+            inc snapIndex
+            columnIndex = 0
+
+    beat.snapSize = snapIndex
+    if beat.notes.len > 0:
+        result.add beat
 
 func parseChart(data: string): Chart =
     let meta = data.split(":", 5)
-    let mode = parseEnum[GameMode](meta[0])
-    let diff = parseEnum[Difficulty](meta[2])
+    let mode = parseEnum[GameMode](meta[0].toLower)
+    let diff = parseEnum[Difficulty](meta[2].toLower)
     let columns = columnCount(mode)
 
     result = Chart()
@@ -836,11 +878,11 @@ proc putFileData(chart: var ChartFile, tag: string, data: string): void =
     of "notes2":
         chart.keySoundCharts.add parseChart(data)
     of "combos":
-        chart.combos = parseCombos(data)
+        chart.combos = parseComboChanges(data)
     of "speeds":
-        chart.speeds = parseSpeeds(data)
+        chart.speeds = parseSpeedChanges(data)
     of "scrolls":
-        chart.scrolls = parseScrolls(data)
+        chart.scrolls = parseScollSpeedChanges(data)
     of "fakes":
         chart.fakes = parseFakeSections(data)
     of "labels":
@@ -858,6 +900,10 @@ proc parseStepMania*(data: string): ChartFile =
 
     while not reader.isEOF():
         let line = reader.nextLine()
+
+        # Ignore comment lines
+        if line.startsWith("//"):
+            continue
 
         if inMeta:
             let eend = line.find(";")

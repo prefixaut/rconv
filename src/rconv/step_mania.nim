@@ -40,10 +40,10 @@ type
 
     Note* = ref object
         ## A single note to be played
-        column*: int
-        ## On which column the Note is placed on
         snap*: int
         ## On which snap this note is
+        column*: int
+        ## On which column the Note is placed on
         attack*: Attack
         ## The attack to apply when the note is played
         keysound*: int
@@ -180,10 +180,10 @@ func newTimedAttack*(time: float, length: float, mods: seq[string] = @[]): Timed
 func newTimedAttack*(time: Option[float], length: Option[float], mods: seq[string] = @[]): TimedAttack =
     result = newTimedAttack(time.get(0.0), length.get(0.0), mods)
 
-func newNote*(kind: NoteType, column: int, snap: int, attack: Attack = nil, keysound: int = -1): Note =
+func newNote*(kind: NoteType, snap: int, column: int, attack: Attack = nil, keysound: int = -1): Note =
     result = Note(kind: kind)
-    result.column = column
     result.snap = snap
+    result.column = column
     result.attack = attack
     result.keysound = keysound
 
@@ -356,7 +356,8 @@ func parseBeats(data: string, columns: int, lenient: bool): seq[Beat] =
             columnIndex = 0
             continue
 
-        var kind = parseEnum[NoteType]($str)
+        var kind = parseEnum[NoteType](($str).toUpper)
+        var note = newNote(kind, snapIndex, columnIndex)
 
         if kind == NoteType.HoldEnd:
             var hold = longNotes[columnIndex]
@@ -369,14 +370,19 @@ func parseBeats(data: string, columns: int, lenient: bool): seq[Beat] =
                     hold.rollEndBeat = beatIndex
                     hold.rollEndSnap = snapIndex
                     longNotes[columnIndex] = nil
-        elif kind != NoteType.Empty:
-            let note = newNote(kind, columnIndex, snapIndex)
+                elif not lenient:
+                    # This should never happen
+                    raise newNoteError("Found invalid hold! Beat " & $beatIndex & ", Note: " & $hold[], beatIndex, hold)
 
+            elif not lenient:
+                raise newNoteError("Found hold-release where no hold was! Beat " & $beatIndex & ", Note: " & $note[], beatIndex, note)
+
+        elif kind != NoteType.Empty:
             previousNote = note
             beat.notes.add previousNote
 
             if kind == NoteType.Hold or kind == NoteType.Roll:
-                longNotes[columnIndex] = previousNote
+                longNotes[columnIndex] = note
             elif longNotes[columnIndex] != nil and not lenient:
                 raise newNoteError("Note is placed in a hold! Beat: " & $beatIndex & ", Note: " & $note[], beatIndex, note)
 

@@ -138,14 +138,14 @@ M0FF
 
         proc testNote(
             note: Note,
-            snap: int,
-            column: int,
-            kind: NoteType = NoteType.Note
+            expectedSnap: int,
+            expectedColumn: int,
+            expectedKind: NoteType = NoteType.Note
         ): void =
             check:
-                note.kind == kind
-                note.snap == snap
-                note.column == column
+                note.kind == expectedKind
+                note.snap == expectedSnap
+                note.column == expectedColumn
 
         template checkNote(
             note: Note,
@@ -160,19 +160,19 @@ M0FF
             note: Note,
             snap: int,
             column: int,
-            releaseBeat: int,
-            releaseSnap: int,
+            expectedReleaseBeat: int,
+            expectedReleaseSnap: int,
             kind: NoteType = NoteType.Hold
         ): void =
             testNote(note, snap, column, kind)
             if kind == NoteType.Hold:
                 check:
-                    note.holdEndBeat == releaseBeat
-                    note.holdEndSnap == releaseSnap
+                    note.holdEndBeat == expectedReleaseBeat
+                    note.holdEndSnap == expectedReleaseSnap
             elif kind == NoteType.Roll:
                 check:
-                    note.rollEndBeat == releaseBeat
-                    note.rollEndSnap == releaseSnap
+                    note.rollEndBeat == expectedReleaseBeat
+                    note.rollEndSnap == expectedReleaseSnap
 
         template checkHold(
             note: Note,
@@ -183,7 +183,7 @@ M0FF
             kind: NoteType = NoteType.Hold
         ) =
             checkpoint("Note (" & $kind & ") on Snap " & $snap & ", Column " & $column & ", Release on " & $releaseBeat & "-" & $releaseSnap)
-            testHold(note, column, snap, releaseBeat, releaseSnap, kind)
+            testHold(note, snap, column, releaseBeat, releaseSnap, kind)
 
         let chart = parseStepMania(testFile)
 
@@ -331,12 +331,13 @@ M0FF
         checkNote(diff.beats[1].notes[2], 2, 2)
         checkNote(diff.beats[1].notes[3], 2, 3)
         checkNote(diff.beats[1].notes[4], 3, 0, NoteType.Mine)
-        checkNote(diff.beats[1].notes[6], 3, 2, NoteType.Fake)
-        checkNote(diff.beats[1].notes[7], 3, 3, NoteType.Fake)
-        checkNote(diff.beats[1].notes[8], 4, 1)
-        checkNote(diff.beats[1].notes[9], 4, 2)
-        checkNote(diff.beats[1].notes[10], 4, 3)
-        checkNote(diff.beats[1].notes[11], 5, 2)
-        checkNote(diff.beats[1].notes[12], 5, 3)
+        checkNote(diff.beats[1].notes[5], 3, 2, NoteType.Fake)
+        checkNote(diff.beats[1].notes[6], 3, 3, NoteType.Fake)
+        checkNote(diff.beats[1].notes[7], 4, 0)
+        checkNote(diff.beats[1].notes[8], 4, 2)
+        checkNote(diff.beats[1].notes[9], 4, 3)
+        checkNote(diff.beats[1].notes[10], 5, 2)
+        checkNote(diff.beats[1].notes[11], 5, 3)
+        checkNote(diff.beats[1].notes[12], 7, 0)
         checkNote(diff.beats[1].notes[13], 7, 2)
         checkNote(diff.beats[1].notes[14], 7, 3)

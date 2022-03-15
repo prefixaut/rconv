@@ -29,7 +29,7 @@ type
         ## The mode for a malody chart.
         Key = 0
         ## "Mania" game mode (SM, PIU, ...) with varying amount of keys (4,5,6,7, ...)k
-        
+
         # Type 1 and 2 seem to be deleted types for DDR pads and BMS/merged with "Key"
         Unused_1 = 1
         ## Unused enum-property to prevent enum with holes
@@ -154,7 +154,7 @@ type
     TimedElement* = ref object of RootObj
         beat*: Beat
         ## The Beat on which this timed-element occurs
-        case kind*: ElementType            
+        case kind*: ElementType
             of TimeSignature:
                 sigBpm*: float
                 ## The new BPM it's changing to
@@ -292,7 +292,7 @@ func newMetaData*(
     result.time = time
     result.song = song
     result.mode_ext = mode_ext
-    
+
 func newSongData*(
     title: string = "",
     titleorg: string = "",

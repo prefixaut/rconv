@@ -1,4 +1,4 @@
-import std/[unittest]
+import std/[strformat, unittest]
 
 import rconv/step_mania
 import rconv/private/test_utils
@@ -69,21 +69,21 @@ drums=drumdum.mp3;
 ,
 2011
 0011
-0000
+0400
 0011
-0111
+0010
 0000
 0011
 0000
 ,
 0000
-0011
-0011
-0000
-0111
-0011
-0000
 3011
+0011
+M0FF
+1011
+0311
+0000
+1011
 ;
 #NOTES2:;
 #COMBOS:;
@@ -115,30 +115,56 @@ drums=drumdum.mp3;
                 change.color1 == expected.color1
                 change.color2 == expected.color2
 
-        proc checkNote(
+        func `$`(kind: NoteType): string =
+            case kind:
+                of NoteType.Note:
+                    result = "Note"
+                of NoteType.Hold:
+                    result = "Hold"
+                of NoteType.Roll:
+                    result = "Roll"
+                of NoteType.Mine:
+                    result = "Mine"
+                of NoteType.Lift:
+                    result = "Lift"
+                of NoteType.Fake:
+                    result = "Fake"
+                of NoteType.Keysound:
+                    result = "KeyCound"
+                of NoteType.Hidden:
+                    result = "Hidden"
+                else:
+                    result = "---"
+
+        proc testNote(
             note: Note,
-            column: int,
             snap: int,
+            column: int,
             kind: NoteType = NoteType.Note
         ): void =
             check:
                 note.kind == kind
-                note.column == column
                 note.snap == snap
+                note.column == column
 
-        proc checkHold(
+        template checkNote(
             note: Note,
-            column: int,
             snap: int,
+            column: int,
+            kind: NoteType = NoteType.Note
+        ) =
+            checkpoint("Note (" & $kind & ") on Snap " & $snap & ", Column " & $column)
+            testNote(note, snap, column, kind)
+
+        proc testHold(
+            note: Note,
+            snap: int,
+            column: int,
             releaseBeat: int,
             releaseSnap: int,
             kind: NoteType = NoteType.Hold
         ): void =
-            check:
-                note.kind == kind
-                note.column == column
-                note.snap == snap
-
+            testNote(note, snap, column, kind)
             if kind == NoteType.Hold:
                 check:
                     note.holdEndBeat == releaseBeat
@@ -147,6 +173,17 @@ drums=drumdum.mp3;
                 check:
                     note.rollEndBeat == releaseBeat
                     note.rollEndSnap == releaseSnap
+
+        template checkHold(
+            note: Note,
+            snap: int,
+            column: int,
+            releaseBeat: int,
+            releaseSnap: int,
+            kind: NoteType = NoteType.Hold
+        ) =
+            checkpoint("Note (" & $kind & ") on Snap " & $snap & ", Column " & $column & ", Release on " & $releaseBeat & "-" & $releaseSnap)
+            testHold(note, column, snap, releaseBeat, releaseSnap, kind)
 
         let chart = parseStepMania(testFile)
 
@@ -261,8 +298,8 @@ drums=drumdum.mp3;
 
         let diff = chart.charts[0]
         check:
-            diff.gameMode == GameMode.DanceSingle
-            diff.chartArtist == "cool-dood"
+            diff.chartType == ChartType.DanceSingle
+            diff.description == "cool-dood"
             diff.difficulty == Difficulty.Challenge
             diff.difficultyLevel == 20
             diff.radarValues == [0.2, 0.3, 0.5, 0.7, 0.9]
@@ -270,15 +307,36 @@ drums=drumdum.mp3;
             diff.beats.len == 2
             diff.beats[0].index == 2
             diff.beats[0].snapSize == 8
-            diff.beats[0].notes.len == 12
+            diff.beats[0].notes.len == 11
 
-        checkHold(diff.beats[0].notes[0], 0, 0, 3, 7)
-        checkNote(diff.beats[0].notes[1], 2, 0)
-        checkNote(diff.beats[0].notes[2], 3, 0)
-        checkNote(diff.beats[0].notes[3], 2, 1)
-        checkNote(diff.beats[0].notes[4], 3, 1)
+        checkHold(diff.beats[0].notes[0], 0, 0, 3, 1)
+        checkNote(diff.beats[0].notes[1], 0, 2)
+        checkNote(diff.beats[0].notes[2], 0, 3)
+        checkNote(diff.beats[0].notes[3], 1, 2)
+        checkNote(diff.beats[0].notes[4], 1, 3)
+        checkHold(diff.beats[0].notes[5], 2, 1, 3, 5, NoteType.Roll)
+        checkNote(diff.beats[0].notes[6], 3, 2)
+        checkNote(diff.beats[0].notes[7], 3, 3)
+        checkNote(diff.beats[0].notes[8], 4, 2)
+        checkNote(diff.beats[0].notes[9], 6, 2)
+        checkNote(diff.beats[0].notes[10], 6, 3)
 
         check:
             diff.beats[1].index == 3
             diff.beats[1].snapSize == 8
-            diff.beats[1].notes.len == 11
+            diff.beats[1].notes.len == 15
+
+        checkNote(diff.beats[1].notes[0], 1, 2)
+        checkNote(diff.beats[1].notes[1], 1, 3)
+        checkNote(diff.beats[1].notes[2], 2, 2)
+        checkNote(diff.beats[1].notes[3], 2, 3)
+        checkNote(diff.beats[1].notes[4], 3, 0, NoteType.Mine)
+        checkNote(diff.beats[1].notes[6], 3, 2, NoteType.Fake)
+        checkNote(diff.beats[1].notes[7], 3, 3, NoteType.Fake)
+        checkNote(diff.beats[1].notes[8], 4, 1)
+        checkNote(diff.beats[1].notes[9], 4, 2)
+        checkNote(diff.beats[1].notes[10], 4, 3)
+        checkNote(diff.beats[1].notes[11], 5, 2)
+        checkNote(diff.beats[1].notes[12], 5, 3)
+        checkNote(diff.beats[1].notes[13], 7, 2)
+        checkNote(diff.beats[1].notes[14], 7, 3)

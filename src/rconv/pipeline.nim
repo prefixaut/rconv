@@ -8,6 +8,7 @@ import ./fxf as fxf
 import ./malody as malody
 import ./memo as memo
 import ./memson as memson
+import ./step_mania as sm
 
 include ./private/json_hooks
 
@@ -37,27 +38,43 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
 
     case actualFrom:
     of FileType.Memo:
+        let raw = readFile(file)
+        let parsed = memo.parseMemoToMemson(raw)
+
         case to:
         of FileType.FXF:
-            let raw = readFile(file)
-            let parsed = memo.parseMemoToMemson(raw)
             var chart = parsed.toFXF
             result = saveChart(chart, actualOptions, some($parsed.difficulty))
         of FileType.Malody:
-            let raw = readFile(file)
-            let parsed = memo.parseMemoToMemson(raw)
             var chart = parsed.toMalody
             result = saveChart(chart, actualOptions)
         else:
             raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
 
     of FileType.Malody:
+        var raw = parseJson(readFile(file))
+        var parsed = raw.toMalodyChart(actualOptions.lenient)
+
         case to:
         of FileType.FXF:
-            var raw = parseJson(readFile(file))
-            var mc = raw.toMalodyChart()
-            var chart = mc.toFXF
+            var chart = parsed.toFXF
             result = saveChart(chart, actualOptions, none(string))
+        else:
+            raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
+
+    of FileType.StepMania:
+        let raw = readFile(file)
+        let parsed = sm.parseStepMania(raw, actualOptions.lenient)
+
+        case to:
+        else:
+            raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
+
+    of FileType.FXF:
+        var stream = openFileStream(file)
+        let parsed = fxf.readFXFChartFile(stream)
+
+        case to:
         else:
             raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
 

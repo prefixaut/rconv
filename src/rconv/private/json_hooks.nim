@@ -1,5 +1,6 @@
 import std/[enumutils, json, jsonutils, sets, tables]
 
+import ../common
 import ./json_helpers
 
 import ../malody as malody
@@ -21,11 +22,13 @@ func getBeatSafe(self: JsonNode, field: string = "beat", default: malody.Beat = 
         except:
             discard
 
-proc toMalodyTimedElement*(self: JsonNode): malody.TimedElement =
+proc toMalodyTimedElement*(self: JsonNode, lenient: bool = false): malody.TimedElement {.raises: [ParseError,ValueError].} =
     ## Hook to convert the provided JsonNode to the appropiate `TimeElement`.
 
-    assert self.kind == JsonNodeKind.JObject:
-        "The kind of `JsonNode` must be `JObject`, but it's actual kind is `" & $self.kind & "`."
+    if self.kind != JsonNodeKind.JObject:
+        if lenient:
+            return malody.newTimedElement()
+        raise newException(ParseError, "The kind of `JsonNode` must be `JObject`, but it's actual kind is `" & $self.kind & "`.")
 
     let beat = self.getBeatSafe()
 
@@ -71,7 +74,7 @@ proc toMalodyTimedElement*(self: JsonNode): malody.TimedElement =
         if self.hasField("w", JsonNodeKind.JInt):
             var seg: seq[TimedElement] = @[]
             if self.fields.hasKey("seg"):
-                seg.fromJson(self.fields["seg"], Joptions(allowMissingKeys: true, allowExtraKeys: true))
+                seg.fromJson(self.fields["seg"], Joptions(allowMissingKeys: lenient, allowExtraKeys: lenient))
 
             result = malody.newSlideNote(
                 beat = beat,
@@ -97,25 +100,27 @@ proc toMalodyTimedElement*(self: JsonNode): malody.TimedElement =
     else:
         result = malody.newTimedElement(beat = beat)
 
-proc toMalodyChart*(self: JsonNode): malody.Chart {.raises:[ValueError].} =
+proc toMalodyChart*(self: JsonNode, lenient: bool = false): malody.Chart {.raises:[ParseError,ValueError].} =
     ## Additional hook to make the hook for `TimedElement` work.
 
     if self.kind != JsonNodeKind.JObject:
-        raise newException(ValueError, "The kind of `JsonNode` must be `JObject`, but it's actual kind is `" & $self.kind & "`.")
+        if lenient:
+            return malody.newChart()
+        raise newException(ParseError, "The kind of `JsonNode` must be `JObject`, but it's actual kind is `" & $self.kind & "`.")
 
     result = malody.newChart()
 
     if self.hasField("meta", JsonNodeKind.JObject):
-        result.meta = self.fields["meta"].jsonTo(malody.MetaData, Joptions(allowMissingKeys: true, allowExtraKeys: true))
+        result.meta = self.fields["meta"].jsonTo(malody.MetaData, Joptions(allowMissingKeys: lenient, allowExtraKeys: lenient))
 
     if self.hasField("note", JsonNodeKind.JArray):
         for data in self.fields["note"].elems:
-            let note = toMalodyTimedElement(data)
+            let note = toMalodyTimedElement(data, lenient)
             result.note.add(note)
 
     if self.hasField("time", JsonNodeKind.JArray):
         for data in self.fields["time"].elems:
-            let time = toMalodyTimedElement(data)
+            let time = toMalodyTimedElement(data, lenient)
             result.time.add(time)
 
 proc toJsonHook*[T: memson.BpmRange](this: T): JsonNode =
@@ -145,7 +150,7 @@ proc toJsonHook*[T: malody.Chart](this: T): JsonNode =
     result["time"] = newJArray()
     for time in this.time:
         result["time"].elems.add toJsonHook(time)
-    
+
     result["note"] = newJArray()
     for note in this.note:
         result["note"].elems.add toJsonHook(note)

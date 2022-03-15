@@ -3,10 +3,12 @@ import std/[macros, options, strformat, strutils]
 type
     FileType* {.pure.} = enum
         ## File types which are supported
-        Memo = "memo",
-        Memo2 = "memo2",
-        Malody = "malody",
-        StepMania = "stepmania",
+        Memo = "memo"
+        Memo2 = "memo2"
+        Malody = "malody"
+        StepMania = "stepmania"
+        StepMania5 = "stepmania5"
+        KickItUp = "kickitup"
         FXF = "fxf"
 
     ConvertOptions* = object
@@ -19,6 +21,8 @@ type
         ## If the output-type is json based, if it should format it prettyly
         keep*: bool
         ## If it should keep the original meta-data when merging a file
+        lenient*: bool
+        ## If parsing of the files should be lenient/not strict - Ignores certain syntax errors
         merge*: bool
         ## If the output-type supports multiple charts to be in a single file,
         ## if it should merge existing and new charts together.
@@ -28,7 +32,7 @@ type
         ## If it should preserve any existing output-files.
         ## Doesn't save the convertion at all then.
         resources*: bool
-        ## If it should copy over all referenced resources (audio, graphics, etc.) 
+        ## If it should copy over all referenced resources (audio, graphics, etc.)
         ## to the charts output folder.
         normalize*: bool
         ## If it should normalize the output-paths (folder/file).
@@ -54,8 +58,9 @@ type
         ## Absolute file-path to the file.
 
     CombinedError* = object of CatchableError
-        ## An error which combines multiple error messages into one.
+        ## An error which combines/collects multiple error messages into one.
         errors*: seq[ref Exception]
+        ## The combined/collected errors.
 
     ParseError* = object of CatchableError ## \
     ## Error which occurs when parsing of a file failed.
@@ -193,6 +198,10 @@ func detectFileType*(file: string): Option[FileType] =
             result = some(FileType.FXF)
         of "sm":
             result = some(FileType.StepMania)
+        of "ssc":
+            result = some(FileType.StepMania5)
+        of "ksf":
+            result = some(FileType.KickItUp)
 
 func getFileExtension*(fileType: FileType): string =
     ## Get's the file-extension for the provided file-type
@@ -205,9 +214,13 @@ func getFileExtension*(fileType: FileType): string =
     of FileType.Malody:
         result = "mc"
     of FileType.FXF:
-        result = "fxfc"
+        result = "fxf"
     of FileType.StepMania:
         result = "sm"
+    of FileType.StepMania5:
+        result = "ssc"
+    of FileType.KickItUp:
+        result = "ksf"
 
 func getDefaultChartFormat*(fileType: FileType): string =
     ## Gets the default chart-format for the provided file-type
@@ -220,7 +233,7 @@ func getDefaultChartFormat*(fileType: FileType): string =
 
 func getDefaultOptions*(to: FileType): ConvertOptions =
     ## Creates file-type specific default-options.
-    ## 
+    ##
     ## See also:
     ## * `getDefaultChartFormat,FileType`_
 

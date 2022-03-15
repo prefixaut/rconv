@@ -1,8 +1,20 @@
-import std/[enumutils, strutils, sequtils, sugar, options]
+import std/[enumutils, strutils, options]
 
-import ./private/[line_reader, parser_helpers]
+import ./common
+import ./private/[parser_helpers, simfile_common, simfile_helper]
+
+export simfile_common
+
+{.experimental: "codeReordering".}
 
 type
+    InvalidNoteError* = object of ParseError
+        ## Exception which is thrown when a Note is invalidly placed.
+        beat*: int
+        ## The beat where the note is placed in
+        note*: Note
+        ## The note that caused an error
+
     NoteType* {.pure.} = enum
         ## The type of notes that can be present in a SM file
         Empty = "0"
@@ -21,172 +33,10 @@ type
         ## Hold but with a timed release
         Fake = "F"
         ## Notes which can't be hit
-        Attack = "A"
-        ## ???
         Keysound = "K"
-        ## ?????????
-        Minefield = "N"
-        ## More mines ???
+        ## Special Keysound note ... ?
         Hidden = "H"
         ## A Ghost note
-
-    GameMode* {.pure.} = enum
-        ## The type of the game-mode for which the chart is for
-        DanceSingle = "dance-single"
-        ## 4k
-        DanceDouble = "dance-double"
-        ## 8k
-        DanceCouple = "dance-couple"
-        ## 8k
-        DanceRoutine = "dance-routine"
-        ## 8k
-        DanceSolo = "dance-solo"
-        ## 6k
-        PumpSingle = "pump-single"
-        ## 5k
-        PumpHalfdouble = "pump-halfdouble"
-        ## 6k
-        PumpDouble = "pump-double"
-        ## 10k
-        PumpCouple = "pump-couple"
-        ## 10k
-
-    Difficulty* {.pure.} = enum
-        ## The difficulty of a chart.
-        ## The same difficulty may only be defined once with the same game-mode, except for the Edit.
-        ## Edit-Difficulties may be present unlimited amount of times.
-        Beginner = "beginner"
-        Easy = "easy"
-        Medium = "medium"
-        Hard = "hard"
-        Challenge = "challenge"
-        Edit = "edit"
-
-    Color* = array[4, float] ## \
-    ## A rgba color representation
-
-    RadarValues* = array[5, float] ## \
-    ## Radar values from SM 3.9 (Stream, Voltage, Air, Freeze & Chaos)
-
-    BpmChange* = ref object
-        ## A bpm-change in a song
-        beat*: float
-        ## At which beat the change occurs
-        bpm*: float
-        ## To what BPM it should change
-
-    Stop* = ref object
-        beat*: float
-        ## At which beat the stop occurs
-        duration*: float
-        ## For how long the stop holds on
-
-    Delay* = ref object
-        beat*: float
-        ## At which beat the delay occurs
-        duration*: float
-        ## For how long the delay holds on
-
-    TimeSignature* = ref object
-        ## A time-signature change (ie. 3/4 or 7/8)
-        beat*: float
-        ## At which point the time-signature changes
-        numerator*: int
-        ## The numerator of the signature
-        denominator*: int
-        ## The deniminator of the signature
-
-    InstrumentTrack* = ref object
-        ## A special track for a single instrument
-        instrument*: string
-        ## The instrument name
-        file*: string
-        ## The file-path to the track/song
-
-    TickCount* = ref object
-        ## Specifies how many checkpoints a hold has in a beat.
-        beat*: float
-        ## At which beat the tick-count changes
-        count*: int
-        ## How many ticks it should change to
-
-    BackgroundChange* = ref object
-        ## A background change which occurrs at a specified time
-        beat*: float
-        ## The beat on which the change occurs
-        path*: string
-        ## The file path (or if it's a folder path, uses "default.lua") to the script file
-        updateRate*: float
-        ## How often the change is updated
-        crossFade*: bool
-        ## If it should use the cross-fade effect (overruled by `effect`)
-        stretchRewind*: bool
-        ## If it should use the stretch-rewind effect (overruled by `effect`)
-        stretchNoLoop*: bool
-        ## If it should use the stretch-noloop effect (overruled by `effect`)
-        effect*: string
-        ## The background-effect to use
-        file2*: string
-        ## The second file to load/use
-        transition*: string
-        ## The the background transitions to this state
-        color1*: Color
-        ## First color passed to the script files
-        color2*: Color
-        ## Second color passed to the script files
-
-    Attack* = ref object of RootObj
-        ## An attack is a modifier which occurs at a time/note for a certain time
-        length*: float
-        ## For how long the attack is active
-        mods*: seq[string]
-        ## The modifiers which will be applied
-
-    TimedAttack* = ref object of Attack
-        ## An attack which happens at the specified time
-        time*: float
-        ## The time when the attack occurs
-
-    ComboChange* = ref object
-        ## Changes the combo count for hits/misses
-        beat*: float
-        ## When the combo-change should occur
-        hit*: int
-        ## How much a single hit should count to the combo
-        miss*: int
-        ## How many misses a single miss should count
-
-    SpeedChange* = ref object
-        ## Modifies the speed of the chart by ratio
-        beat*: float
-        ## The beat where the speed-change occurs on
-        ratio*: float
-        ## The ratio that will be applied
-        duration*: float
-        ## How long it should take for the ratio to be applied (will be applied gradually)
-        inSeconds*: bool
-        ## If the duration is specified in seconds or in beats
-
-    ScollSpeedChange* = ref object
-        ## Modifies the scroll speed bt a factor
-        beat*: float
-        ## The beat where the scroll-speed occurs on
-        factor*: float
-        ## The factor of how much the scoll changes compared to the regular speed
-
-    FakeSection* = ref object
-        ## Marker for a section to make all notes fakes
-        beat*: float
-        ## The beat from when the fake-section should begin from
-        duration*: float
-        ## How long the fake-section should last (in beats)
-
-    Label* = ref object
-        ## Label for a certain beat
-        beat*: float
-        ## The beat on which the label is placed on
-        content*: string
-        ## The text/content of the label
 
     Note* = ref object
         ## A single note to be played
@@ -224,10 +74,10 @@ type
 
     Chart* = ref object
         ## A single chart (difficulty for a game-mode)
-        gameMode*: GameMode
+        chartType*: ChartType
         ## The game-mode of the chart
-        chartArtist*: string
-        ## The charter/chart-artist
+        description*: string
+        ## The description of the chart
         difficulty*: Difficulty
         ## The difficulty of the chart
         difficultyLevel*: int
@@ -316,114 +166,10 @@ type
         labels*: seq[Label]
         ## Labels for the song
 
-func newBpmChange*(beat: float, bpm: float): BpmChange =
-    new result
+func newNoteError(msg: string, beat: int, note: Note): ref InvalidNoteError =
+    result = newException(InvalidNoteError, msg)
     result.beat = beat
-    result.bpm = bpm
-
-func newBpmChange*(beat: Option[float], bpm: Option[float]): BpmChange =
-    result = newBpmChange(beat.get(0.0), bpm.get(0.0))
-
-func newStop*(beat: float, duration: float): Stop =
-    new result
-    result.beat = beat
-    result.duration = duration
-
-func newStop*(beat: Option[float], duration: Option[float]): Stop =
-    result = newStop(beat.get(0.0), duration.get(0.0))
-
-func newDelay*(beat: float, duration: float): Delay =
-    new result
-    result.beat = beat
-    result.duration = duration
-
-func newDelay*(beat: Option[float], duration: Option[float]): Delay =
-    result = newDelay(beat.get(0.0), duration.get(0.0))
-
-func newTimeSignature*(beat: float, numerator: int, denominator: int): TimeSignature =
-    new result
-    result.beat = beat
-    result.numerator = numerator
-    result.denominator = denominator
-
-func newTimeSignature*(beat: Option[float], numerator: Option[int], denominator: Option[int]): TimeSignature =
-    result = newTimeSignature(beat.get(0.0), numerator.get(4), denominator.get(4))
-
-func newInstrumentTrack*(instrument: string = "", file: string = ""): InstrumentTrack =
-    new result
-    result.instrument = instrument
-    result.file = file
-
-func newComboChange*(beat: float, hit: int, miss: int): ComboChange =
-    new result
-    result.beat = beat
-    result.hit = hit
-    result.miss = miss
-
-func newComboChange*(beat: Option[float], hit: Option[int], miss: Option[int]): ComboChange =
-    result = newComboChange(beat.get(0.0), hit.get(1), miss.get(1))
-
-func newSpeedChange*(beat: float, ratio: float, duration: float, inSeconds: bool): SpeedChange =
-    new result
-    result.beat = beat
-    result.ratio = ratio
-    result.duration = duration
-    result.inSeconds = inSeconds
-
-func newSpeedChange*(beat: Option[float], ration: Option[float], duration: Option[float], inSeconds: Option[bool]): SpeedChange =
-    result = newSpeedChange(beat.get(0.0), ration.get(1.0), duration.get(0.0), inSeconds.get(false))
-
-func newScollSpeedChange*(beat: float, factor: float): ScollSpeedChange =
-    new result
-    result.beat = beat
-    result.factor = factor
-
-func newScollSpeedChange*(beat: Option[float], factor: Option[float]): ScollSpeedChange =
-    result = newScollSpeedChange(beat.get(0.0), factor.get(1.0))
-
-func newFakeSection*(beat: float, duration: float): FakeSection =
-    new result
-    result.beat = beat
-    result.duration = duration
-
-func newFakeSection*(beat: Option[float], duration: Option[float]): FakeSection =
-    result = newFakeSection(beat.get(0.0), duration.get(0.0))
-
-func newLabel*(beat: float = 0.0, content: string = ""): Label =
-    new result
-    result.beat = beat
-    result.content = content
-
-func newBackgroundChange*(
-    beat: float = 0.0,
-    path: string = "",
-    updateRate: float = 0.0,
-    crossFade: bool = false,
-    stretchRewind: bool = false,
-    stretchNoLoop: bool = false,
-    effect: string = "",
-    file2: string = "",
-    transition: string = "",
-    color1: Color = [0.0, 0.0, 0.0, 0.0],
-    color2: Color = [0.0, 0.0, 0.0, 0.0]
-): BackgroundChange =
-    new result
-    result.beat = beat
-    result.path = path
-    result.updateRate = updateRate
-    result.crossFade = crossFade
-    result.stretchRewind = stretchRewind
-    result.stretchNoLoop = stretchNoLoop
-    result.effect = effect
-    result.file2 = file2
-    result.transition = transition
-    result.color1 = color1
-    result.color2 = color2
-
-func newAttack*(length: float = 0.0, mods: seq[string] = @[]): Attack =
-    new result
-    result.length = length
-    result.mods = mods
+    result.note = note
 
 func newTimedAttack*(time: float, length: float, mods: seq[string] = @[]): TimedAttack =
     new result
@@ -433,14 +179,6 @@ func newTimedAttack*(time: float, length: float, mods: seq[string] = @[]): Timed
 
 func newTimedAttack*(time: Option[float], length: Option[float], mods: seq[string] = @[]): TimedAttack =
     result = newTimedAttack(time.get(0.0), length.get(0.0), mods)
-
-func newTickCount*(beat: float, count: int): TickCount =
-    new result
-    result.beat = beat
-    result.count = count
-
-func newTickCount*(beat: Option[float], count: Option[int]): TickCount =
-    result = newTickCount(beat.get(0.0), count.get(4))
 
 func newNote*(kind: NoteType, column: int, snap: int, attack: Attack = nil, keysound: int = -1): Note =
     result = Note(kind: kind)
@@ -456,15 +194,15 @@ func newBeat*(index: int, snapSize: int = 0, notes: seq[Note] = @[]): Beat =
     result.notes = notes
 
 func newChart*(
-    gameMode: GameMode,
-    chartArtist: string = "",
+    chartType: ChartType,
+    description: string = "",
     difficulty: Difficulty = Difficulty.Beginner,
     difficultyLevel: int = 1,
     beats: seq[Beat] = @[]
 ): Chart =
     new result
-    result.gameMode = gameMode
-    result.chartArtist = chartArtist
+    result.chartType = chartType
+    result.description = description
     result.difficulty = difficulty
     result.difficultyLevel = difficultyLevel
     result.beats = beats
@@ -549,81 +287,6 @@ func newChartFile*(
     result.fakes = fakes
     result.labels = labels
 
-func isYes(str: string): bool =
-    return str.toLower in ["yes", "1", "es", "omes"]
-
-func splitByComma(data: string, doStrip: bool = false): seq[string] =
-    result = @[]
-    if data.contains(","):
-        result = data.split(",").filter(s => s.strip.len > 0)
-    elif not data.isEmptyOrWhitespace:
-        result = @[data]
-
-    if doStrip:
-        result = result.map(s => s.strip)
-
-func parseIntrumentTracks(data: string): seq[InstrumentTrack] =
-    result = @[]
-    for elem in data.splitByComma:
-        let spl = elem.split("=")
-        if spl.len >= 2:
-            result.add(newInstrumentTrack(spl[0], spl[1]))
-
-proc parseColor(data: string): Color =
-    if data.strip.len == 0:
-        return [0.0, 0.0, 0.0, 0.0]
-
-    var spl = data.replace("^", ",").split(",")
-    for i in spl.len..4:
-        spl.add "0"
-    result = [
-        parseFloatSafe(spl[0]).get(0.0),
-        parseFloatSafe(spl[1]).get(0.0),
-        parseFloatSafe(spl[2]).get(0.0),
-        parseFloatSafe(spl[3]).get(0.0)
-    ]
-
-proc parseBackgroundChanges(data: string): seq[BackgroundChange] =
-    result = @[]
-    for elem in data.splitByComma:
-        var spl = elem.splitMin("=", 11)
-
-        result.add newBackgroundChange(
-            beat = parseFloatSafe(spl[0]).get(0.0),
-            path = spl[1],
-            updateRate = parseFloatSafe(spl[2]).get(0.0),
-            crossFade = parseBoolSafe(spl[3]).get(false),
-            stretchRewind = parseBoolSafe(spl[4]).get(false),
-            stretchNoLoop = parseBoolSafe(spl[5]).get(false),
-            effect = spl[6],
-            file2 = spl[7],
-            transition = spl[8],
-            color1 = parseColor(spl[9]),
-            color2 = parseColor(spl[10])
-        )
-
-func parseStops(data: string): seq[Stop] =
-    result = @[]
-    for elem in data.splitByComma:
-        let spl = elem.splitMin("=", 2)
-        result.add newStop(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]))
-
-func parseBpms(data: string): seq[BpmChange] =
-    result = @[]
-    for elem in data.splitByComma:
-        let spl = elem.splitMin("=", 2)
-        result.add newBpmChange(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]))
-
-func parseTimeSignatures(data: string): seq[TimeSignature] =
-    result = @[]
-    for elem in data.splitByComma:
-        let spl = elem.split("=", 3)
-        result.add newTimeSignature(parseFloatSafe(spl[0]), parseIntSafe(spl[1]), parseIntSafe(spl[2]))
-
-func parseAttack(data: string): Attack =
-    let spl = data.splitMin(":", 2)
-    result = newAttack(parseFloatSafe(spl[1]).get(0.0), spl[0].splitByComma)
-
 proc parseTimedAttacks(data: string): seq[TimedAttack] =
     result = @[]
     let spl = data.split(":")
@@ -642,78 +305,8 @@ proc parseTimedAttacks(data: string): seq[TimedAttack] =
 
         result.add newTimedAttack(time, length, mods)
 
-func parseDelays(data: string): seq[Delay] =
-    result = @[]
-    for elem in data.splitByComma:
-        let spl = elem.splitMin("=", 2)
-        result.add newDelay(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]))
 
-func parseTickCounts(data: string): seq[TickCount] =
-    result = @[]
-    for elem in data.splitByComma:
-        let spl = elem.splitMin("=", 2)
-        result.add newTickCount(parseFloatSafe(spl[0]), parseIntSafe(spl[1]))
-
-func parseComboChanges(data: string): seq[ComboChange] =
-    result = @[]
-    for elem in data.splitByComma:
-        let spl = elem.splitMin("=", 3)
-        result.add newComboChange(parseFloatSafe(spl[0]), parseIntSafe(spl[1]), parseIntSafe(spl[2]))
-
-func parseSpeedChanges(data: string): seq[SpeedChange] =
-    result = @[]
-    for elem in data.splitByComma:
-        let spl = elem.splitMin("=", 4)
-        result.add newSpeedChange(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]), parseFloatSafe(spl[2]), parseBoolSafe(spl[3]))
-
-func parseScollSpeedChanges(data: string): seq[ScollSpeedChange] =
-    result = @[]
-    for elem in data.splitByComma:
-        let spl = elem.splitMin("=", 2)
-        result.add newScollSpeedChange(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]))
-
-func parseFakeSections(data: string): seq[FakeSection] =
-    result = @[]
-    for elem in data.splitByComma:
-        let spl = elem.splitMin("=", 2)
-        result.add newFakeSection(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]))
-
-func parseLabels(data: string): seq[Label] =
-    result = @[]
-    for elem in data.splitByComma:
-        let spl = elem.splitMin("=", 2)
-        if spl.len > 1:
-            result.add newLabel(parseFloat(spl[0]), spl[1])
-
-func parseRadarValues(data: string): RadarValues =
-    var spl = data.splitMin(",", 5, "0")
-
-    result = [
-        parseFloatSafe(spl[0]).get(0.0),
-        parseFloatSafe(spl[1]).get(0.0),
-        parseFloatSafe(spl[2]).get(0.0),
-        parseFloatSafe(spl[3]).get(0.0),
-        parseFloatSafe(spl[4]).get(0.0)
-    ]
-
-func columnCount(mode: GameMode): int =
-    result = 4
-
-    case mode:
-    of GameMode.DanceSingle:
-        result = 4
-    of GameMode.PumpSingle:
-        result = 5
-    of GameMode.DanceSolo, GameMode.PumpHalfdouble:
-        result = 6
-    of GameMode.DanceCouple, GameMode.DanceDouble, GameMode.DanceRoutine:
-        result = 8
-    of GameMode.PumpCouple, GameMode.PumpDouble:
-        result = 10
-    else:
-        discard
-
-func parseBeats(data: string, columns: int): seq[Beat] =
+func parseBeats(data: string, columns: int, lenient: bool): seq[Beat] =
     result = @[]
 
     var beatIndex = 0
@@ -777,11 +370,15 @@ func parseBeats(data: string, columns: int): seq[Beat] =
                     hold.rollEndSnap = snapIndex
                     longNotes[columnIndex] = nil
         elif kind != NoteType.Empty:
-            previousNote = newNote(kind, columnIndex, snapIndex)
+            let note = newNote(kind, columnIndex, snapIndex)
+
+            previousNote = note
             beat.notes.add previousNote
 
             if kind == NoteType.Hold or kind == NoteType.Roll:
                 longNotes[columnIndex] = previousNote
+            elif longNotes[columnIndex] != nil and not lenient:
+                raise newNoteError("Note is placed in a hold! Beat: " & $beatIndex & ", Note: " & $note[], beatIndex, note)
 
         inc columnIndex
         if columnIndex >= columns:
@@ -792,21 +389,39 @@ func parseBeats(data: string, columns: int): seq[Beat] =
     if beat.notes.len > 0:
         result.add beat
 
-func parseChart(data: string): Chart =
+func parseDifficulty(data: string, description: string): Difficulty =
+    # Fall back to edit difficulty
+    result = Difficulty.Edit
+
+    try:
+        result = parseEnum[Difficulty](data)
+    except ValueError:
+        if data.endsWith(".edit"):
+            result = Difficulty.Edit
+        elif data == "smaniac":
+            result = Difficulty.Challenge
+
+    if result == Difficulty.Hard:
+        if description.toLower == "smaniac" or description.toLower == "challenge":
+            result = Difficulty.Challenge
+
+func parseChart(data: string, lenient: bool): Chart =
     let meta = data.split(":", 5)
-    let mode = parseEnum[GameMode](meta[0].toLower)
-    let diff = parseEnum[Difficulty](meta[2].toLower)
+    let mode = parseEnum[ChartType](meta[0].toLower)
     let columns = columnCount(mode)
 
     result = Chart()
-    result.gameMode = mode
-    result.chartArtist = meta[1]
-    result.difficulty = diff
+    result.chartType = mode
+    result.description = meta[1]
+    result.difficulty = parseDifficulty(meta[2].toLower, result.description)
     result.difficultyLevel = parseInt(meta[3])
     result.radarValues = parseRadarValues(meta[4])
-    result.beats = parseBeats(meta[5], columns)
+    result.beats = parseBeats(meta[5], columns, lenient)
 
-proc putFileData(chart: var ChartFile, tag: string, data: string): void =
+func isYes(str: string): bool =
+    return str.toLower in ["yes", "1", "es", "omes"]
+
+proc putFileData(chart: var ChartFile, tag: string, data: string, lenient: bool): void =
     if data.strip.len == 0:
         return
 
@@ -874,9 +489,9 @@ proc putFileData(chart: var ChartFile, tag: string, data: string): void =
     of "tickcounts":
         chart.tickCounts = parseTickCounts(data)
     of "notes":
-        chart.charts.add parseChart(data)
+        chart.charts.add parseChart(data, lenient)
     of "notes2":
-        chart.keySoundCharts.add parseChart(data)
+        chart.keySoundCharts.add parseChart(data, lenient)
     of "combos":
         chart.combos = parseComboChanges(data)
     of "speeds":
@@ -890,43 +505,7 @@ proc putFileData(chart: var ChartFile, tag: string, data: string): void =
     else:
         discard
 
-proc parseStepMania*(data: string): ChartFile =
+proc parseStepMania*(data: string, lenient: bool = false): ChartFile =
     result = newChartFile()
-
-    var reader = newLineReader(data)
-    var inMeta = false
-    var tag = ""
-    var data = ""
-
-    while not reader.isEOF():
-        let line = reader.nextLine()
-
-        # Ignore comment lines
-        if line.startsWith("//"):
-            continue
-
-        if inMeta:
-            let eend = line.find(";")
-            if eend > -1:
-                data &= line.substr(0, eend - 1)
-                putFileData(result, tag, data)
-
-                tag = ""
-                data = ""
-                inMeta = false
-            else:
-                data &= line
-            continue
-
-        if line.startsWith("#"):
-            let sep = line.find(":")
-            let eend = line.find(";")
-            tag = line.substr(1, sep - 1).strip
-
-            if eend > -1:
-                putFileData(result, tag, line.substr(sep + 1, eend - 1))
-                tag = ""
-            else:
-                data = line.substr(sep + 1)
-                inMeta = true
-            continue
+    for tag, tagData in parseTags(data):
+        result.putFileData(tag, tagData, lenient)

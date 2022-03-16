@@ -1,4 +1,4 @@
-import std/[strformat, unittest]
+import std/[strformat, unittest, options]
 
 import rconv/step_mania
 import rconv/private/test_utils
@@ -44,10 +44,12 @@ drums=drumdum.mp3;
 ,90.000=90.750
 ;
 #TIMESIGNATURES:3.500=8=5,5.100=3=4,8.900=8=10;
-#ATTACKS:TIME=1.618:END=3.166:MODS=*32 Invert, *32 No Flip
-:TIME=2.004:END=3.166:MODS=*32 No Invert, *32 No Flip
-:TIME=2.392:LEN=0.1:MODS=*64 30% Mini
-:TIME=2.489:LEN=0.1:MODS=*64 60% Mini;
+#ATTACKS:
+    TIME=26.879999:LEN=209715.000000:MODS=*4 500 bumpy,*8 -50 bumpyperiod:
+    TIME=28.320000:LEN=5.000000:MODS=*8 no bumpy:
+    TIME=0.000000:LEN=209715.000000:MODS=*-1 skew:
+    TIME=0.000000:LEN=209715.000000:MODS=*-1 p2 10000 centered:
+    TIME=0.000000:LEN=209715.000000:MODS=*-1 p1 no dark;
 #DELAYS:65.134=4.262,84.001=43.232
 ,930.32=12.000;
 #TICKCOUNTS:45.23=12,84.999=24;
@@ -114,6 +116,33 @@ M0FF
                 change.transition == expected.transition
                 change.color1 == expected.color1
                 change.color2 == expected.color2
+
+        proc testModifier(
+            modifier: Modifier,
+            expectedName: string,
+            expectedApproachRate: int,
+            expectedMagnitude: float = 100,
+            expectedPercent: bool = true,
+            expectedPlayer = ""
+        ): void =
+
+            check:
+                modifier.name == expectedName
+                modifier.approachRate == expectedApproachRate
+                modifier.magnitude == expectedMagnitude
+                modifier.isPercent == expectedPercent
+                modifier.player == expectedPlayer
+
+        template checkModifier(
+            modifier: Modifier,
+            expectedName: string,
+            expectedApproachRate: int,
+            expectedMagnitude: float = 100,
+            expectedPercent: bool = true,
+            expectedPlayer = ""
+        ) =
+            checkpoint("Modifier " & $modifier[] & " '" & expectedName & "': " & expectedPlayer & " *" & $expectedApproachRate & " " & $expectedMagnitude & (if expectedPercent: "%" else: ""))
+            testModifier(modifier, expectedName, expectedApproachRate, expectedMagnitude, expectedPercent, expectedPlayer)
 
         func `$`(kind: NoteType): string =
             case kind:
@@ -260,24 +289,43 @@ M0FF
             chart.timeSignatures[2].numerator == 8
             chart.timeSignatures[2].denominator == 10
 
-            chart.attacks.len == 4
+            chart.attacks.len == 5
 
         check:
-            int(chart.attacks[0].time * 1000) == int(1.618 * 1000)
-            int(chart.attacks[0].length * 1000) == int(1.548 * 1000)
-        check chart.attacks[0].mods == @["*32 Invert", "*32 No Flip"]
+            int(chart.attacks[0].time * 1000) == int(26.879 * 1000)
+            int(chart.attacks[0].length * 1000) == int(209_715.000 * 1000)
+            chart.attacks[0].mods.len == 2
+
+        checkModifier(chart.attacks[0].mods[0], "bumpy", 4, 500.0, false)
+        checkModifier(chart.attacks[0].mods[1], "bumpyperiod", 8, -50.0, false)
+
         check:
-            int(chart.attacks[1].time * 1000) == int(2.004 * 1000)
-            int(chart.attacks[1].length * 1000) == int(1.162 * 1000)
-        check chart.attacks[1].mods == @["*32 No Invert", "*32 No Flip"]
+            int(chart.attacks[1].time * 1000) == int(28.320 * 1000)
+            int(chart.attacks[1].length * 1000) == int(5.000 * 1000)
+            chart.attacks[1].mods.len == 1
+
+        checkModifier(chart.attacks[1].mods[0], "bumpy", 8, 0.0)
+
         check:
-            int(chart.attacks[2].time * 1000) == int(2.392 * 1000)
-            int(chart.attacks[2].length * 1000) == int(0.1 * 1000)
-        check chart.attacks[2].mods == @["*64 30% Mini"]
+            int(chart.attacks[2].time * 1000) == int(0.000 * 1000)
+            int(chart.attacks[2].length * 1000) == int(209_715.0000 * 1000)
+            chart.attacks[2].mods.len == 1
+
+        checkModifier(chart.attacks[2].mods[0], "skew", -1)
+
         check:
-            int(chart.attacks[3].time * 1000) == int(2.489 * 1000)
-            int(chart.attacks[3].length * 1000) == int(0.1 * 1000)
-        check chart.attacks[3].mods == @["*64 60% Mini"]
+            int(chart.attacks[3].time * 1000) == int(0.000 * 1000)
+            int(chart.attacks[3].length * 1000) == int(209_715.0000 * 1000)
+            chart.attacks[3].mods.len == 1
+
+        checkModifier(chart.attacks[3].mods[0], "centered", -1, 10_000.0, false, "p2")
+
+        check:
+            int(chart.attacks[4].time * 1000) == int(0.000 * 1000)
+            int(chart.attacks[4].length * 1000) == int(209_715.0000 * 1000)
+            chart.attacks[4].mods.len == 1
+
+        checkModifier(chart.attacks[4].mods[0], "dark", -1, 0.0, true, "p1")
 
         check:
             chart.delays.len == 3
@@ -294,9 +342,9 @@ M0FF
             int(chart.tickCounts[1].beat * 1000) == int(84.999 * 1000)
             chart.tickCounts[1].count == 24
 
-            chart.charts.len == 1
+            chart.noteData.len == 1
 
-        let diff = chart.charts[0]
+        let diff = chart.noteData[0]
         check:
             diff.chartType == ChartType.DanceSingle
             diff.description == "cool-dood"

@@ -1,4 +1,4 @@
-import std/[strutils, options]
+import std/[strutils, sequtils, options]
 
 func parseFloatSafe*(value: string, default: Option[float] = none[float]()): Option[float] =
     try:
@@ -29,3 +29,25 @@ func splitMin*(str: string, sep: string, minCount: int, default: string = ""): s
     let l = result.len
     for i in l..minCount:
         result.add default
+
+func stripSplit*(str: string, sep: string, maxSplit: int = -1): seq[string] =
+    result = str.split(sep, maxSplit).mapIt(it.strip)
+
+func stripSplitMin*(str: string, sep: string, minCount: int, default: string = ""): seq[string] =
+    result = str.splitMin(sep, minCount, default).mapIt(it.strip)
+
+func last*[T](collection: seq[T]): T =
+    result = collection[collection.len - 1]
+
+func unshift*[T](collection: var seq[T]): T =
+    result = collection[0]
+    collection.delete(0)
+
+func find*[T](collection: seq[T], fn: proc (element: T): bool): int =
+    result = -1
+    var index = 0
+
+    for item in collection:
+        if fn(item):
+            return index
+        inc index

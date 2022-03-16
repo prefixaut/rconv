@@ -111,11 +111,24 @@ type
         color2*: Color
         ## Second color passed to the script files
 
+    Modifier* = ref object
+        ## Modifiers which may be applied to the song or on an individual note
+        name*: string
+        ## The name of the modifier
+        player*: string
+        ## The player for which the modifier is meant for
+        approachRate*: int
+        ## The approach-rate
+        magnitude*: float
+        ## The magnitude of the modifier
+        isPercent*: bool
+        ## If the '_magnitude is percent based
+
     Attack* = ref object of RootObj
         ## An attack is a modifier which occurs at a time/note for a certain time
         length*: float
         ## For how long the attack is active
-        mods*: seq[string]
+        mods*: seq[Modifier]
         ## The modifiers which will be applied
 
     TimedAttack* = ref object of Attack
@@ -287,7 +300,21 @@ func newBackgroundChange*(
     result.color1 = color1
     result.color2 = color2
 
-func newAttack*(length: float = 0.0, mods: seq[string] = @[]): Attack =
+func newModifier*(
+    name: string,
+    player: string = "",
+    approachRate: int = 1,
+    magnitude: float = 100,
+    isPercent: bool = true
+): Modifier =
+    new result
+    result.name = name
+    result.approachRate = approachRate
+    result.magnitude = magnitude
+    result.isPercent = isPercent
+    result.player = player
+
+func newAttack*(length: float = 0.0, mods: seq[Modifier] = @[]): Attack =
     new result
     result.length = length
     result.mods = mods
@@ -368,9 +395,44 @@ func parseTimeSignatures*(data: string): seq[TimeSignature] =
         let spl = elem.split("=", 3)
         result.add newTimeSignature(parseFloatSafe(spl[0]), parseIntSafe(spl[1]), parseIntSafe(spl[2]))
 
+func parseModifier*(data: string): Modifier =
+    var spl = data.stripSplit(" ")
+    let name = spl.pop()
+
+    var approachRate = 1
+    var magnitude = 100.0
+    var isPercent = true
+
+    var player = ""
+
+    if spl.len > 0 and spl[0].startsWith("*"):
+        let approachStr = spl.unshift()
+
+        try:
+            approachRate = parseInt(approachStr.substr(1))
+        except:
+            discard
+
+    if spl.len > 0 and spl[0].toLower.startsWith("p"):
+        player = spl.unshift()
+
+    if spl.len > 0 and not spl[0].isEmptyOrWhitespace:
+        isPercent = spl[0].endsWith("%")
+        try:
+            if isPercent:
+                magnitude = parseFloat(spl[0].substr(-1))
+            else:
+                magnitude = parseFloat(spl[0])
+        except ValueError:
+            isPercent = true
+            if spl[0].toLower == "no":
+                magnitude = 0
+
+    result = newModifier(name, player, approachRate, magnitude, isPercent)
+
 func parseAttack*(data: string): Attack =
     let spl = data.splitMin(":", 2)
-    result = newAttack(parseFloatSafe(spl[1]).get(0.0), spl[0].splitByComma)
+    result = newAttack(parseFloatSafe(spl[1]).get(0.0), spl[0].splitByComma.mapIt(parseModifier(it)))
 
 func parseDelays*(data: string): seq[Delay] =
     result = @[]

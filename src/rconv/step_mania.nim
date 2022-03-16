@@ -1,4 +1,4 @@
-import std/[enumutils, strutils, options]
+import std/[enumutils, sequtils, strutils, options, sugar]
 
 import ./common
 import ./private/[parser_helpers, simfile_common, simfile_helper]
@@ -48,6 +48,9 @@ type
         ## The attack to apply when the note is played
         keysound*: int
         ## Keysound which has to be played when hit
+        modifiers*: seq[Modifier]
+        ## Modifiers to apply only for this note
+
         case kind*: NoteType:
             ## The kind of the note
             of Hold:
@@ -72,7 +75,7 @@ type
         notes*: seq[Note]
         ## All notes in this beat
 
-    Chart* = ref object
+    NoteData* = ref object
         ## A single chart (difficulty for a game-mode)
         chartType*: ChartType
         ## The game-mode of the chart
@@ -151,10 +154,8 @@ type
         ## The delays of the song (?)
         tickCounts*: seq[TickCount]
         ## The tick-counts for holds
-        charts*: seq[Chart]
-        ## The charts available for this song
-        keySoundCharts*: seq[Chart]
-        ## The charts for the keysounds
+        noteData*: seq[NoteData]
+        ## The noteData available for this song
         combos*: seq[ComboChange]
         ## Combo changes
         speeds*: seq[SpeedChange]
@@ -171,13 +172,13 @@ func newNoteError(msg: string, beat: int, note: Note): ref InvalidNoteError =
     result.beat = beat
     result.note = note
 
-func newTimedAttack*(time: float, length: float, mods: seq[string] = @[]): TimedAttack =
+func newTimedAttack*(time: float, length: float, mods: seq[Modifier] = @[]): TimedAttack =
     new result
     result.time = time
     result.length = length
     result.mods = mods
 
-func newTimedAttack*(time: Option[float], length: Option[float], mods: seq[string] = @[]): TimedAttack =
+func newTimedAttack*(time: Option[float], length: Option[float], mods: seq[Modifier] = @[]): TimedAttack =
     result = newTimedAttack(time.get(0.0), length.get(0.0), mods)
 
 func newNote*(kind: NoteType, snap: int, column: int, attack: Attack = nil, keysound: int = -1): Note =
@@ -193,13 +194,13 @@ func newBeat*(index: int, snapSize: int = 0, notes: seq[Note] = @[]): Beat =
     result.snapSize = snapSize
     result.notes = notes
 
-func newChart*(
+func newNoteData*(
     chartType: ChartType,
     description: string = "",
     difficulty: Difficulty = Difficulty.Beginner,
     difficultyLevel: int = 1,
     beats: seq[Beat] = @[]
-): Chart =
+): NoteData =
     new result
     result.chartType = chartType
     result.description = description
@@ -239,8 +240,7 @@ func newChartFile*(
     attacks: seq[TimedAttack] = @[],
     delays: seq[Delay] = @[],
     tickCounts: seq[TickCount] = @[],
-    charts: seq[Chart] = @[],
-    keySoundCharts: seq[Chart] = @[],
+    noteData: seq[NoteData] = @[],
     combos: seq[ComboChange] = @[],
     speeds: seq[SpeedChange] = @[],
     scrolls: seq[ScollSpeedChange] = @[],
@@ -279,8 +279,7 @@ func newChartFile*(
     result.bpms = bpms
     result.displayBpm = displayBpm
     result.tickCounts = tickCounts
-    result.charts = charts
-    result.keySoundCharts = keySoundCharts
+    result.noteData = noteData
     result.combos = combos
     result.speeds = speeds
     result.scrolls = scrolls
@@ -297,14 +296,13 @@ proc parseTimedAttacks(data: string): seq[TimedAttack] =
         let time = parseFloatSafe(spl[offset].split("=")[1])
         let lenOrEndSpl = spl[offset + 1].split("=")
         let lenOrEndVal = parseFloatSafe(lenOrEndSpl[1])
-        let mods = spl[offset + 2].split("=")[1].splitByComma(true)
+        let mods = spl[offset + 2].split("=")[1].splitByComma(true).mapIt(parseModifier(it))
         let length = if lenOrEndSpl[0].toLower.strip == "len":
             lenOrendVal
             # Annoying extra steps, to prevent rounding/fraction errors
             else: some(((lenOrEndVal.get() * 1000) - (time.get() * 1000)) / 1000)
 
         result.add newTimedAttack(time, length, mods)
-
 
 func parseBeats(data: string, columns: int, lenient: bool): seq[Beat] =
     result = @[]
@@ -317,32 +315,42 @@ func parseBeats(data: string, columns: int, lenient: bool): seq[Beat] =
     var previousNote: Note = nil
     var longNotes = newSeq[Note](columns);
 
-    var inAttack = false
-    var attackData = ""
-    var inKeysound = false
-    var keysoundData = ""
+    var tmpData = ""
+    # 0 = regular, 1 = attack-data, 2 = keysound-data, 3 = modifier-data
+    var state = 0
 
     for str in data:
-        if inAttack:
+        if state == 1:
             if str == '}':
-                inAttack = false
-                previousNote.attack = parseAttack(attackData)
+                state = 0
+                previousNote.attack = parseAttack(tmpData)
                 continue
-            attackData &= str
+            tmpData &= str
             continue
         elif str == '{':
-            inAttack = true
+            state = 1
             continue
 
-        if inKeysound:
+        if state == 2:
             if str == ']':
-                inKeysound = false
-                previousNote.keySound = parseInt(keysoundData)
+                state = 0
+                previousNote.keySound = parseInt(tmpData)
                 continue
-            keysoundData &= str
+            tmpData &= str
             continue
         elif str == '[':
-            inKeysound = true
+            state = 2
+            continue
+
+        if state == 3:
+            if str == '>':
+                state = 0
+                previousNote.modifiers = tmpData.stripSplit("/").mapIt(parseModifier(it))
+                continue
+            tmpData &= str
+            continue
+        elif str == '<':
+            state = 3
             continue
 
         if str == ',':
@@ -411,12 +419,12 @@ func parseDifficulty(data: string, description: string): Difficulty =
         if description.toLower == "smaniac" or description.toLower == "challenge":
             result = Difficulty.Challenge
 
-func parseChart(data: string, lenient: bool): Chart =
+func parseNoteData(data: string, lenient: bool): NoteData =
     let meta = data.split(":", 5)
     let mode = parseEnum[ChartType](meta[0].toLower)
     let columns = columnCount(mode)
 
-    result = Chart()
+    new result
     result.chartType = mode
     result.description = meta[1]
     result.difficulty = parseDifficulty(meta[2].toLower, result.description)
@@ -495,9 +503,22 @@ proc putFileData(chart: var ChartFile, tag: string, data: string, lenient: bool)
     of "tickcounts":
         chart.tickCounts = parseTickCounts(data)
     of "notes":
-        chart.charts.add parseChart(data, lenient)
+        chart.noteData.add parseNoteData(data, lenient)
     of "notes2":
-        chart.keySoundCharts.add parseChart(data, lenient)
+        # This one is quite uncommon and is normally the same content as the previous "notes" section,
+        # but with note additions like inline keysounds, attacks and modifiers.
+        # Since we support all the formats out of the box, we're usually only interested in the "notes2" section.
+        # Therefore check if the note-data is already present and replace it.
+        # Has its own section to not break compatibility with older parsers.
+
+        var noteData = parseNoteData(data, lenient)
+        let found = chart.noteData.find((existing: NoteData) => existing.chartType == noteData.chartType and existing.difficulty == noteData.difficulty and existing.difficultyLevel == noteData.difficultyLevel)
+
+        if found > -1:
+            chart.noteData[found] = noteData
+        else:
+            chart.noteData.add noteData
+
     of "combos":
         chart.combos = parseComboChanges(data)
     of "speeds":

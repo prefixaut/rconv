@@ -104,9 +104,10 @@ rconv -C -j -f -t malody --out output/nested /somewhere/my-input/sample.memo
 As library, you should only have to import the entry file and the file formtats you want to use.
 Each file-format should be imported in an own namespace, as types might overlap (Multiple types called `Chart` for example).
 
-Parsing/Reading of the chart is done via the `parse{format}` procs, while writing the chart is done via the `write` procs defined in each module.
+Parsing/Reading of the chart is done via the `parse{format}` (i.E. `parseMemo` or `parseStepMania`) procs, while writing the chart is done via the `write` procs defined in each module.
 These `parse` and `write` procs are always implemented for streams, and usually also for strings (as long as the chart-format is not binary).
-Converting procs are found in the `rconv/mapper` (imported via `rconv`) and are named `to{OtherFormat}`, i.E. `toFXF` or `toMalody`.
+
+Converting procs are found in the `rconv/mapper` (imported via `rconv`) and are named `to{format}`, i.E. `toFXF` or `toMalody`.
 
 ```nim
 import pkg/rconv
@@ -116,7 +117,7 @@ import pkg/rconv/memo as memo
 let rawMemo = readFile("/home/user/some-chart.memo")
 let memoChart = memo.parseMemo(rawMemo)
 let fxfChart = memoChart.toFXF
-echo chart
+echo fxfChart.write
 ```
 
 ## Supported Formats
@@ -125,10 +126,10 @@ echo chart
 
 All listed formats are able to be parsed, have proper types (structs) and outputs setup:
 
-* Memo (.memo)
-* Malody (.mc)
-* FXF (.fxf)
-* StepMania (.sm)
+* Memo (`.memo`)
+* Malody (`.mc`)
+* FXF (`.fxf`)
+* StepMania (`.sm`)
 
 ### Convertion
 
@@ -139,9 +140,10 @@ All listed formats are able to be parsed, have proper types (structs) and output
         <td>MemoV2</td>
         <td>Malody¹</td>
         <td>FXF</td>
-        <td>StepMania</td>
         <td>osu!¹</td>
-        <td>ITG</td>
+        <td>StepMania</td>
+        <td>StepMania 5</td>
+        <td>Kick It Up</td>
     </tr>
     <tr>
         <td style="text-align: center;">Memo</td>
@@ -152,11 +154,13 @@ All listed formats are able to be parsed, have proper types (structs) and output
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">❌</td>
     </tr>
     <tr>
         <td style="text-align: center;">MemoV2</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">➖</td>
+        <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
@@ -172,9 +176,22 @@ All listed formats are able to be parsed, have proper types (structs) and output
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">❌</td>
     </tr>
     <tr>
         <td style="text-align: center;">FXF</td>
+        <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">➖</td>
+        <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">❌</td>
+    </tr>
+    <tr>
+        <td style="text-align: center;">osu!</td>
+        <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
@@ -189,12 +206,14 @@ All listed formats are able to be parsed, have proper types (structs) and output
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">❌</td>
         <td style="text-align: center;">➖</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
     </tr>
     <tr>
-        <td style="text-align: center;">osu!</td>
+        <td style="text-align: center;">StepMania 5</td>
+        <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
@@ -204,7 +223,8 @@ All listed formats are able to be parsed, have proper types (structs) and output
         <td style="text-align: center;">❌</td>
     </tr>
     <tr>
-        <td style="text-align: center;">ITG</td>
+        <td style="text-align: center;">Kick It Up</td>
+        <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>

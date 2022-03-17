@@ -250,8 +250,8 @@ func newSpeedChange*(beat: float, ratio: float, duration: float, inSeconds: bool
     result.duration = duration
     result.inSeconds = inSeconds
 
-func newSpeedChange*(beat: Option[float], ration: Option[float], duration: Option[float], inSeconds: Option[bool]): SpeedChange =
-    result = newSpeedChange(beat.get(0.0), ration.get(1.0), duration.get(0.0), inSeconds.get(false))
+func newSpeedChange*(beat: Option[float], ratio: Option[float], duration: Option[float], inSeconds: Option[bool]): SpeedChange =
+    result = newSpeedChange(beat.get(0.0), ratio.get(1.0), duration.get(0.0), inSeconds.get(false))
 
 func newScollSpeedChange*(beat: float, factor: float): ScollSpeedChange =
     new result

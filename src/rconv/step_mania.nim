@@ -386,13 +386,18 @@ func parseBeats(data: string, columns: int, lenient: bool): seq[Beat] =
                 raise newNoteError("Found hold-release where no hold was! Beat " & $beatIndex & ", Note: " & $note[], beatIndex, note)
 
         elif kind != NoteType.Empty:
-            previousNote = note
-            beat.notes.add previousNote
+            var doAdd = true
 
             if kind == NoteType.Hold or kind == NoteType.Roll:
                 longNotes[columnIndex] = note
-            elif longNotes[columnIndex] != nil and not lenient:
-                raise newNoteError("Note is placed in a hold! Beat: " & $beatIndex & ", Note: " & $note[], beatIndex, note)
+            elif longNotes[columnIndex] != nil:
+                doAdd = false
+                if not lenient:
+                    raise newNoteError("Note is placed in a hold! Beat: " & $beatIndex & ", Note: " & $note[], beatIndex, note)
+
+            if doAdd:
+                previousNote = note
+                beat.notes.add previousNote
 
         inc columnIndex
         if columnIndex >= columns:

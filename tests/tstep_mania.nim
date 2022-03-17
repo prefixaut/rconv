@@ -1,10 +1,138 @@
-import std/[strformat, unittest, options]
+import std/[strformat, unittest, options, tables]
 
 import rconv/step_mania
-import rconv/private/test_utils
 
 suite "step-mania":
-    let testFile = """
+    let regularNotes = {
+        NoteType.Note: "1",
+        NoteType.Mine: "M",
+        NoteType.Lift: "L",
+        NoteType.Fake: "F",
+        NoteType.Keysound: "K",
+        NoteType.Hidden: "H"
+    }.toTable
+    let holdNotes = {
+        NoteType.Hold: "2",
+        NoteType.Roll: "4"
+    }.toTable
+
+    proc checkBgChange(
+        change: BackgroundChange,
+        expected: BackgroundChange
+    ): void =
+        check:
+            change.beat == expected.beat
+            change.path == expected.path
+            change.updateRate == expected.updateRate
+            change.crossFade == expected.crossFade
+            change.stretchRewind == expected.stretchRewind
+            change.stretchNoLoop == expected.stretchNoLoop
+            change.effect == expected.effect
+            change.file2 == expected.file2
+            change.transition == expected.transition
+            change.color1 == expected.color1
+            change.color2 == expected.color2
+
+    proc testModifier(
+        modifier: Modifier,
+        expectedName: string,
+        expectedApproachRate: int,
+        expectedMagnitude: float = 100,
+        expectedPercent: bool = true,
+        expectedPlayer = ""
+    ): void =
+
+        check:
+            modifier.name == expectedName
+            modifier.approachRate == expectedApproachRate
+            modifier.magnitude == expectedMagnitude
+            modifier.isPercent == expectedPercent
+            modifier.player == expectedPlayer
+
+    template checkModifier(
+        modifier: Modifier,
+        expectedName: string,
+        expectedApproachRate: int,
+        expectedMagnitude: float = 100,
+        expectedPercent: bool = true,
+        expectedPlayer = ""
+    ) =
+        checkpoint("Modifier " & $modifier[] & " '" & expectedName & "': " & expectedPlayer & " *" & $expectedApproachRate & " " & $expectedMagnitude & (if expectedPercent: "%" else: ""))
+        testModifier(modifier, expectedName, expectedApproachRate, expectedMagnitude, expectedPercent, expectedPlayer)
+
+    func `$`(kind: NoteType): string =
+        case kind:
+            of NoteType.Note:
+                result = "Note"
+            of NoteType.Hold:
+                result = "Hold"
+            of NoteType.Roll:
+                result = "Roll"
+            of NoteType.Mine:
+                result = "Mine"
+            of NoteType.Lift:
+                result = "Lift"
+            of NoteType.Fake:
+                result = "Fake"
+            of NoteType.Keysound:
+                result = "KeyCound"
+            of NoteType.Hidden:
+                result = "Hidden"
+            else:
+                result = "---"
+
+    proc testNote(
+        note: Note,
+        expectedSnap: int,
+        expectedColumn: int,
+        expectedKind: NoteType = NoteType.Note
+    ): void =
+        check:
+            note.kind == expectedKind
+            note.snap == expectedSnap
+            note.column == expectedColumn
+
+    template checkNote(
+        note: Note,
+        snap: int,
+        column: int,
+        kind: NoteType = NoteType.Note
+    ) =
+        checkpoint("Note (" & $kind & ") on Snap " & $snap & ", Column " & $column)
+        testNote(note, snap, column, kind)
+
+    proc testHold(
+        note: Note,
+        snap: int,
+        column: int,
+        expectedReleaseBeat: int,
+        expectedReleaseSnap: int,
+        kind: NoteType = NoteType.Hold
+    ): void =
+        testNote(note, snap, column, kind)
+        if kind == NoteType.Hold:
+            check:
+                note.holdEndBeat == expectedReleaseBeat
+                note.holdEndSnap == expectedReleaseSnap
+        elif kind == NoteType.Roll:
+            check:
+                note.rollEndBeat == expectedReleaseBeat
+                note.rollEndSnap == expectedReleaseSnap
+
+    template checkHold(
+        note: Note,
+        snap: int,
+        column: int,
+        releaseBeat: int,
+        releaseSnap: int,
+        kind: NoteType = NoteType.Hold
+    ) =
+        checkpoint("Note (" & $kind & ") on Snap " & $snap & ", Column " & $column & ", Release on " & $releaseBeat & "-" & $releaseSnap)
+        testHold(note, snap, column, releaseBeat, releaseSnap, kind)
+
+    test "parse":
+
+        let testFile = """
 #TITLE:ゾンビー・サーカス;
 #SUBTITLE:客招く誘蛾灯 テントに灯る;
 #ARTIST:かめりあ;
@@ -54,11 +182,11 @@ drums=drumdum.mp3;
 ,930.32=12.000;
 #TICKCOUNTS:45.23=12,84.999=24;
 #NOTES:
-     dance-single:
-     cool-dood:
-     Challenge:
-     20:
-     0.2,0.3,0.5,0.7,0.9:
+    dance-single:
+    cool-dood:
+    Challenge:
+    20:
+    0.2,0.3,0.5,0.7,0.9:
 0000
 0000
 0000
@@ -87,132 +215,18 @@ M0FF
 0000
 1011
 ;
-#NOTES2:;
-#COMBOS:;
-#SPEEDS:;
-#SCROLLS:;
-#FAKES:;
-#LABELS:;
+#COMBOS:33.333=3=100,
+50.5=10=2,52=2=1;
+#SPEEDS:12.000=10=20=1,76.666=7.5=12=0;
+#SCROLLS:75.123=6.75;
+#FAKES:44.542=61,89.028=13.999;
+#LABELS:71.987=hello world
+,91.565=goodbye;
 """
 
-    let testChange1 = newBackgroundChange(0.0, "something.jpg", 1.0, true, false, true, "bloom", "otherScript.lua", "CrossFade", [0.5, 0.2, 0.9, 1.0], [0.3, 0.2, 0.6, 0.8])
-    let testChange2 = newBackgroundChange(420.0, "ayo.png", 2.0, false, true, true)
-    let testChange3 = newBackgroundChange(69.333, "image.gif", 3.500, true, false, false, "invert", "label.png")
-
-    test "parse":
-        proc checkBgChange(
-            change: BackgroundChange,
-            expected: BackgroundChange
-        ): void =
-            check:
-                change.beat == expected.beat
-                change.path == expected.path
-                change.updateRate == expected.updateRate
-                change.crossFade == expected.crossFade
-                change.stretchRewind == expected.stretchRewind
-                change.stretchNoLoop == expected.stretchNoLoop
-                change.effect == expected.effect
-                change.file2 == expected.file2
-                change.transition == expected.transition
-                change.color1 == expected.color1
-                change.color2 == expected.color2
-
-        proc testModifier(
-            modifier: Modifier,
-            expectedName: string,
-            expectedApproachRate: int,
-            expectedMagnitude: float = 100,
-            expectedPercent: bool = true,
-            expectedPlayer = ""
-        ): void =
-
-            check:
-                modifier.name == expectedName
-                modifier.approachRate == expectedApproachRate
-                modifier.magnitude == expectedMagnitude
-                modifier.isPercent == expectedPercent
-                modifier.player == expectedPlayer
-
-        template checkModifier(
-            modifier: Modifier,
-            expectedName: string,
-            expectedApproachRate: int,
-            expectedMagnitude: float = 100,
-            expectedPercent: bool = true,
-            expectedPlayer = ""
-        ) =
-            checkpoint("Modifier " & $modifier[] & " '" & expectedName & "': " & expectedPlayer & " *" & $expectedApproachRate & " " & $expectedMagnitude & (if expectedPercent: "%" else: ""))
-            testModifier(modifier, expectedName, expectedApproachRate, expectedMagnitude, expectedPercent, expectedPlayer)
-
-        func `$`(kind: NoteType): string =
-            case kind:
-                of NoteType.Note:
-                    result = "Note"
-                of NoteType.Hold:
-                    result = "Hold"
-                of NoteType.Roll:
-                    result = "Roll"
-                of NoteType.Mine:
-                    result = "Mine"
-                of NoteType.Lift:
-                    result = "Lift"
-                of NoteType.Fake:
-                    result = "Fake"
-                of NoteType.Keysound:
-                    result = "KeyCound"
-                of NoteType.Hidden:
-                    result = "Hidden"
-                else:
-                    result = "---"
-
-        proc testNote(
-            note: Note,
-            expectedSnap: int,
-            expectedColumn: int,
-            expectedKind: NoteType = NoteType.Note
-        ): void =
-            check:
-                note.kind == expectedKind
-                note.snap == expectedSnap
-                note.column == expectedColumn
-
-        template checkNote(
-            note: Note,
-            snap: int,
-            column: int,
-            kind: NoteType = NoteType.Note
-        ) =
-            checkpoint("Note (" & $kind & ") on Snap " & $snap & ", Column " & $column)
-            testNote(note, snap, column, kind)
-
-        proc testHold(
-            note: Note,
-            snap: int,
-            column: int,
-            expectedReleaseBeat: int,
-            expectedReleaseSnap: int,
-            kind: NoteType = NoteType.Hold
-        ): void =
-            testNote(note, snap, column, kind)
-            if kind == NoteType.Hold:
-                check:
-                    note.holdEndBeat == expectedReleaseBeat
-                    note.holdEndSnap == expectedReleaseSnap
-            elif kind == NoteType.Roll:
-                check:
-                    note.rollEndBeat == expectedReleaseBeat
-                    note.rollEndSnap == expectedReleaseSnap
-
-        template checkHold(
-            note: Note,
-            snap: int,
-            column: int,
-            releaseBeat: int,
-            releaseSnap: int,
-            kind: NoteType = NoteType.Hold
-        ) =
-            checkpoint("Note (" & $kind & ") on Snap " & $snap & ", Column " & $column & ", Release on " & $releaseBeat & "-" & $releaseSnap)
-            testHold(note, snap, column, releaseBeat, releaseSnap, kind)
+        let testChange1 = newBackgroundChange(0.0, "something.jpg", 1.0, true, false, true, "bloom", "otherScript.lua", "CrossFade", [0.5, 0.2, 0.9, 1.0], [0.3, 0.2, 0.6, 0.8])
+        let testChange2 = newBackgroundChange(420.0, "ayo.png", 2.0, false, true, true)
+        let testChange3 = newBackgroundChange(69.333, "image.gif", 3.500, true, false, false, "invert", "label.png")
 
         let chart = parseStepMania(testFile)
 
@@ -389,3 +403,104 @@ M0FF
         checkNote(diff.beats[1].notes[12], 7, 0)
         checkNote(diff.beats[1].notes[13], 7, 2)
         checkNote(diff.beats[1].notes[14], 7, 3)
+
+        check:
+            chart.combos.len == 3
+            chart.combos[0].beat == 33.333
+            chart.combos[0].hit == 3
+            chart.combos[0].miss == 100
+            chart.combos[1].beat == 50.5
+            chart.combos[1].hit == 10
+            chart.combos[1].miss == 2
+            chart.combos[2].beat == 52.0
+            chart.combos[2].hit == 2
+            chart.combos[2].miss == 1
+
+            chart.speeds.len == 2
+            chart.speeds[0].beat == 12.000
+            chart.speeds[0].ratio == 10.0
+            chart.speeds[0].duration == 20.0
+            chart.speeds[0].inSeconds == true
+            chart.speeds[1].beat == 76.666
+            chart.speeds[1].ratio == 7.5
+            chart.speeds[1].duration == 12.0
+            chart.speeds[1].inSeconds == false
+
+            chart.scrolls.len == 1
+            chart.scrolls[0].beat == 75.123
+            chart.scrolls[0].factor == 6.75
+
+            chart.fakes.len == 2
+            chart.fakes[0].beat == 44.542
+            chart.fakes[0].duration == 61.0
+            chart.fakes[1].beat == 89.028
+            chart.fakes[1].duration == 13.999
+
+            chart.labels.len == 2
+            chart.labels[0].beat == 71.987
+            chart.labels[0].content == "hello world"
+            chart.labels[1].beat == 91.565
+            chart.labels[1].content == "goodbye"
+
+    test "strict note in holds and rolls":
+        for hKind, hStr in holdNotes.pairs:
+            for kind, str in regularNotes.pairs:
+                let testFile = fmt"""
+#NOTES:
+    dance-single:
+    :
+    Hard:
+    10:
+    0,0,0,0,0:
+{hStr}000
+0000
+{str}000
+0000
+0000
+0000
+3000
+0000
+;
+"""
+                var didThrow = false
+                try:
+                    discard parseStepMania(testFile)
+                except InvalidNoteError as e:
+                    didThrow = true
+                    check:
+                        e.beat == 0
+                        e.note.kind == kind
+                        e.note.snap == 2
+                        e.note.column == 0
+                check didThrow == true
+
+    test "lenient note in holds and rolls":
+        for hKind, hStr in holdNotes.pairs:
+            for kind, str in regularNotes.pairs:
+                let testFile = fmt"""
+#NOTES:
+    dance-single:
+    :
+    Hard:
+    10:
+    0,0,0,0,0:
+{hStr}000
+0000
+{str}000
+0000
+0000
+0000
+3000
+0000
+;
+"""
+                var didThrow = false
+                try:
+                    let chart = parseStepMania(testFile, true)
+                    check:
+                        chart.noteData[0].beats.len == 1
+                        chart.noteData[0].beats[0].notes.len == 1
+                    checkHold(chart.noteData[0].beats[0].notes[0], 0, 0, 0, 6, hKind)
+                except InvalidNoteError:
+                    didThrow = true
+                check didThrow == false

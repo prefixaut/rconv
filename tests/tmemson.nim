@@ -45,7 +45,7 @@ BPM: 160
 口口⑪口
     """
 
-    let parsed = parseMemoToMemson(testFile)
+    let parsed = parseMemo(testFile)
 
     test "to fxf":
         let chart = parsed.toFXF

@@ -1,4 +1,4 @@
-import std/[enumutils, sequtils, strutils, options, sugar]
+import std/[enumutils, options, sequtils, sugar, streams, strformat, strutils]
 
 import ./common
 import ./private/[parser_helpers, simfile_common, simfile_helper]
@@ -537,7 +537,86 @@ proc putFileData(chart: var ChartFile, tag: string, data: string, lenient: bool)
     else:
         discard
 
+proc putTag(str: var string, tag: string, value: string): void =
+    if not value.isEmptyOrWhitespace:
+        str &= fmt"#{tag.toUpper}:{value};\n"
+
+proc write(color: Color): string =
+    result = color.join("^")
+
+proc write(change: BackgroundChange): string =
+    result = @[
+        $change.beat,
+        change.path,
+        $change.updateRate,
+        $change.crossFade,
+        $change.stretchRewind,
+        $change.stretchNoLoop,
+        change.effect,
+        change.file2,
+        change.transition,
+        change.color1.write,
+        change.color2.write
+    ].join("=")
+
+proc write(modi: Modifier): string =
+    result = @[
+        fmt"*{modi.approachRate}",
+        modi.player,
+        $modi.magnitude & (if modi.isPercent: "%" else: ""),
+        modi.name
+    ].filter(str => not str.strip.isEmptyOrWhitespace).join("=")
+
+proc write(attack: TimedAttack): string =
+    let mods = attack.mods.mapIt(it.write).join(",")
+    result = @[
+        fmt"TIME={attack.time}",
+        fmt"LEN={attack.length}",
+        fmt"MODS={mods}"
+    ].join(":")
+
 proc parseStepMania*(data: string, lenient: bool = false): ChartFile =
     result = newChartFile()
     for tag, tagData in parseTags(data):
         result.putFileData(tag, tagData, lenient)
+
+proc parseStepMania*(stream: Stream, lenient: bool = false): ChartFile =
+    result = parseStepMania(stream.readAll, lenient)
+
+proc write*(chart: ChartFile): string =
+    result = fmt"""
+#TITLE:{chart.title};
+#SUBTITLE:{chart.subtitle};
+#ARTIST:{chart.artist};
+"""
+    result.putTag("titletranslit", chart.titleTransliterated)
+    result.putTag("subtitletranslit", chart.subtitleTransliterated)
+    result.putTag("artisttranslit", chart.artistTransliterated)
+    result.putTag("genre", chart.genre)
+    result.putTag("credit", chart.credit)
+    result.putTag("banner", chart.banner)
+    result.putTag("background", chart.background)
+    result.putTag("lyricspath", chart.lyricsPath)
+    result.putTag("cdtitle", chart.cdTitle)
+    result.putTag("music", chart.music)
+    result.putTag("instrumenttracks", chart.instrumentTracks.mapIt(fmt"{it.file}={it.instrument}").join(","))
+    result.putTag("samplestart", $chart.sampleStart)
+    result.putTag("samplelength", $chart.sampleLength)
+    result.putTag("displaybpm", chart.displayBpm)
+    result.putTag("selectable", if chart.selectable: "YES" else: "NO")
+    result.putTag("bgchanges", chart.bgChanges.mapIt(it.write).join(","))
+    result.putTag("bgchanges2", chart.bgChanges2.mapIt(it.write).join(","))
+    result.putTag("bgchanges3", chart.bgChanges3.mapIt(it.write).join(","))
+    result.putTag("animations", chart.animations.mapIt(it.write).join(","))
+    result.putTag("fgchanges", chart.fgchanges.mapIt(it.write).join(","))
+    result.putTag("keysounds", chart.keySounds.join(","))
+    result.putTag("offset", $chart.offset)
+    result.putTag("stops", chart.stops.mapIt(fmt"{it.beat}={it.duration}").join(","))
+    result.putTag("bpms", chart.bpms.mapIt(fmt"{it.beat}={it.bpm}").join(","))
+    result.putTag("timesignatures", chart.timeSignatures.mapIt(fmt"{it.beat}={it.numerator}={it.denominator}").join(","))
+    result.putTag("attacks", chart.attacks.mapIt(it.write).join(":"))
+    result.putTag("delays", chart.delays.mapIt(fmt"{it.beat}={it.duration}").join(","))
+    result.putTag("tickcounts", chart.tickCounts.mapIt(fmt"{it.beat}={it.count}").join(","))
+
+proc write*(chart: ChartFile, stream: Stream): void =
+    stream.write(chart.write)

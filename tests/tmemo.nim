@@ -139,7 +139,7 @@ BPM: 160
 口口⑤口 |⑦－⑧－|
     """
 
-    let parsed = parseMemoToMemson(testFile)
+    let parsed = parseMemo(testFile)
 
     test "Chart: Meta-Data":
         check:

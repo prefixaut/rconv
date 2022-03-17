@@ -1,4 +1,4 @@
-import std/[json, jsonutils, tables, streams, strformat, options, os]
+import std/[streams, strformat, options, os]
 
 import ./common, mapper
 
@@ -9,8 +9,6 @@ import ./malody as malody
 import ./memo as memo
 import ./memson as memson
 import ./step_mania as sm
-
-include ./private/json_hooks
 
 {.experimental: "codeReordering".}
 
@@ -39,7 +37,7 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
     case actualFrom:
     of FileType.Memo:
         let raw = readFile(file)
-        let parsed = memo.parseMemoToMemson(raw)
+        let parsed = memo.parseMemo(raw)
 
         case to:
         of FileType.FXF:
@@ -52,8 +50,8 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
             raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
 
     of FileType.Malody:
-        var raw = parseJson(readFile(file))
-        var parsed = raw.toMalodyChart(actualOptions.lenient)
+        var raw = readFile(file)
+        var parsed = malody.parseMalody(raw, actualOptions.lenient)
 
         case to:
         of FileType.FXF:
@@ -72,7 +70,7 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
 
     of FileType.FXF:
         var stream = openFileStream(file)
-        let parsed = fxf.readFXFChartFile(stream)
+        let parsed = fxf.parseFXF(stream)
 
         case to:
         else:
@@ -110,7 +108,7 @@ proc saveChart(chart: var fxf.ChartFile, options: ConvertOptions, diff: Option[s
     if fileExists(filePath) and options.merge:
         try:
             var readStrm = newFileStream(filePath, fmRead)
-            var existing = readStrm.readFXFChartFile
+            var existing = fxf.parseFXF(readStrm)
             readStrm.close
 
             if options.keep:
@@ -131,7 +129,7 @@ proc saveChart(chart: var fxf.ChartFile, options: ConvertOptions, diff: Option[s
             raise newException(ConvertException, fmt"Error while merging existing file {filePath}", getCurrentException())
 
     var writeStrm = newFileStream(filePath, fmWrite)
-    chart.writeToStream(writeStrm)
+    chart.write(writeStrm)
     writeStrm.flush
     writeStrm.close
 
@@ -159,11 +157,7 @@ proc saveChart(chart: var malody.Chart, options: ConvertOptions): ConvertResult 
 
     discard existsOrCreateDir(outDir & DirSep)
 
-    var str = ""
-    if options.jsonPretty:
-        str = toJsonHook(chart).pretty
-    else:
-        toUgly(str, toJson(chart))
+    var str = chart.write(options.jsonPretty)
     writeFile(filePath, str)
 
     result = ConvertResult(

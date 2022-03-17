@@ -104,6 +104,8 @@ rconv -C -j -f -t malody --out output/nested /somewhere/my-input/sample.memo
 As library, you should only have to import the entry file and the file formtats you want to use.
 Each file-format should be imported in an own namespace, as types might overlap (Multiple types called `Chart` for example).
 
+Parsing/Reading of the chart is done via the `parse{format}` procs, while writing the chart is done via the `write` procs defined in each module.
+These `parse` and `write` procs are always implemented for streams, and usually also for strings (as long as the chart-format is not binary).
 Converting procs are found in the `rconv/mapper` (imported via `rconv`) and are named `to{OtherFormat}`, i.E. `toFXF` or `toMalody`.
 
 ```nim
@@ -112,7 +114,7 @@ import pkg/rconv/fxf as fxf
 import pkg/rconv/memo as memo
 
 let rawMemo = readFile("/home/user/some-chart.memo")
-let memoChart = memo.parseMemoToMemson(rawMemo)
+let memoChart = memo.parseMemo(rawMemo)
 let fxfChart = memoChart.toFXF
 echo chart
 ```
@@ -121,9 +123,12 @@ echo chart
 
 ### Parsing
 
-* Memo
-* Malody
-* FXF
+All listed formats are able to be parsed, have proper types (structs) and outputs setup:
+
+* Memo (.memo)
+* Malody (.mc)
+* FXF (.fxf)
+* StepMania (.sm)
 
 ### Convertion
 
@@ -212,4 +217,3 @@ echo chart
 
 **¹** Formats which support multiple different game-types.
 Convertion for these formats is only for the most relevant game-type (i.E. StepMania -> osu! = StepMania -> osu!mania)
-

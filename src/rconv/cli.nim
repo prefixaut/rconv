@@ -40,7 +40,7 @@ let cli = newParser:
         help="Copy all neccessary resources (Sound-File, Jacket) to the output directory. Should only be used in comination with the \"song-folders\" option.")
     flag("-s", "--stats",
         help="Show stats on the end of the operation.")
-    option("-t", "--to", required=true, choices=(@["fxf", "malody", "memo"]),
+    option("-t", "--to", required=true, choices=(@["fxf", "malody", "memo", "sm"]),
         help="The output type.")
     flag("-n", "--normalize",
         help="Normalize the output-paths (folder/file).")

@@ -1,4 +1,4 @@
-import std/[options, strutils, sequtils, sugar]
+import std/[options, strformat, strutils, sequtils, sugar]
 
 import ./parser_helpers
 
@@ -124,15 +124,19 @@ type
         isPercent*: bool
         ## If the '_magnitude is percent based
 
-    Attack* = ref object of RootObj
+    Attack* = ref object
         ## An attack is a modifier which occurs at a time/note for a certain time
+        length*: float
+        ## For how long the attack is active
+        mods*: seq[string]
+        ## The modifiers which will be applied
+
+    TimedAttack* = ref object
+        ## An attack which happens at the specified time
         length*: float
         ## For how long the attack is active
         mods*: seq[Modifier]
         ## The modifiers which will be applied
-
-    TimedAttack* = ref object of Attack
-        ## An attack which happens at the specified time
         time*: float
         ## The time when the attack occurs
 
@@ -314,7 +318,7 @@ func newModifier*(
     result.isPercent = isPercent
     result.player = player
 
-func newAttack*(length: float = 0.0, mods: seq[Modifier] = @[]): Attack =
+func newAttack*(length: float = 0.0, mods: seq[string] = @[]): Attack =
     new result
     result.length = length
     result.mods = mods
@@ -432,7 +436,7 @@ func parseModifier*(data: string): Modifier =
 
 func parseAttack*(data: string): Attack =
     let spl = data.splitMin(":", 2)
-    result = newAttack(parseFloatSafe(spl[1]).get(0.0), spl[0].splitByComma.mapIt(parseModifier(it)))
+    result = newAttack(parseFloatSafe(spl[1]).get(0.0), spl[0].splitByComma)
 
 func parseDelays*(data: string): seq[Delay] =
     result = @[]
@@ -487,3 +491,81 @@ func parseRadarValues*(data: string): RadarValues =
         parseFloatSafe(spl[3]).get(0.0),
         parseFloatSafe(spl[4]).get(0.0)
     ]
+
+proc boolFlag*(val: bool): string =
+    result = if val: "1" else: "0"
+
+proc putTag*(str: var string, tag: string, value: string): void =
+    if not value.isEmptyOrWhitespace:
+        str &= fmt"#{tag.toUpper}:{value};{'\n'}"
+
+proc write*(color: Color): string =
+    result = color.join("^")
+
+proc write*(change: BackgroundChange): string =
+    result = @[
+        $change.beat,
+        change.path,
+        $change.updateRate,
+        change.crossFade.boolFlag,
+        change.stretchRewind.boolFlag,
+        change.stretchNoLoop.boolFlag,
+        change.effect,
+        change.file2,
+        change.transition,
+        change.color1.write,
+        change.color2.write
+    ].join("=")
+
+proc write*(modi: Modifier): string =
+    result = @[
+        fmt"*{modi.approachRate}",
+        modi.player,
+        $modi.magnitude & (if modi.isPercent: "%" else: ""),
+        modi.name
+    ].filter(str => not str.strip.isEmptyOrWhitespace).join("=")
+
+proc write*(attack: TimedAttack): string =
+    let mods = attack.mods.mapIt(it.write).join(",")
+    result = @[
+        fmt"TIME={attack.time}",
+        fmt"LEN={attack.length}",
+        fmt"MODS={mods}"
+    ].join(":")
+
+
+proc `$`*(ct: ChartType): string =
+    case ct:
+    of ChartType.DanceSingle:
+        result = "dance-single"
+    of ChartType.DanceDouble:
+        result = "dance-double"
+    of ChartType.DanceCouple:
+        result = "dance-couple"
+    of ChartType.DanceRoutine:
+        result = "dance-routine"
+    of ChartType.DanceSolo:
+        result = "dance-solo"
+    of ChartType.PumpSingle:
+        result = "pump-single"
+    of ChartType.PumpHalfdouble:
+        result = "pump-halfdouble"
+    of ChartType.PumpDouble:
+        result = "pump-double"
+    of ChartType.PumpCouple:
+        result = "pump-couple"
+
+proc `$`*(diff: Difficulty): string =
+    case diff:
+    of Difficulty.Beginner:
+        result = "Beginner"
+    of Difficulty.Easy:
+        result = "Easy"
+    of Difficulty.Medium:
+        result = "Medium"
+    of Difficulty.Hard:
+        result = "Hard"
+    of Difficulty.Challenge:
+        result = "Challenge"
+    of Difficulty.Edit:
+        result = "Edit"

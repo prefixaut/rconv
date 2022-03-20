@@ -1,4 +1,4 @@
-import std/[enumutils, options, sequtils, sugar, streams, strformat, strutils]
+import std/[enumutils, options, sequtils, sugar, streams, strformat, strutils, tables]
 
 import ./common
 import ./private/[parser_helpers, simfile_common, simfile_helper]
@@ -46,7 +46,7 @@ type
         ## On which column the Note is placed on
         attack*: Attack
         ## The attack to apply when the note is played
-        keysound*: int
+        keySound*: int
         ## Keysound which has to be played when hit
         modifiers*: seq[Modifier]
         ## Modifiers to apply only for this note
@@ -181,12 +181,12 @@ func newTimedAttack*(time: float, length: float, mods: seq[Modifier] = @[]): Tim
 func newTimedAttack*(time: Option[float], length: Option[float], mods: seq[Modifier] = @[]): TimedAttack =
     result = newTimedAttack(time.get(0.0), length.get(0.0), mods)
 
-func newNote*(kind: NoteType, snap: int, column: int, attack: Attack = nil, keysound: int = -1): Note =
+func newNote*(kind: NoteType, snap: int, column: int, attack: Attack = nil, keySound: int = -1): Note =
     result = Note(kind: kind)
     result.snap = snap
     result.column = column
     result.attack = attack
-    result.keysound = keysound
+    result.keySound = keySound
 
 func newBeat*(index: int, snapSize: int = 0, notes: seq[Note] = @[]): Beat =
     new result
@@ -314,9 +314,10 @@ func parseBeats(data: string, columns: int, lenient: bool): seq[Beat] =
     var beat = newBeat(0)
     var previousNote: Note = nil
     var longNotes = newSeq[Note](columns);
+    var hadRelease = false
 
     var tmpData = ""
-    # 0 = regular, 1 = attack-data, 2 = keysound-data, 3 = modifier-data
+    # 0 = regular, 1 = attack-data, 2 = keySound-data, 3 = modifier-data
     var state = 0
 
     for str in data:
@@ -355,8 +356,9 @@ func parseBeats(data: string, columns: int, lenient: bool): seq[Beat] =
 
         if str == ',':
             beat.snapSize = snapIndex
-            if beat.notes.len > 0:
+            if beat.notes.len > 0 or hadRelease:
                 result.add beat
+                hadRelease = false
 
             inc beatIndex
             beat = newBeat(beatIndex)
@@ -381,7 +383,7 @@ func parseBeats(data: string, columns: int, lenient: bool): seq[Beat] =
                 elif not lenient:
                     # This should never happen
                     raise newNoteError("Found invalid hold! Beat " & $beatIndex & ", Note: " & $hold[], beatIndex, hold)
-
+                hadRelease = true
             elif not lenient:
                 raise newNoteError("Found hold-release where no hold was! Beat " & $beatIndex & ", Note: " & $note[], beatIndex, note)
 
@@ -405,7 +407,7 @@ func parseBeats(data: string, columns: int, lenient: bool): seq[Beat] =
             columnIndex = 0
 
     beat.snapSize = snapIndex
-    if beat.notes.len > 0:
+    if beat.notes.len > 0 or hadRelease:
         result.add beat
 
 func parseDifficulty(data: string, description: string): Difficulty =
@@ -439,6 +441,13 @@ func parseNoteData(data: string, lenient: bool): NoteData =
 
 func isYes(str: string): bool =
     return str.toLower in ["yes", "1", "es", "omes"]
+
+proc hasNoteExtra(data: NoteData): bool =
+    result = false
+    for beat in data.beats:
+        for note in beat.notes:
+            if note.attack != nil or note.keySound > -1 or note.modifiers.len > 0:
+                return true
 
 proc putFileData(chart: var ChartFile, tag: string, data: string, lenient: bool): void =
     if data.strip.len == 0:
@@ -491,7 +500,7 @@ proc putFileData(chart: var ChartFile, tag: string, data: string, lenient: bool)
         chart.animations = parseBackgroundChanges(data)
     of "fgchanges":
         chart.fgChanges = parseBackgroundChanges(data)
-    of "keysounds":
+    of "keySounds":
         chart.keySounds = data.split(",")
     of "offset":
         chart.offset = parseFloat(data)
@@ -511,7 +520,7 @@ proc putFileData(chart: var ChartFile, tag: string, data: string, lenient: bool)
         chart.noteData.add parseNoteData(data, lenient)
     of "notes2":
         # This one is quite uncommon and is normally the same content as the previous "notes" section,
-        # but with note additions like inline keysounds, attacks and modifiers.
+        # but with note additions like inline keySounds, attacks and modifiers.
         # Since we support all the formats out of the box, we're usually only interested in the "notes2" section.
         # Therefore check if the note-data is already present and replace it.
         # Has its own section to not break compatibility with older parsers.
@@ -537,43 +546,108 @@ proc putFileData(chart: var ChartFile, tag: string, data: string, lenient: bool)
     else:
         discard
 
-proc putTag(str: var string, tag: string, value: string): void =
-    if not value.isEmptyOrWhitespace:
-        str &= fmt"#{tag.toUpper}:{value};\n"
+proc `$`(nt: NoteType): string =
+    case nt:
+    of NoteType.Empty:
+        result = "0"
+    of NoteType.Note:
+        result = "1"
+    of NoteType.Hold:
+        result = "2"
+    of NoteType.HoldEnd:
+        result = "3"
+    of NoteType.Roll:
+        result = "4"
+    of NoteType.Mine:
+        result = "M"
+    of NoteType.Lift:
+        result = "L"
+    of NoteType.Fake:
+        result = "F"
+    of NoteType.Keysound:
+        result = "K"
+    of NoteType.Hidden:
+        result = "H"
 
-proc write(color: Color): string =
-    result = color.join("^")
+proc write(note: Note, withExtras: bool): string =
+    result = $note.kind
+    if withExtras:
+        if note.attack != nil:
+            result &= "{" & note.attack.mods.join(",") & ":" & $note.attack.length & "}"
+        if note.keySound > -1:
+            result &= fmt"[{note.keySound}]"
+        if note.modifiers.len > 0:
+            result &= "<" & note.modifiers.mapIt(write(it)).join("/") & ">"
 
-proc write(change: BackgroundChange): string =
-    result = @[
-        $change.beat,
-        change.path,
-        $change.updateRate,
-        $change.crossFade,
-        $change.stretchRewind,
-        $change.stretchNoLoop,
-        change.effect,
-        change.file2,
-        change.transition,
-        change.color1.write,
-        change.color2.write
-    ].join("=")
+proc write(notes: NoteData, withNoteExtras: bool = false): string =
+    let ct = $notes.chartType
+    let columns = columnCount(notes.chartType)
+    let emptyBeat = "0000\n0000\n0000\n0000\n"
 
-proc write(modi: Modifier): string =
-    result = @[
-        fmt"*{modi.approachRate}",
-        modi.player,
-        $modi.magnitude & (if modi.isPercent: "%" else: ""),
-        modi.name
-    ].filter(str => not str.strip.isEmptyOrWhitespace).join("=")
+    var tag = "NOTES"
+    if withNoteExtras:
+        tag &= "2"
 
-proc write(attack: TimedAttack): string =
-    let mods = attack.mods.mapIt(it.write).join(",")
-    result = @[
-        fmt"TIME={attack.time}",
-        fmt"LEN={attack.length}",
-        fmt"MODS={mods}"
-    ].join(":")
+    result = "//--------------- " & ct & " -  -----------------\n#" & tag & ":\n"
+    result &= @[
+        ct,
+        notes.description,
+        $notes.difficulty,
+        $notes.difficultyLevel,
+        notes.radarValues.mapIt($it).join(",")
+    ].mapIt(fmt"    {it}:{'\n'}").join("")
+
+    var arr: seq[string] = @[]
+    var tmp = ""
+    var lastBeat = 0
+    var holdReleases = newTable[int, seq[int]]()
+    var highestRelease = 0
+    var highestBeat = notes.beats.last.index
+
+    for beatIndex in 0..highestBeat:
+        let bIndex = notes.beats.find(b => b.index == beatIndex, lastBeat)
+        if bIndex == -1:
+            # Empty 4th section
+            arr.add emptyBeat
+            continue
+        lastBeat = bIndex
+        let beat = notes.beats[bIndex]
+        var lastNote = 0
+
+        for noteIndex in 0..<(columns * beat.snapSize):
+            let nIndex = beat.notes.find(n => noteIndex == ((n.snap * columns) + n.column), lastNote)
+
+            if nIndex > -1:
+                lastNote = nIndex
+                let note = beat.notes[nIndex]
+                tmp &= write(note, withNoteExtras)
+
+                var releaseNote = -1
+                var releaseBeat = -1
+
+                if note.kind == NoteType.Hold:
+                    releaseBeat = note.holdEndBeat
+                    releaseNote = (columns * note.holdEndSnap) + (noteIndex mod columns)
+                elif note.kind == NoteType.Roll:
+                    releaseBeat = note.rollEndBeat
+                    releaseNote = (columns * note.rollEndSnap) + (noteIndex mod columns)
+
+                if releaseNote > -1:
+                    holdReleases.mgetOrPut(releaseBeat, @[]).add releaseNote
+                    highestRelease = max(highestRelease, releaseBeat)
+
+            elif holdReleases.hasKey(beatIndex) and holdReleases[beatIndex].contains(noteIndex):
+                tmp &= $NoteType.HoldEnd
+
+            else:
+                tmp &= $NoteType.Empty
+
+            if (noteIndex + 1) mod columns == 0:
+                tmp &= '\n'
+        arr.add tmp
+        tmp = ""
+
+    result &= arr.join(",\n") & ";\n"
 
 proc parseStepMania*(data: string, lenient: bool = false): ChartFile =
     result = newChartFile()
@@ -604,19 +678,27 @@ proc write*(chart: ChartFile): string =
     result.putTag("samplelength", $chart.sampleLength)
     result.putTag("displaybpm", chart.displayBpm)
     result.putTag("selectable", if chart.selectable: "YES" else: "NO")
-    result.putTag("bgchanges", chart.bgChanges.mapIt(it.write).join(","))
-    result.putTag("bgchanges2", chart.bgChanges2.mapIt(it.write).join(","))
-    result.putTag("bgchanges3", chart.bgChanges3.mapIt(it.write).join(","))
-    result.putTag("animations", chart.animations.mapIt(it.write).join(","))
-    result.putTag("fgchanges", chart.fgchanges.mapIt(it.write).join(","))
-    result.putTag("keysounds", chart.keySounds.join(","))
+    result.putTag("bgchanges", chart.bgChanges.mapIt(it.write).join("\n,"))
+    result.putTag("bgchanges2", chart.bgChanges2.mapIt(it.write).join("\n,"))
+    result.putTag("bgchanges3", chart.bgChanges3.mapIt(it.write).join("\n,"))
+    result.putTag("animations", chart.animations.mapIt(it.write).join("\n,"))
+    result.putTag("fgchanges", chart.fgchanges.mapIt(it.write).join("\n,"))
+    result.putTag("keySounds", chart.keySounds.join("\n,"))
     result.putTag("offset", $chart.offset)
-    result.putTag("stops", chart.stops.mapIt(fmt"{it.beat}={it.duration}").join(","))
-    result.putTag("bpms", chart.bpms.mapIt(fmt"{it.beat}={it.bpm}").join(","))
-    result.putTag("timesignatures", chart.timeSignatures.mapIt(fmt"{it.beat}={it.numerator}={it.denominator}").join(","))
-    result.putTag("attacks", chart.attacks.mapIt(it.write).join(":"))
-    result.putTag("delays", chart.delays.mapIt(fmt"{it.beat}={it.duration}").join(","))
-    result.putTag("tickcounts", chart.tickCounts.mapIt(fmt"{it.beat}={it.count}").join(","))
+    result.putTag("stops", chart.stops.mapIt(fmt"{it.beat}={it.duration}").join("\n,"))
+    result.putTag("bpms", chart.bpms.mapIt(fmt"{it.beat}={it.bpm}").join("\n,"))
+    result.putTag("timesignatures", chart.timeSignatures.mapIt(fmt"{it.beat}={it.numerator}={it.denominator}").join("\n,"))
+    result.putTag("attacks", chart.attacks.mapIt(it.write).join("\n:"))
+    result.putTag("delays", chart.delays.mapIt(fmt"{it.beat}={it.duration}").join("\n,"))
+    result.putTag("tickcounts", chart.tickCounts.mapIt(fmt"{it.beat}={it.count}").join("\n,"))
+    for n in chart.noteData:
+        result &= write(n)
+        if n.hasNoteExtra:
+            result &= write(n, true)
+    result.putTag("combos", chart.combos.mapIt(fmt"{it.beat}={it.hit}={it.miss}").join("\n,"))
+    result.putTag("speeds", chart.speeds.mapIt(fmt"{it.beat}={it.ratio}={it.duration}={it.inSeconds.boolFlag}").join("\n,"))
+    result.putTag("fakes", chart.fakes.mapIt(fmt"{it.beat}={it.duration}").join("\n,"))
+    result.putTag("labels", chart.labels.mapIt(fmt"{it.beat}={it.content}").join("\n,"))
 
 proc write*(chart: ChartFile, stream: Stream): void =
     stream.write(chart.write)

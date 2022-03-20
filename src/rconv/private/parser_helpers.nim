@@ -43,11 +43,8 @@ func unshift*[T](collection: var seq[T]): T =
     result = collection[0]
     collection.delete(0)
 
-func find*[T](collection: seq[T], fn: proc (element: T): bool): int =
+func find*[T](collection: seq[T], fn: proc (element: T): bool, start: int = 0): int =
     result = -1
-    var index = 0
-
-    for item in collection:
-        if fn(item):
-            return index
-        inc index
+    for i in start..<collection.len:
+        if fn(collection[i]):
+            return i

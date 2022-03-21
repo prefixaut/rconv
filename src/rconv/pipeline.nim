@@ -43,9 +43,11 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
         of FileType.FXF:
             var chart = parsed.toFXF
             result = saveChart(chart, actualOptions, some($parsed.difficulty))
+
         of FileType.Malody:
-            var chart = parsed.toMalody
+            let chart = parsed.toMalody
             result = saveChart(chart, actualOptions)
+
         else:
             raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
 
@@ -57,6 +59,14 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
         of FileType.FXF:
             var chart = parsed.toFXF
             result = saveChart(chart, actualOptions, none(string))
+
+        of FileType.Malody:
+            result = saveChart(parsed, actualOptions)
+
+        of FileType.StepMania:
+            let chart = parsed.toStepMania
+            result = saveChart(chart, actualOptions)
+
         else:
             raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
 
@@ -65,14 +75,20 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
         let parsed = sm.parseStepMania(raw, actualOptions.lenient)
 
         case to:
+        of FileType.StepMania:
+            result = saveChart(parsed, actualOptions)
+
         else:
             raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
 
     of FileType.FXF:
         var stream = openFileStream(file)
-        let parsed = fxf.parseFXF(stream)
+        var parsed = fxf.parseFXF(stream)
 
         case to:
+        of FileType.FXF:
+            result = saveChart(parsed, actualOptions)
+
         else:
             raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
 
@@ -100,12 +116,12 @@ proc saveChart(chart: var fxf.ChartFile, options: ConvertOptions, diff: Option[s
     let filePath = joinPath(outDir, options.formatFileName(params))
 
     if fileExists(filePath) and options.preserve:
-        # TODO: Logging?
         raise newException(PreserveFileException, fmt"Output-File already exists: {filePath}")
 
     discard existsOrCreateDir(outDir & DirSep)
 
     if fileExists(filePath) and options.merge:
+        # TODO: Merge it the other way, to make the `chart` parameter not editable
         try:
             var readStrm = newFileStream(filePath, fmRead)
             var existing = fxf.parseFXF(readStrm)
@@ -138,8 +154,7 @@ proc saveChart(chart: var fxf.ChartFile, options: ConvertOptions, diff: Option[s
         filePath: filePath
     )
 
-proc saveChart(chart: var malody.Chart, options: ConvertOptions): ConvertResult =
-
+proc saveChart(chart: malody.Chart, options: ConvertOptions): ConvertResult =
     let params = malody.asFormattingParams(chart)
 
     var outDir = options.output
@@ -152,12 +167,36 @@ proc saveChart(chart: var malody.Chart, options: ConvertOptions): ConvertResult 
     let filePath = joinPath(outDir, options.formatFileName(params))
 
     if fileExists(filePath) and options.preserve:
-        # TODO: Logging?
         raise newException(PreserveFileException, fmt"Output-File already exists: {filePath}")
 
     discard existsOrCreateDir(outDir & DirSep)
 
     var str = chart.write(options.jsonPretty)
+    writeFile(filePath, str)
+
+    result = ConvertResult(
+        folderName: folderName,
+        filePath: filePath
+    )
+
+proc saveChart(chart: sm.ChartFile, options: ConvertOptions): ConvertResult =
+    let params = sm.asFormattingParams(chart)
+
+    var outDir = options.output
+    if not isAbsolute(outDir):
+        outDir = joinPath(getCurrentDir(), outDir)
+    var folderName = ""
+    if options.songFolders:
+        folderName = options.formatFolderName(params)
+        outDir = joinPath(outDir, folderName)
+    let filePath = joinPath(outDir, options.formatFileName(params))
+
+    if fileExists(filePath) and options.preserve:
+        raise newException(PreserveFileException, fmt"Output-File already exists: {filePath}")
+
+    discard existsOrCreateDir(outDir & DirSep)
+
+    var str = chart.write()
     writeFile(filePath, str)
 
     result = ConvertResult(

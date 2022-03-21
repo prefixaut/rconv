@@ -30,13 +30,9 @@ type
         Mine = "M"
         ## A single Mine
         Lift = "L"
-        ## Hold but with a timed release
+        ## A note where the release is timed
         Fake = "F"
         ## Notes which can't be hit
-        Keysound = "K"
-        ## Special Keysound note ... ?
-        Hidden = "H"
-        ## A Ghost note
 
     Note* = ref object
         ## A single note to be played
@@ -53,16 +49,13 @@ type
 
         case kind*: NoteType:
             ## The kind of the note
-            of Hold:
-                holdEndBeat*: int
+            of Hold, Roll:
+                releaseBeat*: int
                 ## On which beat the hold has to end
-                holdEndSnap*: int
+                releaseSnap*: int
                 ## At which snap-index in the beat the hold has to end
-            of Roll:
-                rollEndBeat*: int
-                ## On which beat the roll has to end
-                rollEndSnap*: int
-                ## At which snap-index in the beat the roll has to end
+                releaseLift*: bool
+                ## If the release is a lift-note
             else:
                 discard
 
@@ -166,6 +159,10 @@ type
         ## Fake sections in the song
         labels*: seq[Label]
         ## Labels for the song
+
+const
+    SpecialNoteStart = 'B'
+    EmptyBeat = "0000\n0000\n0000\n0000\n"
 
 func newNoteError(msg: string, beat: int, note: Note): ref InvalidNoteError =
     result = newException(InvalidNoteError, msg)
@@ -286,6 +283,16 @@ func newChartFile*(
     result.fakes = fakes
     result.labels = labels
 
+func asFormattingParams*(chart: ChartFile): FormattingParameters =
+    ## Creates formatting-parameters from the provided chart-file
+
+    result = newFormattingParameters(
+        title = chart.title,
+        artist = chart.artist,
+        difficulty = "",
+        extension = FileType.StepMania.getFileExtension,
+    )
+
 proc parseTimedAttacks(data: string): seq[TimedAttack] =
     result = @[]
     let spl = data.split(":")
@@ -315,6 +322,7 @@ func parseBeats(data: string, columns: int, lenient: bool): seq[Beat] =
     var previousNote: Note = nil
     var longNotes = newSeq[Note](columns);
     var hadRelease = false
+    var isSpecial = false
 
     var tmpData = ""
     # 0 = regular, 1 = attack-data, 2 = keySound-data, 3 = modifier-data
@@ -325,8 +333,8 @@ func parseBeats(data: string, columns: int, lenient: bool): seq[Beat] =
             if str == '}':
                 state = 0
                 previousNote.attack = parseAttack(tmpData)
-                continue
-            tmpData &= str
+            else:
+                tmpData &= str
             continue
         elif str == '{':
             state = 1
@@ -336,9 +344,10 @@ func parseBeats(data: string, columns: int, lenient: bool): seq[Beat] =
             if str == ']':
                 state = 0
                 previousNote.keySound = parseInt(tmpData)
-                continue
-            tmpData &= str
+            else:
+                tmpData &= str
             continue
+
         elif str == '[':
             state = 2
             continue
@@ -347,8 +356,8 @@ func parseBeats(data: string, columns: int, lenient: bool): seq[Beat] =
             if str == '>':
                 state = 0
                 previousNote.modifiers = tmpData.stripSplit("/").mapIt(parseModifier(it))
-                continue
-            tmpData &= str
+            else:
+                tmpData &= str
             continue
         elif str == '<':
             state = 3
@@ -366,24 +375,29 @@ func parseBeats(data: string, columns: int, lenient: bool): seq[Beat] =
             columnIndex = 0
             continue
 
+        if str == SpecialNoteStart:
+            isSpecial = true
+            continue
+
         var kind = parseEnum[NoteType](($str).toUpper)
         var note = newNote(kind, snapIndex, columnIndex)
 
-        if kind == NoteType.HoldEnd:
+        if kind == NoteType.HoldEnd or (isSpecial and kind == NoteType.Lift):
             var hold = longNotes[columnIndex]
+
             if hold != nil:
-                if hold.kind == NoteType.Hold:
-                    hold.holdEndBeat = beatIndex
-                    hold.holdEndSnap = snapIndex
+                if hold.kind == NoteType.Hold or hold.kind == NoteType.Roll:
+                    hold.releaseBeat = beatIndex
+                    hold.releaseSnap = snapIndex
+                    hold.releaseLift = isSpecial and kind == NoteType.Lift
                     longNotes[columnIndex] = nil
-                elif hold.kind == NoteType.Roll:
-                    hold.rollEndBeat = beatIndex
-                    hold.rollEndSnap = snapIndex
-                    longNotes[columnIndex] = nil
+
                 elif not lenient:
                     # This should never happen
                     raise newNoteError("Found invalid hold! Beat " & $beatIndex & ", Note: " & $hold[], beatIndex, hold)
+
                 hadRelease = true
+
             elif not lenient:
                 raise newNoteError("Found hold-release where no hold was! Beat " & $beatIndex & ", Note: " & $note[], beatIndex, note)
 
@@ -392,6 +406,7 @@ func parseBeats(data: string, columns: int, lenient: bool): seq[Beat] =
 
             if kind == NoteType.Hold or kind == NoteType.Roll:
                 longNotes[columnIndex] = note
+
             elif longNotes[columnIndex] != nil:
                 doAdd = false
                 if not lenient:
@@ -401,6 +416,7 @@ func parseBeats(data: string, columns: int, lenient: bool): seq[Beat] =
                 previousNote = note
                 beat.notes.add previousNote
 
+        isSpecial = false
         inc columnIndex
         if columnIndex >= columns:
             inc snapIndex
@@ -564,10 +580,6 @@ proc `$`(nt: NoteType): string =
         result = "L"
     of NoteType.Fake:
         result = "F"
-    of NoteType.Keysound:
-        result = "K"
-    of NoteType.Hidden:
-        result = "H"
 
 proc write(note: Note, withExtras: bool): string =
     result = $note.kind
@@ -582,13 +594,12 @@ proc write(note: Note, withExtras: bool): string =
 proc write(notes: NoteData, withNoteExtras: bool = false): string =
     let ct = $notes.chartType
     let columns = columnCount(notes.chartType)
-    let emptyBeat = "0000\n0000\n0000\n0000\n"
 
     var tag = "NOTES"
     if withNoteExtras:
         tag &= "2"
 
-    result = "//--------------- " & ct & " -  -----------------\n#" & tag & ":\n"
+    result = fmt"//--------------- {ct} - {notes.description} ----------------{'\n'}#{tag}:{'\n'}"
     result &= @[
         ct,
         notes.description,
@@ -600,7 +611,7 @@ proc write(notes: NoteData, withNoteExtras: bool = false): string =
     var arr: seq[string] = @[]
     var tmp = ""
     var lastBeat = 0
-    var holdReleases = newTable[int, seq[int]]()
+    var holdReleases = newTable[int, seq[tuple[pos: int, isLift: bool]]]()
     var highestRelease = 0
     var highestBeat = notes.beats.last.index
 
@@ -608,8 +619,9 @@ proc write(notes: NoteData, withNoteExtras: bool = false): string =
         let bIndex = notes.beats.find(b => b.index == beatIndex, lastBeat)
         if bIndex == -1:
             # Empty 4th section
-            arr.add emptyBeat
+            arr.add EmptyBeat
             continue
+
         lastBeat = bIndex
         let beat = notes.beats[bIndex]
         var lastNote = 0
@@ -625,25 +637,26 @@ proc write(notes: NoteData, withNoteExtras: bool = false): string =
                 var releaseNote = -1
                 var releaseBeat = -1
 
-                if note.kind == NoteType.Hold:
-                    releaseBeat = note.holdEndBeat
-                    releaseNote = (columns * note.holdEndSnap) + (noteIndex mod columns)
-                elif note.kind == NoteType.Roll:
-                    releaseBeat = note.rollEndBeat
-                    releaseNote = (columns * note.rollEndSnap) + (noteIndex mod columns)
+                if note.kind == NoteType.Hold or note.kind == NoteType.Roll:
+                    releaseBeat = note.releaseBeat
+                    releaseNote = (columns * note.releaseSnap) + (noteIndex mod columns)
 
                 if releaseNote > -1:
-                    holdReleases.mgetOrPut(releaseBeat, @[]).add releaseNote
+                    holdReleases.mgetOrPut(releaseBeat, @[]).add (releaseNote, note.releaseLift)
                     highestRelease = max(highestRelease, releaseBeat)
 
-            elif holdReleases.hasKey(beatIndex) and holdReleases[beatIndex].contains(noteIndex):
-                tmp &= $NoteType.HoldEnd
+            elif holdReleases.hasKey(beatIndex) and holdReleases[beatIndex].any(tmp => tmp.pos == noteIndex):
+                if holdReleases[beatIndex].any(tmp => tmp.pos == noteIndex and tmp.isLift):
+                    tmp &= $SpecialNoteStart & $NoteType.Lift
+                else:
+                    tmp &= $NoteType.HoldEnd
 
             else:
                 tmp &= $NoteType.Empty
 
             if (noteIndex + 1) mod columns == 0:
                 tmp &= '\n'
+
         arr.add tmp
         tmp = ""
 
@@ -658,21 +671,25 @@ proc parseStepMania*(stream: Stream, lenient: bool = false): ChartFile =
     result = parseStepMania(stream.readAll, lenient)
 
 proc write*(chart: ChartFile): string =
+
+    # The basic/required fields
     result = fmt"""
 #TITLE:{chart.title};
 #SUBTITLE:{chart.subtitle};
 #ARTIST:{chart.artist};
+#TITLETRANSLIT:{chart.titleTransliterated};
+#SUBTITLETRANSLIT:{chart.subtitleTransliterated};
+#ARTISTTRANSLIT:{chart.artistTransliterated};
+#GENRE:{chart.genre};
+#CREDIT:{chart.credit};
+#BANNER:{chart.banner};
+#BACKGROUND:{chart.background};
+#LYRICSPATH:{chart.lyricsPath};
+#CDTITLE:{chart.cdTitle};
+#MUSIC:{chart.music};
 """
-    result.putTag("titletranslit", chart.titleTransliterated)
-    result.putTag("subtitletranslit", chart.subtitleTransliterated)
-    result.putTag("artisttranslit", chart.artistTransliterated)
-    result.putTag("genre", chart.genre)
-    result.putTag("credit", chart.credit)
-    result.putTag("banner", chart.banner)
-    result.putTag("background", chart.background)
-    result.putTag("lyricspath", chart.lyricsPath)
-    result.putTag("cdtitle", chart.cdTitle)
-    result.putTag("music", chart.music)
+
+    # Optional fields
     result.putTag("instrumenttracks", chart.instrumentTracks.mapIt(fmt"{it.file}={it.instrument}").join(","))
     result.putTag("samplestart", $chart.sampleStart)
     result.putTag("samplelength", $chart.sampleLength)

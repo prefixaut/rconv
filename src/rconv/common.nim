@@ -6,9 +6,9 @@ type
         Memo = "memo"
         Memo2 = "memo2"
         Malody = "malody"
-        StepMania = "stepmania"
-        StepMania5 = "stepmania5"
-        KickItUp = "kickitup"
+        StepMania = "sm"
+        StepMania5 = "sm5"
+        KickItUp = "ksf"
         FXF = "fxf"
 
     ConvertOptions* = object
@@ -226,7 +226,7 @@ func getDefaultChartFormat*(fileType: FileType): string =
     ## Gets the default chart-format for the provided file-type
 
     case fileType:
-    of FileType.FXF:
+    of FileType.FXF, FileType.StepMania:
         return DefaultNonDifficultyChartFormat
     else:
         return DefaultChartFormat

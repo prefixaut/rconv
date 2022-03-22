@@ -1,0 +1,49 @@
+---
+name: Release
+
+on:
+  push:
+    tags: [ '*' ]
+
+jobs:
+  release:
+    name: Release ${{ matrix.os }} with nim 1.6.x
+
+    strategy:
+      matrix:
+        os: [ 'ubuntu-latest', 'windows-latest', 'macos-latest' ]
+
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+
+    steps:
+      # Basic Setup
+      - uses: actions/checkout@v2
+      - name: Setup Nim Environment 1.6.x
+        uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: 1.6.x
+      - name: Cache nimble
+        id: cache-nimble
+        uses: actions/cache@v1
+        with:
+          path: ~/.nimble
+          key: ${{ runner.os }}-nimble-${{ matrix.nim }}-${{ hashFiles('*.nimble') }}
+        if: runner.os != 'Windows'
+
+      # Build the release elements
+      - name: Create Library Release Build
+        run: nimble clib -d:release
+
+      - name: Create CLI Release Build
+        run: nimble build -d:release
+
+      # Create/Update the release
+      - name: Release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "dist/*"
+          allowUpdates: true
+          prerelease: ${{ endsWith(github.ref, 'rc') || endsWith(github.ref, 'snapshot') }}
+          token: ${{ secrets.GITHUB_TOKEN }}

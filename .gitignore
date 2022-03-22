@@ -11,6 +11,7 @@ thumbs.db
 /docs
 /bin
 /*.json
+/coverage
 
 ####
 ## Test Files
@@ -23,6 +24,11 @@ thumbs.db
 /tests/**/*.js
 /outputGotten.txt
 /testresults
+
+####
+## Temp File
+####
+generated_not_to_break_here
 
 ####
 ## Misc

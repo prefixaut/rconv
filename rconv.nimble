@@ -11,12 +11,15 @@ skipFiles     = @[".editorconfig"]
 namedBin      = {"rconv/cli": "rconv"}.toTable
 installExt    = @["nim"]
 
-# Dependencies
+# Required nim environment
 
 requires "nim >= 1.6.0"
 
+# Dependencies
+
 requires "argparse >= 2.0.1"
 requires "glob >= 0.11.1"
+requires "coco >= 0.0.3"
 
 # Tasks
 

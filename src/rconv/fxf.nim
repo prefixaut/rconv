@@ -74,12 +74,12 @@ type
     ## e.g. [3, 10] -> button 3 and 10 need to be pressed.
     ##
     ## This file format indexes buttons starting from 0 to 15::
-    ## 
+    ##
     ##  0  1  2  3
     ##  4  5  6  7
     ##  8  9  10 11
     ##  12 13 14 15
-    ## 
+    ##
 
     Tick* = ref object
         ## A tick referres to a time in the chart, where one or more
@@ -173,8 +173,8 @@ func asFormattingParams*(chart: ChartFile): FormattingParameters =
         extension = $FileType.FXF,
     )
 
-proc readFXFChartFile*(stream: Stream): ChartFile =
-    ## Load a FXF Chart File from the stream
+proc parseFXF*(stream: Stream, lenient: bool = false): ChartFile =
+    ## Parse a FXF Chart File from the stream
 
     var version = stream.readUint32
     if Version1 != version:
@@ -241,30 +241,7 @@ proc readFXFHold(stream: Stream): Hold =
     result.to = stream.readUint8
     result.releaseOn = stream.readFloat32
 
-proc writeToStream*(chart: ChartFile, stream: Stream): void =
-    stream.write(chart.version)
-    stream.writeUTF8(chart.title, chart.artist, chart.audio, chart.jacket)
-    stream.write(chart.offset)
-    stream.write(uint32(chart.bpmChange.len))
-
-    for bpmChange in chart.bpmChange:
-        stream.write(bpmChange.bpm)
-        stream.write(bpmChange.time)
-        stream.write(bpmChange.snapSize)
-        stream.write(bpmChange.snapIndex)
-
-    stream.write(uint8(chart.charts.basic != nil))
-    stream.write(uint8(chart.charts.advanced != nil))
-    stream.write(uint8(chart.charts.extreme != nil))
-
-    if chart.charts.basic != nil:
-        chart.charts.basic.writeToStream(stream)
-    if chart.charts.advanced != nil:
-        chart.charts.advanced.writeToStream(stream)
-    if chart.charts.extreme != nil:
-        chart.charts.extreme.writeToStream(stream)
-
-proc writeToStream(chart: Chart, stream: Stream): void =
+proc write(chart: Chart, stream: Stream): void =
     stream.write(chart.rating)
     stream.write(uint32(chart.ticks.len))
 
@@ -283,3 +260,26 @@ proc writeToStream(chart: Chart, stream: Stream): void =
             stream.write(uint8(hold.`from`))
             stream.write(uint8(hold.to))
             stream.write(hold.releaseOn)
+
+proc write*(chart: ChartFile, stream: Stream): void =
+    stream.write(chart.version)
+    stream.writeUTF8(chart.title, chart.artist, chart.audio, chart.jacket)
+    stream.write(chart.offset)
+    stream.write(uint32(chart.bpmChange.len))
+
+    for bpmChange in chart.bpmChange:
+        stream.write(bpmChange.bpm)
+        stream.write(bpmChange.time)
+        stream.write(bpmChange.snapSize)
+        stream.write(bpmChange.snapIndex)
+
+    stream.write(uint8(chart.charts.basic != nil))
+    stream.write(uint8(chart.charts.advanced != nil))
+    stream.write(uint8(chart.charts.extreme != nil))
+
+    if chart.charts.basic != nil:
+        chart.charts.basic.write(stream)
+    if chart.charts.advanced != nil:
+        chart.charts.advanced.write(stream)
+    if chart.charts.extreme != nil:
+        chart.charts.extreme.write(stream)

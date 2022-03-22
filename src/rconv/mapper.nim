@@ -1,10 +1,12 @@
-import std/[algorithm, math, sets, strformat, tables]
+import std/[algorithm, math, sets, strformat, sugar, tables]
 
 import ./common
+import ./private/parser_helpers
 
 import ./fxf as fxf
 import ./malody as malody
 import ./memson as memson
+import ./step_mania as sm
 
 type
     FXFHoldRelease = tuple[fxf: fxf.Hold, memson: memson.Note] ## \
@@ -35,7 +37,7 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
             var change = fxf.newBpmChange(
                 bpm = bpm,
                 time = float32(round(globalTime * 10) / 10),
-                snapSize = uint16(section.snaps[0].len),
+                snapSize = uint16(section.snaps[0].length),
                 snapIndex = uint16(0)
             )
             result.bpmChange.add change
@@ -45,9 +47,9 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
         var indexOffset = 0
 
         for snap in section.snaps:
-            let snapTime = beat / float(snap.len)
+            let snapTime = beat / float(snap.length)
 
-            for snapIndex in 0..<snap.len:
+            for snapIndex in 0..<snap.length:
                 let timing = indexOffset + snapIndex
                 let noteTime = round(globalTime * 10) / 10
 
@@ -67,7 +69,7 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
 
                 var tick = fxf.newTick(
                     time = noteTime,
-                    snapSize = uint16(snap.len),
+                    snapSize = uint16(snap.length),
                     snapIndex = uint16(snapIndex)
                 )
                 var hasData = false
@@ -78,7 +80,7 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
                             continue
 
                         hasData = true
-                        if note.kind == NoteType.Hold:
+                        if note.kind == memson.NoteType.Hold:
                             var hold = fxf.newHold(`from` = note.animationStartIndex, to = noteIndex)
                             tick.holds.add hold
                             holdRelease.add (hold, note)
@@ -91,12 +93,12 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
                     chart.ticks.add tick
                     inc chart.numTick
 
-            inc indexOffset, snap.len
+            inc indexOffset, snap.length
 
-    if this.difficulty == Difficulty.Basic:
+    if this.difficulty == memson.Difficulty.Basic:
         result.charts.basic = chart
         result.charts.bscPresent = 1
-    elif this.difficulty == Difficulty.Advanced:
+    elif this.difficulty == memson.Difficulty.Advanced:
         result.charts.advanced = chart
         result.charts.advPresent = 1
     else:
@@ -128,7 +130,7 @@ proc toMalody*(this: memson.Memson): malody.Chart =
         snapIndex = 0
 
         if section.snaps.len > 0:
-            snapSize = section.snaps[0].len
+            snapSize = section.snaps[0].length
         else:
             snapSize = 0
 
@@ -166,7 +168,7 @@ proc toMalody*(this: memson.Memson): malody.Chart =
             if snapIndex >= snapSize:
                 snapIndex = 0
                 if section.snaps.len > snapPos:
-                    snapSize = section.snaps[snapPos].len
+                    snapSize = section.snaps[snapPos].length
                 else:
                     snapSize = 0
                 inc snapPos
@@ -199,8 +201,8 @@ proc toFXF*(this: malody.Chart): fxf.ChartFile =
     else:
         result.charts.extreme = chart
 
-    var beats = initHashSet[Beat]()
-    var holdBeats = initHashSet[Beat]()
+    var beats = initHashSet[malody.Beat]()
+    var holdBeats = initHashSet[malody.Beat]()
     var tmp: seq[TimedElement] = @[]
 
     for e in this.note:
@@ -233,8 +235,8 @@ proc toFXF*(this: malody.Chart): fxf.ChartFile =
     var bpm: float = 1
     var offset: float = 0
     var lastBpmSection: int = 0
-    var holdTable = initTable[Beat, seq[fxf.Hold]]()
-    var beatTable = initTable[Beat, fxf.Tick]()
+    var holdTable = initTable[malody.Beat, seq[fxf.Hold]]()
+    var beatTable = initTable[malody.Beat, fxf.Tick]()
 
     for element in timedElements:
         let beatSize = OneMinute / bpm
@@ -296,3 +298,46 @@ proc toFXF*(this: malody.Chart): fxf.ChartFile =
             holdTable[element.beat] = @[]
         holdTable[element.beat].add hold
         tick.holds.add hold
+
+proc toStepMania*(chart: malody.Chart): sm.ChartFile =
+    if chart.meta.mode != malody.ChartMode.Key:
+        raise newException(InvalidModeException, fmt"The provided Malody-Chart is from the wrong Mode! Mode is {chart.meta.mode}, where a {ChartMode.Key} is required!")
+
+    result = sm.newChartFile()
+    var output: sm.NoteData = nil
+
+    case chart.meta.mode_ext.column:
+        of 4:
+            output = sm.newNoteData(sm.ChartType.DanceSingle)
+        of 5:
+            output = sm.newNoteData(sm.ChartType.PumpSingle)
+        of 6:
+            output = sm.newNoteData(sm.ChartType.DanceSolo)
+        of 8:
+            output = sm.newNoteData(sm.ChartType.DanceDouble)
+        of 10:
+            output = sm.newNoteData(sm.ChartType.PumpDouble)
+        else:
+            raise newException(ConvertException, fmt"The column-count {chart.meta.mode_ext.column} does not have a SM equivalent!")
+
+    for elem in chart.note:
+        if elem.kind != malody.ElementType.ColumnNote:
+            continue
+
+        # noteBeat is required to not violate nim's gc
+        let noteBeat = elem.beat[0]
+        var beatIndex = output.beats.find(proc (beat: sm.Beat): bool = beat.index == noteBeat)
+        var beat: sm.Beat = nil
+
+        if beatIndex == -1:
+            beat = sm.newBeat(elem.beat[0], elem.beat[2])
+            output.beats.add beat
+        else:
+            beat = output.beats[beatIndex]
+
+        if elem.hold == malody.HoldType.ColumnHold:
+            var hold = sm.newNote(sm.NoteType.Hold, elem.beat[1], elem.column)
+            hold.releaseBeat = elem.colEndBeat[0]
+            beat.notes.add hold
+        else:
+            beat.notes.add sm.newNote(sm.NoteType.Note, elem.beat[1], elem.column)

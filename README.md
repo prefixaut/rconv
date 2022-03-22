@@ -1,5 +1,9 @@
 # rconv
 
+![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/prefixaut/rconv/build/develop?style=for-the-badge)
+![Coveralls branch](https://img.shields.io/coveralls/github/prefixaut/rconv/develop?style=for-the-badge)
+![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/prefixaut/rconv?style=for-the-badge)
+
 rconv is a library and command-line program to convert between various rhythm game formats.
 
 - [rconv](#rconv)
@@ -14,9 +18,10 @@ rconv is a library and command-line program to convert between various rhythm ga
   - [Supported Formats](#supported-formats)
     - [Parsing](#parsing)
     - [Convertion](#convertion)
+
 ## Installation
 
-### Installation as CLI
+## Installation as CLI
 
 See the [releases](https://github.com/prefixaut/rconv/releases) for pre-build executables of your system.
 
@@ -31,16 +36,22 @@ If you still want to use it as library, you can do so as a Git Submodule and imp
 ## Building
 
 This project can be built with the regular [`nim` compiler](https://nim-lang.org/) ([Nim CLI Documentation](https://nim-lang.org/docs/nimc.html)).
-Additionally, the following convenience tasks are defined in the [`config.nims`](config.nims) file:
+Additionally, the following convenience tasks are defined in the [`rconv.nimble`](rconv.nimble) file:
 
-* **cli**: Builds the project as a CLI application.
-* **lib**: Builds the project as a regular library.
-* **docs**: Builds the project's documentation.
+- `clib`: Builds the project as a regular library
+- `build`: Builds the project as a regular library
+- `docs`: Builds the project's documentation.
 
 These may then be executed like this:
 
 ```sh
-$ nim --release cli
+nimble clib
+nimble build
+nimble docs
+
+# Release Versions
+nimble clib -d:release
+numble build -d:release
 ```
 
 ## Documentation
@@ -55,12 +66,12 @@ please refer to the [documentation](https://prefixaut.github.io/rconv/theindex.h
 The CLI is rather straight forward and may be used like this:
 
 ```sh
-$ rconv [options] <--to=output-type> <input-files>
+rconv [options] <--to=output-type> <input-files>
 ```
 
 The CLI requires an output-type (`-t`/`--to`), and the file-paths to the charts you want to convert.
 
-```
+```text
 Usage:
    [options] [files ...]
 
@@ -99,12 +110,17 @@ Example:
 rconv -C -j -f -t malody --out output/nested /somewhere/my-input/sample.memo
 ```
 
+> **Note**: You can also use the same output format again to format the files.
+
 ### Usage of Library
 
 As library, you should only have to import the entry file and the file formtats you want to use.
 Each file-format should be imported in an own namespace, as types might overlap (Multiple types called `Chart` for example).
 
-Converting procs are found in the `rconv/mapper` (imported via `rconv`) and are named `to{OtherFormat}`, i.E. `toFXF` or `toMalody`.
+Parsing/Reading of the chart is done via the `parse{format}` (i.E. `parseMemo` or `parseStepMania`) procs, while writing the chart is done via the `write` procs defined in each module.
+These `parse` and `write` procs are always implemented for streams, and usually also for strings (as long as the chart-format is not binary).
+
+Converting procs are found in the `rconv/mapper` (imported via `rconv`) and are named `to{format}`, i.E. `toFXF` or `toMalody`.
 
 ```nim
 import pkg/rconv
@@ -112,18 +128,21 @@ import pkg/rconv/fxf as fxf
 import pkg/rconv/memo as memo
 
 let rawMemo = readFile("/home/user/some-chart.memo")
-let memoChart = memo.parseMemoToMemson(rawMemo)
+let memoChart = memo.parseMemo(rawMemo)
 let fxfChart = memoChart.toFXF
-echo chart
+echo fxfChart.write
 ```
 
 ## Supported Formats
 
 ### Parsing
 
-* Memo
-* Malody
-* FXF
+All listed formats are able to be parsed, have proper types (structs) and outputs setup:
+
+- Memo (`.memo`)
+- Malody (`.mc`)
+- FXF (`.fxf`)
+- StepMania (`.sm`)
 
 ### Convertion
 
@@ -134,9 +153,10 @@ echo chart
         <td>MemoV2</td>
         <td>Malody¹</td>
         <td>FXF</td>
-        <td>StepMania</td>
         <td>osu!¹</td>
-        <td>ITG</td>
+        <td>StepMania</td>
+        <td>StepMania 5</td>
+        <td>Kick It Up</td>
     </tr>
     <tr>
         <td style="text-align: center;">Memo</td>
@@ -147,11 +167,13 @@ echo chart
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">❌</td>
     </tr>
     <tr>
         <td style="text-align: center;">MemoV2</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">➖</td>
+        <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
@@ -167,9 +189,22 @@ echo chart
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">❌</td>
     </tr>
     <tr>
         <td style="text-align: center;">FXF</td>
+        <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">➖</td>
+        <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">❌</td>
+    </tr>
+    <tr>
+        <td style="text-align: center;">osu!</td>
+        <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
@@ -184,12 +219,14 @@ echo chart
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">❌</td>
         <td style="text-align: center;">➖</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
     </tr>
     <tr>
-        <td style="text-align: center;">osu!</td>
+        <td style="text-align: center;">StepMania 5</td>
+        <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
@@ -199,7 +236,8 @@ echo chart
         <td style="text-align: center;">❌</td>
     </tr>
     <tr>
-        <td style="text-align: center;">ITG</td>
+        <td style="text-align: center;">Kick It Up</td>
+        <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
@@ -212,4 +250,3 @@ echo chart
 
 **¹** Formats which support multiple different game-types.
 Convertion for these formats is only for the most relevant game-type (i.E. StepMania -> osu! = StepMania -> osu!mania)
-

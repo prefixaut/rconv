@@ -10,7 +10,7 @@ let cli = newParser:
 
     flag("-b", "--bundle",
         help="All output files should instead be bundles (if the output type supports it).")
-    flag("-c", "--color", 
+    flag("-c", "--color",
         help="Enable print messages to be in color.")
     flag("-C", "--clean",
         help="If it should clean (delete all contents) of the output folder. Disabled if 'preserve' is enabled.")
@@ -24,6 +24,8 @@ let cli = newParser:
         help="Output JSON data prettily.")
     flag("-k", "--keep",
         help="If it should keep the original meta data when merging a file.")
+    flag("-l", "--lenient",
+        help="If parsing of the files should be lenient/not strict - Ignores certain syntax errors.")
     flag("-m", "--merge",
         help="Merge all possible charts into existing files.")
     option("-o", "--output", default=some("."),
@@ -38,7 +40,7 @@ let cli = newParser:
         help="Copy all neccessary resources (Sound-File, Jacket) to the output directory. Should only be used in comination with the \"song-folders\" option.")
     flag("-s", "--stats",
         help="Show stats on the end of the operation.")
-    option("-t", "--to", required=true, choices=(@["fxf", "malody", "memo"]),
+    option("-t", "--to", required=true, choices=(@["fxf", "malody", "memo", "sm"]),
         help="The output type.")
     flag("-n", "--normalize",
         help="Normalize the output-paths (folder/file).")

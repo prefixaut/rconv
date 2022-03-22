@@ -1,4 +1,4 @@
-import std/[sequtils, strformat, sugar, tables, unicode]
+import std/[sequtils, streams, strformat, sugar, tables, unicode]
 import std/strutils except split, strip
 
 import ./private/line_reader
@@ -113,7 +113,7 @@ type
         timings: seq[Token]
         snaps: seq[Snap]
         notes: Table[NoteRange, Token]
-    
+
     RowResult = object
         position: int
         tokens: seq[Token]
@@ -140,7 +140,7 @@ const
     NotePosition = 0..15.NoteRange
     NonTokenChars = toRunes($(Whitespace + {'|'}))
 
-proc parseMemoToMemson*(content: string): Memson =
+proc parseMemo*(content: string): Memson =
     ## Parses the provided memo-data to a memson object (memo object representation).
     ## The content has to be a complete memo file to be parsed correctly.
 
@@ -236,18 +236,23 @@ proc parseMemoToMemson*(content: string): Memson =
         result.sections.add parseSection(sectionIndex, partIndex, bpm, parts)
         partIndex = 0
         inc sectionIndex
-    
+
     if minBpm != maxBpm:
         result.bpmRange = (min: minBpm, max: maxBpm)
 
+proc write*(chart: Memson): string =
+    # TODO: Implement
+    result = ""
+
+proc write*(chart: Memson, stream: Stream): void =
+    stream.write(chart.write)
+
 proc parseSection(index: int, partIndex: int, bpm: float, parts: seq[SectionPart]): Section =
-    result = Section()
-    result.index = index
-    result.bpm = bpm
-    result.partCount = partIndex
-    result.notes = initOrderedTable[NoteRange, seq[Note]]()
-    result.timings = @[]
-    result.snaps = @[]
+    result = newSection(
+        index = index,
+        bpm = bpm,
+        partCount = partIndex,
+    )
 
     for partIndex, singlePart in parts.pairs:
         # Add the snaps
@@ -293,12 +298,11 @@ proc parseSection(index: int, partIndex: int, bpm: float, parts: seq[SectionPart
             if not result.notes.hasKey(holdEnd):
                 result.notes[holdEnd] = @[]
 
-            result.notes[holdEnd].add Note(
-                kind: NoteType.Hold,
-                time: noteTiming,
-                partIndex: partIndex,
-                animationStartIndex: noteIndex,
-                releaseTime: -1
+            result.notes[holdEnd].add newHold(
+                time = noteTiming,
+                partIndex = partIndex,
+                animationStartIndex = noteIndex,
+                releaseTime = -1
             )
             inc result.noteCount
 
@@ -324,7 +328,7 @@ proc parseSection(index: int, partIndex: int, bpm: float, parts: seq[SectionPart
                     break
 
             if not releasedHold:
-                result.notes[noteIndex].add Note(kind: NoteType.Note, time: noteTiming, partIndex: partIndex)
+                result.notes[noteIndex].add newNote(time = noteTiming, partIndex = partIndex)
                 inc result.noteCount
 
     # Sort the notes by the index
@@ -346,11 +350,11 @@ proc parseSectionParts(index: int, lineIndex: int, rows: array[4, string]): Sect
 
         for noteIndex, note in notes.tokens.pairs:
             result.notes[(rowIndex * 4) + noteIndex] = note
-        
+
         if ticks.tokens.len > 0:
             for timing in ticks.tokens:
                 result.timings.add timing
-            result.snaps.add Snap(len: ticks.tokens.len, row: rowIndex, partIndex: index)
+            result.snaps.add newSnap(length = ticks.tokens.len, row = rowIndex, partIndex = index)
         inc rowIndex
 
 func holdOffset(token: Token): int =
@@ -360,7 +364,7 @@ func holdOffset(token: Token): int =
         of Token.Down, Token.Down2:
             return 4
         of Token.Left:
-            return -1            
+            return -1
         of Token.Right:
             return 1
         else:

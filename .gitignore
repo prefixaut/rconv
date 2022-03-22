@@ -9,7 +9,9 @@ thumbs.db
 ####
 /dist
 /docs
+/bin
 /*.json
+/coverage
 
 ####
 ## Test Files
@@ -22,6 +24,12 @@ thumbs.db
 /tests/**/*.js
 /outputGotten.txt
 /testresults
+/lcov.info
+
+####
+## Temp File
+####
+generated_not_to_break_here
 
 ####
 ## Misc

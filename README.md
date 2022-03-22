@@ -1,4 +1,4 @@
-<center>
+<div style="text-align: center">
 
 # rconv
 
@@ -10,20 +10,23 @@
 
 rconv is a library and command-line program to parse and convert various rhythm game formats
 
-</center>
+</div>
 
-- [rconv](#rconv)
-  - [Installation](#installation)
-    - [Installation as CLI](#installation-as-cli)
-    - [Installtion as Library](#installtion-as-library)
-  - [Building](#building)
-  - [Documentation](#documentation)
-  - [Usage](#usage)
-    - [Usage of CLI](#usage-of-cli)
-    - [Usage of Library](#usage-of-library)
-  - [Supported Formats](#supported-formats)
-    - [Parsing](#parsing)
-    - [Convertion](#convertion)
+---
+
+- [Installation](#installation)
+  - [Installation as CLI](#installation-as-cli)
+  - [Installtion as Library](#installtion-as-library)
+- [Building](#building)
+- [Documentation](#documentation)
+- [Usage](#usage)
+  - [Usage of CLI](#usage-of-cli)
+  - [Usage of Library](#usage-of-library)
+- [Supported Formats](#supported-formats)
+- [Parsing](#parsing)
+- [Convertion](#convertion)
+
+---
 
 ## Installation
 

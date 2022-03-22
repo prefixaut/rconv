@@ -52,10 +52,12 @@ jobs:
         with:
           repository: 'linux-test-project/lcov'
           path: './clones/lcov'
-      - name: Move lcov files
-        run: |
-          mv ./clones/lcov/bin/lcov .
-          mv ./clones/lcov/bin/gen* .
+      - name: Add lcov to path (Unix)
+        run: 'export PATH=$(pwd)/clones/lcov/bin:$PATH'
+        if: runner.os != 'Windows'
+      - name: Add locv to path (Windows)
+        run: 'set PATH=%PATH%;%cd%\clones\lcov\bin'
+        if: runner.os == 'Windows'
 
       # Testing & Converage
       - name: Run tests with converage

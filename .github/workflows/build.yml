@@ -59,8 +59,11 @@ jobs:
           repository: 'linux-test-project/lcov'
           path: './clones/lcov'
       - name: Install lcov (Unix)
-        if: runner.os != 'Windows'
-        run: 'export PATH=$(pwd)/clones/lcov/bin:$PATH'
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y lcov
+      - name: Install lcov (MacOS)
+        if: runner.os == 'macOS'
+        run: echo "todo"
       - name: Install lcov (Windows)
         if: runner.os == 'Windows'
         run: |
@@ -69,7 +72,7 @@ jobs:
           echo "perl .\clones\lcov\bin\genhtml %*" > genhtml
           echo "perl .\clones\lcov\bin\geninfo %*" > geninfo
           echo "perl .\clones\lcov\bin\genpng %*" > genpng
-          set PATH=%PATH%;%cd%
+          echo "PATH=%PATH%;%cd%" >> $GITHUB_ENV
 
       # Testing & Converage
       - name: Run tests with converage

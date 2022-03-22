@@ -1,9 +1,10 @@
-<div style="text-align: center">
+<div align="center">
 
 # rconv
 
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/prefixaut/rconv/Building%20&%20Testing/develop?style=for-the-badge&logo=github-actions&logoColor=white)](https://github.com/prefixaut/rconv/actions)
 [![Coveralls branch](https://img.shields.io/coveralls/github/prefixaut/rconv/develop?style=for-the-badge&logo=coveralls)](https://coveralls.io/github/prefixaut/rconv)
+
 [![GitHub release](https://img.shields.io/github/v/release/prefixaut/rconv?style=for-the-badge&logo=github)](https://github.com/prefixaut/rconv/releases)
 ![Nim Version](https://img.shields.io/badge/nim-%3E%3D%201.6-blue?style=for-the-badge&logo=nim&logoColor=white)
 [![GitHub](https://img.shields.io/github/license/prefixaut/rconv?style=for-the-badge)](https://github.com/prefixaut/rconv/blob/master/LICENSE)

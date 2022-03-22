@@ -52,12 +52,18 @@ jobs:
         with:
           repository: 'linux-test-project/lcov'
           path: './clones/lcov'
-      - name: Add lcov to path (Unix)
-        run: 'export PATH=$(pwd)/clones/lcov/bin:$PATH'
+      - name: Install lcov (Unix)
         if: runner.os != 'Windows'
-      - name: Add locv to path (Windows)
-        run: 'set PATH=%PATH%;%cd%\clones\lcov\bin'
+        run: 'export PATH=$(pwd)/clones/lcov/bin:$PATH'
+      - name: Install lcov (Windows)
         if: runner.os == 'Windows'
+        run: |
+          echo "perl .\clones\lcov\bin\lcov %*" > lcov
+          echo "perl .\clones\lcov\bin\gendesc %*" > gendesc
+          echo "perl .\clones\lcov\bin\genhtml %*" > genhtml
+          echo "perl .\clones\lcov\bin\geninfo %*" > geninfo
+          echo "perl .\clones\lcov\bin\genpng %*" > genpng
+          set PATH=%PATH%;%cd%
 
       # Testing & Converage
       - name: Run tests with converage

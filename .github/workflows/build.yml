@@ -51,11 +51,11 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: 'linux-test-project/lcov'
-          path: './lcov'
+          path: './clones/lcov'
       - name: Move lcov files
         run: |
-          mv ./lcov/bin/lcov .
-          mv ./lcov/bin/gen* .
+          mv ./clones/lcov/bin/lcov .
+          mv ./clones/lcov/bin/gen* .
 
       # Testing & Converage
       - name: Run tests with converage

@@ -9,8 +9,14 @@ jobs:
 
     strategy:
       matrix:
-        nim: [ '1.6.x', 'stable', 'devel' ]
-        os: [ 'ubuntu-latest', 'windows-latest', 'macos-latest' ]
+        nim:
+          - '1.6.x'
+          #- 'stable'
+          #- 'devel'
+        os:
+          - 'ubuntu-latest'
+          #- 'windows-latest'
+          #- 'macos-latest'
 
     runs-on: ${{ matrix.os }}
 

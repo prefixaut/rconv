@@ -8,12 +8,10 @@ suite "step-mania":
         NoteType.Mine: "M",
         NoteType.Lift: "L",
         NoteType.Fake: "F",
-        NoteType.Keysound: "K",
-        NoteType.Hidden: "H"
     }.toTable
     let holdNotes = {
         NoteType.Hold: "2",
-        NoteType.Roll: "4"
+        NoteType.Roll: "4",
     }.toTable
 
     proc checkBgChange(
@@ -74,10 +72,6 @@ suite "step-mania":
                 result = "Lift"
             of NoteType.Fake:
                 result = "Fake"
-            of NoteType.Keysound:
-                result = "KeyCound"
-            of NoteType.Hidden:
-                result = "Hidden"
             else:
                 result = "---"
 
@@ -110,14 +104,10 @@ suite "step-mania":
         kind: NoteType = NoteType.Hold
     ): void =
         testNote(note, snap, column, kind)
-        if kind == NoteType.Hold:
+        if kind == NoteType.Hold or kind == NoteType.Roll:
             check:
-                note.holdEndBeat == expectedReleaseBeat
-                note.holdEndSnap == expectedReleaseSnap
-        elif kind == NoteType.Roll:
-            check:
-                note.rollEndBeat == expectedReleaseBeat
-                note.rollEndSnap == expectedReleaseSnap
+                note.releaseBeat == expectedReleaseBeat
+                note.releaseSnap == expectedReleaseSnap
 
     template checkHold(
         note: Note,

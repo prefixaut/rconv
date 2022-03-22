@@ -516,7 +516,7 @@ proc putFileData(chart: var ChartFile, tag: string, data: string, lenient: bool)
         chart.animations = parseBackgroundChanges(data)
     of "fgchanges":
         chart.fgChanges = parseBackgroundChanges(data)
-    of "keySounds":
+    of "keysounds":
         chart.keySounds = data.split(",")
     of "offset":
         chart.offset = parseFloat(data)

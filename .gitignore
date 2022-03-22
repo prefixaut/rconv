@@ -24,6 +24,7 @@ thumbs.db
 /tests/**/*.js
 /outputGotten.txt
 /testresults
+/lcov.info
 
 ####
 ## Temp File

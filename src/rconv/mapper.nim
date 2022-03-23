@@ -1,4 +1,4 @@
-import std/[algorithm, math, sets, strformat, sugar, tables]
+import std/[algorithm, math, sets, strutils, strformat, sugar, tables]
 
 import ./common
 import ./private/parser_helpers
@@ -303,24 +303,60 @@ proc toStepMania*(chart: malody.Chart): sm.ChartFile =
     if chart.meta.mode != malody.ChartMode.Key:
         raise newException(InvalidModeException, fmt"The provided Malody-Chart is from the wrong Mode! Mode is {chart.meta.mode}, where a {ChartMode.Key} is required!")
 
-    result = sm.newChartFile()
+    result = sm.newChartFile(
+        credit = chart.meta.creator,
+        sampleStart = float(chart.meta.preview),
+        background = chart.meta.background
+    )
     var output: sm.NoteData = nil
+    var diff = sm.Difficulty.Edit
+
+    for part in chart.meta.version.stripSplit(" "):
+        try:
+            diff = parseEnum[sm.Difficulty](part.toLower)
+        except:
+            discard
 
     case chart.meta.mode_ext.column:
         of 4:
-            output = sm.newNoteData(sm.ChartType.DanceSingle)
+            output = sm.newNoteData(sm.ChartType.DanceSingle, chart.meta.creator, diff)
         of 5:
-            output = sm.newNoteData(sm.ChartType.PumpSingle)
+            output = sm.newNoteData(sm.ChartType.PumpSingle, chart.meta.creator, diff)
         of 6:
-            output = sm.newNoteData(sm.ChartType.DanceSolo)
+            output = sm.newNoteData(sm.ChartType.DanceSolo, chart.meta.creator, diff)
         of 8:
-            output = sm.newNoteData(sm.ChartType.DanceDouble)
+            output = sm.newNoteData(sm.ChartType.DanceDouble, chart.meta.creator, diff)
         of 10:
-            output = sm.newNoteData(sm.ChartType.PumpDouble)
+            output = sm.newNoteData(sm.ChartType.PumpDouble, chart.meta.creator, diff)
         else:
             raise newException(ConvertException, fmt"The column-count {chart.meta.mode_ext.column} does not have a SM equivalent!")
 
+    if not chart.meta.song.title.isEmptyOrWhitespace:
+        if not chart.meta.song.titleorg.isEmptyOrWhitespace:
+            result.title = chart.meta.song.titleorg
+            result.titleTransliterated = chart.meta.song.title
+        else:
+            result.title = chart.meta.song.title
+
+    if not chart.meta.song.artist.isEmptyOrWhitespace:
+        if not chart.meta.song.artistorg.isEmptyOrWhitespace:
+            result.artist = chart.meta.song.artistorg
+            result.artistTransliterated = chart.meta.song.artist
+        else:
+            result.artist = chart.meta.song.artist
+
+    for elem in chart.time:
+        if elem.kind != malody.ElementType.TimeSignature:
+            continue
+        result.bpms.add sm.newBpmChange(float(elem.beat[0]) + ((1 / elem.beat[2]) * float(elem.beat[1])), elem.sigBpm)
+
     for elem in chart.note:
+        if elem.kind == malody.ElementType.SoundCue:
+            if elem.cueType == malody.SoundCueType.Song:
+                result.music = elem.cueSound
+                result.offset = elem.cueOffset
+            continue
+
         if elem.kind != malody.ElementType.ColumnNote:
             continue
 
@@ -338,6 +374,8 @@ proc toStepMania*(chart: malody.Chart): sm.ChartFile =
         if elem.hold == malody.HoldType.ColumnHold:
             var hold = sm.newNote(sm.NoteType.Hold, elem.beat[1], elem.column)
             hold.releaseBeat = elem.colEndBeat[0]
+            hold.releaseSnap = elem.colEndBeat[1]
+            hold.releaseLift = false
             beat.notes.add hold
         else:
             beat.notes.add sm.newNote(sm.NoteType.Note, elem.beat[1], elem.column)

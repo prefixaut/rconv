@@ -379,3 +379,55 @@ proc toStepMania*(chart: malody.Chart): sm.ChartFile =
             beat.notes.add hold
         else:
             beat.notes.add sm.newNote(sm.NoteType.Note, elem.beat[1], elem.column)
+
+proc toMalody*(chart: sm.ChartFile, notes: NoteData): malody.Chart =
+    result = malody.newChart()
+
+    if not chart.artistTransliterated.isEmptyOrWhitespace:
+        result.meta.song.artist = chart.artistTransliterated
+        result.meta.song.artistorg = chart.artist
+    else:
+        result.meta.song.artist = chart.artist
+
+    if not chart.titleTransliterated.isEmptyOrWhitespace:
+        result.meta.song.title = chart.titleTransliterated
+        result.meta.song.titleorg = chart.title
+    else:
+        result.meta.song.title = chart.title
+
+    result.note.add malody.newSoundCue([0, 0, 1], malody.SoundCueType.Song, chart.music, chart.offset, 100.0)
+
+    result.meta.mode = malody.ChartMode.Key
+    result.meta.mode_ext.column = sm.columnCount(notes.chartType)
+    result.meta.preview = int(chart.sampleStart)
+    result.meta.version = $notes.difficulty
+    if not chart.credit.isEmptyOrWhitespace:
+        result.meta.creator = chart.credit
+    else:
+        result.meta.creator = notes.description
+
+    for bpm in chart.bpms:
+        let beatIndex = int(bpm.beat)
+        let rest = int(bpm.beat - float(beatIndex)) * 1000
+        let beatTmp = notes.beats.find(proc (nb: sm.Beat): bool = nb.index == beatIndex)
+        let snapSize = if beatTmp > -1: notes.beats[beatTmp].snapSize else: 4
+        let partial = int((1 / snapSize) * 1000)
+        var snapIdx = 0
+        while partial * (snapIdx + 1) > rest:
+            inc snapIdx
+
+        result.time.add malody.newTimeSignature([beatIndex, snapIdx, snapSize], bpm.bpm)
+
+    for beat in notes.beats:
+        for note in beat.notes:
+            let noteBeat = [beat.index, note.snap, beat.snapSize]
+            if note.kind == sm.NoteType.Hold or note.kind == sm.NoteType.Roll:
+                let releaseBeat = note.releaseBeat
+                let releaseIndex = notes.beats.find(proc (nb: sm.Beat): bool = nb.index == releaseBeat)
+                let releaseSnapSize = if releaseIndex > -1: notes.beats[releaseIndex].snapSize else: 4
+                result.note.add malody.newColumnHold(noteBeat, note.column, 0, [note.releaseBeat, note.releaseSnap, releaseSnapSize])
+            else:
+                result.note.add malody.newColumnNote(noteBeat, note.column)
+
+proc toMalody*(chart: sm.ChartFile, index: int = 0): malody.Chart =
+    result = toMalody(chart, chart.noteData[index])

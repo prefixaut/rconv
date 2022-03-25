@@ -75,6 +75,10 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
         let parsed = sm.parseStepMania(raw, actualOptions.lenient)
 
         case to:
+        of FileType.Malody:
+            let chart = parsed.toMalody
+            result = saveChart(chart, actualOptions)
+
         of FileType.StepMania:
             result = saveChart(parsed, actualOptions)
 

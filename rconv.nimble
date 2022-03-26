@@ -19,6 +19,10 @@ requires "nim >= 1.6.0"
 
 requires "argparse >= 2.0.1"
 requires "glob >= 0.11.1"
+requires "regex >= 0.19.0"
+
+# Test/Develop Dependencies
+
 requires "coco >= 0.0.3"
 
 # Tasks

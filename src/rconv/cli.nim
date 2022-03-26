@@ -47,10 +47,10 @@ let cli = newParser:
     flag("-V", "--verbose",
         help="Print verbose messages on internal operations.")
     option("-x", "--folder-format", default=some(DefaultFolderFormat),
-        help=fmt"The format for song-folders. You may use the following placeholders: '{PlaceholderArtist}', '{PlaceholderTitle}'.")
+        help=fmt"The format for song-folders. You may use the following placeholders: '{PlaceholderArtist}', and '{PlaceholderTitle}'.")
     option("-z", "--chart-format",
-        help=fmt"The format for the output file-name. You may use the following placeholders: '{PlaceholderArtist}', '{PlaceholderTitle}', '{PlaceholderDifficulty}', and '{PlaceholderExtension}'." &
-            fmt"Defaults to '{DefaultNonDifficultyChartFormat}' on type 'fxf', otherwise to '{DefaultChartFormat}'")
+        help=fmt"The format for the output file-name. You may use the following placeholders: '{PlaceholderArtist}', '{PlaceholderTitle}', '{PlaceholderDifficulty}', '{PlaceholderLevel}', and '{PlaceholderMode}''." &
+        fmt"Defaults to a reasonable Format depending on the output format.")
     arg("files", nargs=(-1),
         help="Input-Files to convert. At least one has to be specified")
 
@@ -59,7 +59,11 @@ try:
     if params.files.len == 0:
         raise newException(ValueError, "No input-files specified!")
 
-    let to = parseEnum[FileType](params.to.toLower)
+    let to = try:
+        parseEnum[FileType](params.to.toLower)
+    except ValueError:
+        raise newException(ValueError, fmt"Specified invalid output type '{params.to}'!")
+
     if params.chart_format.isEmptyOrWhitespace:
         params.chart_format = getDefaultChartFormat(to)
     if not isAbsolute(params.output):
@@ -68,7 +72,7 @@ try:
     let convOptions = newConvertOptions(
         bundle = params.bundle,
         songFolders = params.song_folders,
-        jsonpretty = params.json_pretty,
+        jsonPretty = params.json_pretty,
         keep = params.keep,
         merge = params.merge,
         output = params.output,

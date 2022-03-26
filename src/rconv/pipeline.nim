@@ -1,6 +1,7 @@
 import std/[streams, strformat, options, os]
 
 import ./common, mapper
+import ./private/utils
 
 # Import different game-modes into own scopes, as they often
 # have colliding types
@@ -122,7 +123,7 @@ proc saveChart(chart: var fxf.ChartFile, options: ConvertOptions, diff: Option[s
     if fileExists(filePath) and options.preserve:
         raise newException(PreserveFileException, fmt"Output-File already exists: {filePath}")
 
-    discard existsOrCreateDir(outDir & DirSep)
+    existsOrCreateDirRecursive(outDir)
 
     if fileExists(filePath) and options.merge:
         # TODO: Merge it the other way, to make the `chart` parameter not editable
@@ -173,7 +174,7 @@ proc saveChart(chart: malody.Chart, options: ConvertOptions): ConvertResult =
     if fileExists(filePath) and options.preserve:
         raise newException(PreserveFileException, fmt"Output-File already exists: {filePath}")
 
-    discard existsOrCreateDir(outDir & DirSep)
+    existsOrCreateDirRecursive(outDir)
 
     var str = chart.write(options.jsonPretty)
     writeFile(filePath, str)
@@ -198,7 +199,7 @@ proc saveChart(chart: sm.ChartFile, options: ConvertOptions): ConvertResult =
     if fileExists(filePath) and options.preserve:
         raise newException(PreserveFileException, fmt"Output-File already exists: {filePath}")
 
-    discard existsOrCreateDir(outDir & DirSep)
+    existsOrCreateDirRecursive(outDir)
 
     var str = chart.write()
     writeFile(filePath, str)

@@ -3,7 +3,7 @@ import std/[encodings, streams]
 const
     Terminator = '\0'
 
-proc toString*(bytes: seq[byte]): string =
+func toString*(bytes: seq[byte]): string =
   result = newStringOfCap(len(bytes))
   for b in bytes:
     add(result, char(b))

@@ -1,4 +1,6 @@
-import std/[macros, options, strformat, strutils]
+import std/[options, strformat, strutils]
+
+import pkg/regex
 
 type
     FileType* {.pure.} = enum
@@ -46,6 +48,8 @@ type
         title*: string
         artist*: string
         difficulty*: string
+        level*: string
+        mode*: string
         extension*: string
 
     ConvertResult* = object
@@ -103,15 +107,20 @@ const
     ## Placeholder for the charts artist
     PlaceholderDifficulty* = "%difficulty%" ## \
     ## Placeholder for the charts difficulty
-    PlaceholderExtension* = "%ext%" ## \
-    ## Placeholder for the file extension
+    PlaceholderLevel* = "%level%" ## \
+    ## Placeholder for the charts difficulty-level
+    PlaceholderMode* = "%mode%" ## \
+    ## Placeholder for the chart mode
     DefaultFolderFormat* = fmt"{PlaceholderTitle} ({PlaceholderArtist})" ## \
     ## Default format for folders
-    DefaultChartFormat* = fmt"{PlaceholderArtist} - {PlaceholderTitle}_{PlaceholderDifficulty}.{PlaceholderExtension}" ## \
+    DefaultChartFormat* = fmt"{PlaceholderArtist} - {PlaceholderTitle}_{PlaceholderDifficulty}_{PlaceholderLevel}_{PlaceholderMode}" ## \
     ## Default format for charts which have a separate file per difficulty
-    DefaultNonDifficultyChartFormat* = fmt"{PlaceholderArtist} - {PlaceholderTitle}.{PlaceholderExtension}" ## \
+    DefaultNonDifficultyChartFormat* = fmt"{PlaceholderArtist} - {PlaceholderTitle}" ## \
     ## Default format for charts which have all difficulties in one file
-    debug = true
+    FormatReplaceRegex = re"([[:punct:][:cntrl:]]+)" ## \
+    ## Regex to replace multiple separators and other invalid entities with dashes
+    FormatCleanupRegex = re"([[:space:]_]+)|([[:space:][:punct:]])+$|(\([[:space:]_\-\+]*\))|^([[:space:][:punct:]])+" ## \
+    ## Regex to remove ending separators and empty brackets
 
 func newConvertOptions*(
     bundle: bool = false,
@@ -144,6 +153,8 @@ func newFormattingParameters*(
     title: string = "untitled",
     artist: string = "unknown",
     difficulty: string = "edit",
+    level: string = "",
+    mode: string = "",
     extension: string = "txt",
 ): FormattingParameters =
     ## Function to create a new `FormattingParameters` instance.
@@ -152,10 +163,12 @@ func newFormattingParameters*(
         title: title,
         artist: artist,
         difficulty: difficulty,
+        level: level,
+        mode: mode,
         extension: extension,
     )
 
-func formatFileName*(this: ConvertOptions, params: FormattingParameters): string =
+proc formatFileName*(this: ConvertOptions, params: FormattingParameters): string =
     ## Formats the `ConvertOptions`' `chartFormat` by replacing the Placeholders
     ## with the provided formatting parameters.
 
@@ -163,7 +176,11 @@ func formatFileName*(this: ConvertOptions, params: FormattingParameters): string
         .replace(PlaceholderTitle, params.title)
         .replace(PlaceholderArtist, params.artist)
         .replace(PlaceholderDifficulty, params.difficulty)
-        .replace(PlaceholderExtension, params.extension)
+        .replace(PlaceholderLevel, params.level)
+        .replace(PlaceholderMode, params.mode)
+        .replace(FormatReplaceRegex, "-")
+        .replace(FormatCleanupRegex, "")
+    result &= "." & params.extension
 
     if this.normalize:
         result = normalize(result)
@@ -239,11 +256,3 @@ func getDefaultOptions*(to: FileType): ConvertOptions =
 
     let format = getDefaultChartFormat(to)
     result = newConvertOptions(chartFormat = format)
-
-macro log*(message: string): untyped =
-    ## Internal logging function which will be removed soon
-
-    if debug:
-        result = quote do:
-            {.cast(noSideEffect).}:
-                echo `message`

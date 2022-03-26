@@ -430,7 +430,7 @@ func getBeatSafe(self: JsonNode, field: string = "beat", default: malody.Beat = 
         except:
             discard
 
-proc toTimedElement*(self: JsonNode, lenient: bool = false): malody.TimedElement {.raises: [ParseError,ValueError].} =
+func toTimedElement*(self: JsonNode, lenient: bool = false): malody.TimedElement {.raises: [ParseError,ValueError].} =
     ## Hook to convert the provided JsonNode to the appropiate `TimeElement`.
 
     if self.kind != JsonNodeKind.JObject:
@@ -482,7 +482,7 @@ proc toTimedElement*(self: JsonNode, lenient: bool = false): malody.TimedElement
         if self.hasField("w", JsonNodeKind.JInt):
             var seg: seq[TimedElement] = @[]
             if self.fields.hasKey("seg"):
-                seg.fromJson(self.fields["seg"], Joptions(allowMissingKeys: lenient, allowExtraKeys: lenient))
+                seg.fromJson(self.fields["seg"], Joptions(allowMissingKeys: true, allowExtraKeys: true))
 
             result = malody.newSlideNote(
                 beat = beat,
@@ -508,7 +508,7 @@ proc toTimedElement*(self: JsonNode, lenient: bool = false): malody.TimedElement
     else:
         result = malody.newTimedElement(beat = beat)
 
-proc toChart*(self: JsonNode, lenient: bool = false): malody.Chart {.raises:[ParseError,ValueError].} =
+func toChart*(self: JsonNode, lenient: bool = false): malody.Chart {.raises:[ParseError,ValueError].} =
     ## Additional hook to make the hook for `TimedElement` work.
 
     if self.kind != JsonNodeKind.JObject:
@@ -519,7 +519,7 @@ proc toChart*(self: JsonNode, lenient: bool = false): malody.Chart {.raises:[Par
     result = malody.newChart()
 
     if self.hasField("meta", JsonNodeKind.JObject):
-        result.meta = self.fields["meta"].jsonTo(malody.MetaData, Joptions(allowMissingKeys: lenient, allowExtraKeys: lenient))
+        result.meta = self.fields["meta"].jsonTo(malody.MetaData, Joptions(allowMissingKeys: true, allowExtraKeys: true))
 
     if self.hasField("note", JsonNodeKind.JArray):
         for data in self.fields["note"].elems:
@@ -531,7 +531,7 @@ proc toChart*(self: JsonNode, lenient: bool = false): malody.Chart {.raises:[Par
             let time = toTimedElement(data, lenient)
             result.time.add(time)
 
-proc toJsonHook*[T: malody.Chart](this: T): JsonNode =
+func toJsonHook*[T: malody.Chart](this: T): JsonNode =
     result = newJObject()
     result["meta"] = toJson(this.meta)
     result["time"] = newJArray()
@@ -542,7 +542,7 @@ proc toJsonHook*[T: malody.Chart](this: T): JsonNode =
     for note in this.note:
         result["note"].elems.add toJsonHook(note)
 
-proc toJsonHook*[T: malody.TimedElement](this: T): JsonNode =
+func toJsonHook*[T: malody.TimedElement](this: T): JsonNode =
     result = newJObject()
     result["beat"] = toJsonHook(this.beat)
 
@@ -585,7 +585,7 @@ proc toJsonHook*[T: malody.TimedElement](this: T): JsonNode =
     else:
         discard
 
-proc toJsonHook*[T: malody.Beat](this: T): JsonNode =
+func toJsonHook*[T: malody.Beat](this: T): JsonNode =
     result = newJArray()
     result.elems.add newJInt(this[0])
     result.elems.add newJInt(this[1])
@@ -597,7 +597,7 @@ proc parseMalody*(data: string, lenient: bool = false): Chart =
 proc parseMalody*(stream: Stream, lenient: bool = false): Chart =
     result = parseMalody(stream.readAll, lenient)
 
-proc write*(chart: Chart, pretty: bool = false): string =
+func write*(chart: Chart, pretty: bool = false): string =
     if pretty:
         result = toJsonHook(chart).pretty
     else:

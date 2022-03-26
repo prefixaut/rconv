@@ -178,7 +178,7 @@ proc parseFXF*(stream: Stream, lenient: bool = false): ChartFile =
 
     var version = stream.readUint32
     if Version1 != version:
-        raise newException(InvalidVersionException, fmt"The loaded version #{version} is not valid!")
+        raise newException(InvalidVersionException, "The loaded version " & $version & " is not valid!")
 
     result.version = version
     result.title = stream.readUTF8Str

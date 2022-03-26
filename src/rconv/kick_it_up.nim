@@ -1,6 +1,6 @@
 import std/[enumutils, strutils, options]
 
-import ./private/[parser_helpers, imfile_helper]
+import ./private/[utils, imfile_helper]
 
 type
     NoteType* {.pure.} = enum

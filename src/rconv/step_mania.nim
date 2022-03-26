@@ -1,7 +1,7 @@
 import std/[enumutils, options, sequtils, sugar, streams, strformat, strutils, tables]
 
 import ./common
-import ./private/[parser_helpers, simfile_common, simfile_helper]
+import ./private/[utils, simfile_common, simfile_helper]
 
 export simfile_common
 

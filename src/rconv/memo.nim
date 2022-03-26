@@ -140,7 +140,7 @@ const
     NotePosition = 0..15.NoteRange
     NonTokenChars = toRunes($(Whitespace + {'|'}))
 
-proc parseMemo*(content: string): Memson =
+func parseMemo*(content: string): Memson =
     ## Parses the provided memo-data to a memson object (memo object representation).
     ## The content has to be a complete memo file to be parsed correctly.
 
@@ -247,7 +247,7 @@ proc write*(chart: Memson): string =
 proc write*(chart: Memson, stream: Stream): void =
     stream.write(chart.write)
 
-proc parseSection(index: int, partIndex: int, bpm: float, parts: seq[SectionPart]): Section =
+func parseSection(index: int, partIndex: int, bpm: float, parts: seq[SectionPart]): Section =
     result = newSection(
         index = index,
         bpm = bpm,
@@ -334,7 +334,7 @@ proc parseSection(index: int, partIndex: int, bpm: float, parts: seq[SectionPart
     # Sort the notes by the index
     result.notes.sort((a, b) => system.cmp(a[0], b[0]))
 
-proc parseSectionParts(index: int, lineIndex: int, rows: array[4, string]): SectionPart =
+func parseSectionParts(index: int, lineIndex: int, rows: array[4, string]): SectionPart =
     result = SectionPart()
     result.snaps = @[]
     result.timings = @[]
@@ -370,7 +370,7 @@ func holdOffset(token: Token): int =
         else:
             return 0
 
-proc parseTokens(row: string, rowNum: int, maxLen: int = -1, offset = 0): RowResult =
+func parseTokens(row: string, rowNum: int, maxLen: int = -1, offset = 0): RowResult =
     result.tokens = @[]
     result.position = 0
 

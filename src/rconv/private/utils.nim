@@ -1,4 +1,4 @@
-import std/[strutils, sequtils, options]
+import std/[strutils, sequtils, options, os]
 
 func parseFloatSafe*(value: string, default: Option[float] = none[float]()): Option[float] =
     try:
@@ -48,3 +48,9 @@ func find*[T](collection: seq[T], fn: proc (element: T): bool, start: int = 0): 
     for i in start..<collection.len:
         if fn(collection[i]):
             return i
+
+proc existsOrCreateDirRecursive*(path: string): void =
+    ## Custom _'existsOrCreateDir' proc, as the one from OS/STD doesn't do it recursively (for whatever reason)
+    if dirExists(path):
+        return
+    createDir(path)

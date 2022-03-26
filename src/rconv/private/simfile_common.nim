@@ -1,6 +1,6 @@
 import std/[options, strformat, strutils, sequtils, sugar]
 
-import ./parser_helpers
+import ./utils
 
 type
     ChartType* {.pure.} = enum
@@ -348,7 +348,7 @@ func parseIntrumentTracks*(data: string): seq[InstrumentTrack] =
         if spl.len >= 2:
             result.add(newInstrumentTrack(spl[0], spl[1]))
 
-proc parseColor*(data: string): Color =
+func parseColor*(data: string): Color =
     if data.strip.len == 0:
         return [0.0, 0.0, 0.0, 0.0]
 
@@ -362,7 +362,7 @@ proc parseColor*(data: string): Color =
         parseFloatSafe(spl[3]).get(0.0)
     ]
 
-proc parseBackgroundChanges*(data: string): seq[BackgroundChange] =
+func parseBackgroundChanges*(data: string): seq[BackgroundChange] =
     result = @[]
     for elem in data.splitByComma:
         var spl = elem.splitMin("=", 11)
@@ -499,10 +499,10 @@ proc putTag*(str: var string, tag: string, value: string): void =
     if not value.isEmptyOrWhitespace:
         str &= fmt"#{tag.toUpper}:{value};{'\n'}"
 
-proc write*(color: Color): string =
+func write*(color: Color): string =
     result = color.join("^")
 
-proc write*(change: BackgroundChange): string =
+func write*(change: BackgroundChange): string =
     result = @[
         $change.beat,
         change.path,
@@ -517,7 +517,7 @@ proc write*(change: BackgroundChange): string =
         change.color2.write
     ].join("=")
 
-proc write*(modi: Modifier): string =
+func write*(modi: Modifier): string =
     result = @[
         fmt"*{modi.approachRate}",
         modi.player,
@@ -525,7 +525,7 @@ proc write*(modi: Modifier): string =
         modi.name
     ].filter(str => not str.strip.isEmptyOrWhitespace).join("=")
 
-proc write*(attack: TimedAttack): string =
+func write*(attack: TimedAttack): string =
     let mods = attack.mods.mapIt(it.write).join(",")
     result = @[
         fmt"TIME={attack.time}",
@@ -534,7 +534,7 @@ proc write*(attack: TimedAttack): string =
     ].join(":")
 
 
-proc `$`*(ct: ChartType): string =
+func `$`*(ct: ChartType): string =
     case ct:
     of ChartType.DanceSingle:
         result = "dance-single"
@@ -555,7 +555,7 @@ proc `$`*(ct: ChartType): string =
     of ChartType.PumpCouple:
         result = "pump-couple"
 
-proc `$`*(diff: Difficulty): string =
+func `$`*(diff: Difficulty): string =
     case diff:
     of Difficulty.Beginner:
         result = "Beginner"

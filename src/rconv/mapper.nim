@@ -1,7 +1,7 @@
 import std/[algorithm, math, sets, strutils, strformat, sugar, tables]
 
 import ./common
-import ./private/parser_helpers
+import ./private/utils
 
 import ./fxf as fxf
 import ./malody as malody

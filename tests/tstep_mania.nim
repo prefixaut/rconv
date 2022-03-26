@@ -1,6 +1,7 @@
 import std/[strformat, unittest, options, tables]
 
-import rconv/step_mania
+import rconv/malody as malody
+import rconv/[mapper, step_mania]
 
 suite "step-mania":
     let regularNotes = {
@@ -39,7 +40,6 @@ suite "step-mania":
         expectedPercent: bool = true,
         expectedPlayer = ""
     ): void =
-
         check:
             modifier.name == expectedName
             modifier.approachRate == expectedApproachRate
@@ -119,6 +119,30 @@ suite "step-mania":
     ) =
         checkpoint("Note (" & $kind & ") on Snap " & $snap & ", Column " & $column & ", Release on " & $releaseBeat & "-" & $releaseSnap)
         testHold(note, snap, column, releaseBeat, releaseSnap, kind)
+
+    template testNote(
+        element: malody.TimedElement,
+        expectedBeat: malody.Beat,
+        expectedColumn: int
+    ): void =
+        check:
+            element.beat == expectedBeat
+            element.kind == malody.ElementType.ColumnNote
+            element.column == expectedColumn
+            element.hold == malody.HoldType.None
+
+    template testHold(
+        element: malody.TimedElement,
+        expectedBeat: malody.Beat,
+        expectedColumn: int,
+        expectedRelease: malody.Beat
+    ): void =
+        check:
+            element.beat == expectedBeat
+            element.kind == malody.ElementType.ColumnNote
+            element.column == expectedColumn
+            element.hold == malody.HoldType.ColumnHold
+            element.colEndBeat == expectedRelease
 
     test "parse":
 
@@ -494,3 +518,198 @@ M0FF
                 except InvalidNoteError:
                     didThrow = true
                 check didThrow == false
+
+    test "convert to Malody":
+        let testFile = """
+#TITLE:cool title;
+#SUBTTILE:foo bar;
+#ARTIST:cool duuude;
+#CREDIT:PreFiXAUT;
+#MUSIC:song-file.mp3;
+#OFFSET:12.521;
+#SAMPLESTART:64.215;
+#BPMS:0.5=150,1.666=155,2.800=160,3.999=161.5321,4.5625=165;
+#NOTES:
+    dance-single:
+    PreFiXAUT:
+    Hard:
+    15:
+    0,0,0,0,0:
+0110
+1000
+0002
+0000
+,
+0100
+0010
+L000
+0003
+0010
+1100
+0011
+MMMM
+0000
+1010
+0F01
+1000
+,
+0001
+0010
+01M0
+1000
+0101
+0000
+0010
+0100
+4010
+0F00
+0F00
+DL001
+01L0
+1000
+000L
+MM00
+1100
+0011
+0000
+0000
+,
+LLLL
+0011
+MMMM
+1100
+0110
+0011
+1001
+0110
+,
+0000
+0000
+000L
+0000
+0FF0
+0000
+0000
+1100
+0000
+0011
+0000
+0110
+0000
+0000
+1001
+0000
+;
+"""
+        var parsed = parseStepMania(testFile)
+        var converted = parsed.toMalody
+
+        template checkBpm(actual: malody.TimedElement, expectedBeat: malody.Beat, expectedBpm: float): void =
+            check:
+                actual.beat == expectedBeat
+                actual.kind == malody.ElementType.TimeSignature
+            if actual.kind == malody.ElementType.TimeSignature:
+                check int(actual.sigBpm * 1000) == int(expectedBpm * 1000)
+
+        check:
+            converted.meta.mode == malody.ChartMode.Key
+            converted.meta.song.title == "cool title"
+            converted.meta.song.artist == "cool duuude"
+            converted.meta.creator == "PreFiXAUT"
+            converted.meta.mode_ext.column == 4
+            converted.meta.preview == 64_215
+            converted.meta.version == "Hard 15"
+            converted.time.len == 5
+
+        checkBpm(converted.time[0], [0, 1, 2], 150.0)
+        checkBpm(converted.time[1], [1, 2, 3], 155.0)
+        checkBpm(converted.time[2], [2, 16, 20], 160.0)
+        checkBpm(converted.time[3], [3, 3, 3], 161.5321)
+        checkBpm(converted.time[4], [4, 9, 16], 165.0)
+
+        check:
+            converted.note.len == 61
+            converted.note[0].beat == [0, 0, 1]
+            converted.note[0].kind == malody.ElementType.SoundCue
+            converted.note[0].cueType == malody.SoundCueType.Song
+            converted.note[0].cueSound == "song-file.mp3"
+            converted.note[0].cueOffset == 12.521
+
+        testNote(converted.note[1], [0, 0, 4], 1)
+        testNote(converted.note[2], [0, 0, 4], 2)
+        testNote(converted.note[3], [0, 1, 4], 0)
+        testHold(converted.note[4], [0, 2, 4], 3, [1, 3, 12])
+
+        testNote(converted.note[5], [1, 0, 12], 1)
+        testNote(converted.note[6], [1, 1, 12], 2)
+        testNote(converted.note[7], [1, 2, 12], 0)
+        testNote(converted.note[8], [1, 4, 12], 2)
+        testNote(converted.note[9], [1, 5, 12], 0)
+        testNote(converted.note[10], [1, 5, 12], 1)
+        testNote(converted.note[11], [1, 6, 12], 2)
+        testNote(converted.note[12], [1, 6, 12], 3)
+        testNote(converted.note[13], [1, 9, 12], 0)
+        testNote(converted.note[14], [1, 9, 12], 2)
+        testNote(converted.note[15], [1, 10, 12], 3)
+        testNote(converted.note[16], [1, 11, 12], 0)
+
+        testNote(converted.note[17], [2, 0, 20], 3)
+        testNote(converted.note[18], [2, 1, 20], 2)
+        testNote(converted.note[19], [2, 2, 20], 1)
+        testNote(converted.note[20], [2, 3, 20], 0)
+        testNote(converted.note[21], [2, 4, 20], 1)
+        testNote(converted.note[22], [2, 4, 20], 3)
+        testNote(converted.note[23], [2, 6, 20], 2)
+        testNote(converted.note[24], [2, 7, 20], 1)
+        testHold(converted.note[25], [2, 8, 20], 0, [2, 11, 20])
+        testNote(converted.note[26], [2, 8, 20], 2)
+        testNote(converted.note[27], [2, 11, 20], 3)
+        testNote(converted.note[28], [2, 12, 20], 1)
+        testNote(converted.note[29], [2, 12, 20], 2)
+        testNote(converted.note[30], [2, 13, 20], 0)
+        testNote(converted.note[31], [2, 14, 20], 3)
+        testNote(converted.note[32], [2, 16, 20], 0)
+        testNote(converted.note[33], [2, 16, 20], 1)
+        testNote(converted.note[34], [2, 17, 20], 2)
+        testNote(converted.note[35], [2, 17, 20], 3)
+
+        testNote(converted.note[36], [3, 0, 8], 0)
+        testNote(converted.note[37], [3, 0, 8], 1)
+        testNote(converted.note[38], [3, 0, 8], 2)
+        testNote(converted.note[39], [3, 0, 8], 3)
+        testNote(converted.note[40], [3, 1, 8], 2)
+        testNote(converted.note[41], [3, 1, 8], 3)
+        testNote(converted.note[42], [3, 3, 8], 0)
+        testNote(converted.note[43], [3, 3, 8], 1)
+        testNote(converted.note[44], [3, 4, 8], 1)
+        testNote(converted.note[45], [3, 4, 8], 2)
+        testNote(converted.note[46], [3, 5, 8], 2)
+        testNote(converted.note[47], [3, 5, 8], 3)
+        testNote(converted.note[48], [3, 6, 8], 0)
+        testNote(converted.note[49], [3, 6, 8], 3)
+        testNote(converted.note[50], [3, 7, 8], 1)
+        testNote(converted.note[51], [3, 7, 8], 2)
+
+        testNote(converted.note[52], [4, 2, 16], 3)
+        testNote(converted.note[53], [4, 7, 16], 0)
+        testNote(converted.note[54], [4, 7, 16], 1)
+        testNote(converted.note[55], [4, 9, 16], 2)
+        testNote(converted.note[56], [4, 9, 16], 3)
+        testNote(converted.note[57], [4, 11, 16], 1)
+        testNote(converted.note[58], [4, 11, 16], 2)
+        testNote(converted.note[59], [4, 14, 16], 0)
+        testNote(converted.note[60], [4, 14, 16], 3)
+
+        parsed = parseStepMania("""
+#TITLE:ゾンビー・サーカス;
+#ARTIST:かめりあ;
+#TITLETRANSLIT:No idea;
+#ARTISTTRANSLIT:Camellia;
+""")
+        converted = parsed.toMalody
+
+        check:
+            converted.meta.song.title == "No idea"
+            converted.meta.song.titleorg == "ゾンビー・サーカス"
+            converted.meta.song.artist == "Camellia"
+            converted.meta.song.artistorg == "かめりあ"

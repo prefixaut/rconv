@@ -161,7 +161,7 @@ type
         ## Labels for the song
 
 const
-    SpecialNoteStart = 'B'
+    SpecialNoteStart = 'D'
     EmptyBeat = "0000\n0000\n0000\n0000\n"
 
 func newNoteError(msg: string, beat: int, note: Note): ref InvalidNoteError =
@@ -293,7 +293,7 @@ func asFormattingParams*(chart: ChartFile): FormattingParameters =
         extension = FileType.StepMania.getFileExtension,
     )
 
-proc parseTimedAttacks(data: string): seq[TimedAttack] =
+func parseTimedAttacks(data: string): seq[TimedAttack] =
     result = @[]
     let spl = data.split(":")
     let max = int(spl.len div 3) - 1
@@ -379,7 +379,13 @@ func parseBeats(data: string, columns: int, lenient: bool): seq[Beat] =
             isSpecial = true
             continue
 
-        var kind = parseEnum[NoteType](($str).toUpper)
+        let kind = try:
+            parseEnum[NoteType](($str).toUpper)
+        except ValueError:
+            if lenient:
+                NoteType.Empty
+            else:
+                raise newException(ParseError, "Found an invalid note-type/definition '" & $str & "' on beat " & $beatIndex & ", column " & $columnIndex)
         var note = newNote(kind, snapIndex, columnIndex)
 
         if kind == NoteType.HoldEnd or (isSpecial and kind == NoteType.Lift):
@@ -458,14 +464,14 @@ func parseNoteData(data: string, lenient: bool): NoteData =
 func isYes(str: string): bool =
     return str.toLower in ["yes", "1", "es", "omes"]
 
-proc hasNoteExtra(data: NoteData): bool =
+func hasNoteExtra(data: NoteData): bool =
     result = false
     for beat in data.beats:
         for note in beat.notes:
             if note.attack != nil or note.keySound > -1 or note.modifiers.len > 0:
                 return true
 
-proc putFileData(chart: var ChartFile, tag: string, data: string, lenient: bool): void =
+func putFileData(chart: var ChartFile, tag: string, data: string, lenient: bool): void =
     if data.strip.len == 0:
         return
 
@@ -562,7 +568,7 @@ proc putFileData(chart: var ChartFile, tag: string, data: string, lenient: bool)
     else:
         discard
 
-proc `$`(nt: NoteType): string =
+func `$`(nt: NoteType): string =
     case nt:
     of NoteType.Empty:
         result = "0"
@@ -581,7 +587,7 @@ proc `$`(nt: NoteType): string =
     of NoteType.Fake:
         result = "F"
 
-proc write(note: Note, withExtras: bool): string =
+func write(note: Note, withExtras: bool): string =
     result = $note.kind
     if withExtras:
         if note.attack != nil:
@@ -591,7 +597,7 @@ proc write(note: Note, withExtras: bool): string =
         if note.modifiers.len > 0:
             result &= "<" & note.modifiers.mapIt(write(it)).join("/") & ">"
 
-proc write(notes: NoteData, withNoteExtras: bool = false): string =
+func write(notes: NoteData, withNoteExtras: bool = false): string =
     let ct = $notes.chartType
     let columns = columnCount(notes.chartType)
 
@@ -662,7 +668,7 @@ proc write(notes: NoteData, withNoteExtras: bool = false): string =
 
     result &= arr.join(",\n") & ";\n"
 
-proc parseStepMania*(data: string, lenient: bool = false): ChartFile =
+func parseStepMania*(data: string, lenient: bool = false): ChartFile =
     result = newChartFile()
     for tag, tagData in parseTags(data):
         result.putFileData(tag, tagData, lenient)
@@ -670,7 +676,7 @@ proc parseStepMania*(data: string, lenient: bool = false): ChartFile =
 proc parseStepMania*(stream: Stream, lenient: bool = false): ChartFile =
     result = parseStepMania(stream.readAll, lenient)
 
-proc write*(chart: ChartFile): string =
+func write*(chart: ChartFile): string =
 
     # The basic/required fields
     result = fmt"""

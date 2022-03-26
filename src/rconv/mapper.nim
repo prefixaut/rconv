@@ -16,6 +16,105 @@ type
     ## Tuple to join a memson-hold and malody-hold, to be able to set the
     ## `endBeat` field on the malody hold on time.
 
+proc getBeat(value: float): malody.Beat =
+    ## Helper function to convert a fraction beat-index (1.5, 2.3, ...) to a
+    ## indicative beat & snap position.
+    ## Currently supports from 1 to 20th snaps
+    let beat = int(value)
+    let part = int(int((value - float(beat)) * 100_000) / 10)
+
+    # Additional values are for rounding errors/IEEE float handling
+    case part:
+    of 9990, 9989:
+        result = [beat, 3, 3]
+    of 9500, 9499:
+        result = [beat, 19, 20]
+    of 9375:
+        result = [beat, 15, 16]
+    of 9166:
+        result = [beat, 11, 12]
+    of 9000:
+        result = [beat, 18, 20]
+    of 8750:
+        result = [beat, 7, 8]
+    of 8500:
+        result = [beat, 17, 20]
+    of 8333, 8332:
+        result = [beat, 5, 6]
+    of 8125:
+        result = [beat, 13, 16]
+    of 8000, 7999:
+        result = [beat, 16, 20]
+    of 7500, 7499:
+        result = [beat, 3, 4]
+    of 7000, 6999:
+        result = [beat, 14, 20]
+    of 6875:
+        result = [beat, 11, 16]
+    of 6666, 6659:
+        result = [beat, 2, 3]
+    of 6500:
+        result = [beat, 13, 20]
+    of 6250:
+        result = [beat, 5, 8]
+    of 6000:
+        result = [beat, 12, 20]
+    of 5833, 5832:
+        result = [beat, 7, 12]
+    of 5625:
+        result = [beat, 9, 16]
+    of 5500:
+        result = [beat, 11, 20]
+    of 5000:
+        result = [beat, 1, 2]
+    of 4500:
+        result = [beat, 9, 20]
+    of 4375:
+        result = [beat, 7, 16]
+    of 4166:
+        result = [beat, 5, 12]
+    of 4000:
+        result = [beat, 8, 20]
+    of 3750:
+        result = [beat, 6, 16]
+    of 3500:
+        result = [beat, 7, 20]
+    of 3333, 3329:
+        result = [beat, 1, 3]
+    of 3125:
+        result = [beat, 5, 16]
+    of 3000, 2999:
+        result = [beat, 6, 20]
+    of 2500:
+        result = [beat, 1, 4]
+    of 2000:
+        result = [beat, 4, 20]
+    of 1875:
+        result = [beat, 3, 16]
+    of 1666, 1659:
+        result = [beat, 1, 6]
+    of 1500:
+        result = [beat, 3, 20]
+    of 1250:
+        result = [beat, 1, 8]
+    of 1000:
+        result = [beat, 2, 20]
+    of 833, 832:
+        result = [beat, 1, 12]
+    of 625:
+        result = [beat, 1, 16]
+    of 500:
+        result = [beat, 1, 20]
+    of 0:
+        result = [beat, 0, 2]
+    else:
+        result = [beat, 0, 1]
+#[
+------------------------------------------
+    MEMSON CONVERTS
+------------------------------------------
+]#
+
 func toFXF*(this: memson.Memson): fxf.ChartFile =
     ## Function to map/convert `this` Chart to a FXF-ChartFile.
 
@@ -105,7 +204,7 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
         result.charts.extreme = chart
         result.charts.extPresent = 1
 
-proc toMalody*(this: memson.Memson): malody.Chart =
+func toMalody*(this: memson.Memson): malody.Chart =
     ## Function to map/convert `this` Chart to a Malody Chart.
 
     result = malody.newChart(meta = malody.newMetaData(
@@ -149,9 +248,10 @@ proc toMalody*(this: memson.Memson): malody.Chart =
             for holdIndex, holdVal in holdRelease.mpairs:
                 if holdVal.memson.releaseSection == sectionIndex and holdVal.memson.releaseTime == timeIndex:
                     holdVal.malody.indexEndBeat = beat
-                    releasesToDelete.add(holdIndex)
+                    releasesToDelete.add holdIndex
+                    break
             for idx in releasesToDelete:
-                holdRelease.del(idx)
+                holdRelease.del idx
 
             if time > -1:
                 for secNotePos, secMultiNotes in section.notes:
@@ -177,7 +277,13 @@ proc toMalody*(this: memson.Memson): malody.Chart =
 
         inc sectionIndex
 
-proc toFXF*(this: malody.Chart): fxf.ChartFile =
+#[
+------------------------------------------
+    MALODY CONVERTS
+------------------------------------------
+]#
+
+func toFXF*(this: malody.Chart): fxf.ChartFile =
     ## Function to map/convert `this` Chart to a FXF-ChartFile.
     ## The actual note-data will be present in the `fxf.ChartFile.charts`_ table.
     ## The difficulty is determined by the `memson.parseDifficulty`_ function.
@@ -299,13 +405,13 @@ proc toFXF*(this: malody.Chart): fxf.ChartFile =
         holdTable[element.beat].add hold
         tick.holds.add hold
 
-proc toStepMania*(chart: malody.Chart): sm.ChartFile =
+func toStepMania*(chart: malody.Chart): sm.ChartFile =
     if chart.meta.mode != malody.ChartMode.Key:
         raise newException(InvalidModeException, fmt"The provided Malody-Chart is from the wrong Mode! Mode is {chart.meta.mode}, where a {ChartMode.Key} is required!")
 
     result = sm.newChartFile(
         credit = chart.meta.creator,
-        sampleStart = float(chart.meta.preview),
+        sampleStart = chart.meta.preview / 1000,
         background = chart.meta.background
     )
     var output: sm.NoteData = nil
@@ -380,6 +486,12 @@ proc toStepMania*(chart: malody.Chart): sm.ChartFile =
         else:
             beat.notes.add sm.newNote(sm.NoteType.Note, elem.beat[1], elem.column)
 
+#[
+------------------------------------------
+    STEP-MANIA CONVERTS
+------------------------------------------
+]#
+
 proc toMalody*(chart: sm.ChartFile, notes: NoteData): malody.Chart =
     result = malody.newChart()
 
@@ -395,39 +507,36 @@ proc toMalody*(chart: sm.ChartFile, notes: NoteData): malody.Chart =
     else:
         result.meta.song.title = chart.title
 
-    result.note.add malody.newSoundCue([0, 0, 1], malody.SoundCueType.Song, chart.music, chart.offset, 100.0)
+    if not chart.music.isEmptyOrWhitespace:
+        result.note.add malody.newSoundCue([0, 0, 1], malody.SoundCueType.Song, chart.music, chart.offset, 100.0)
 
     result.meta.mode = malody.ChartMode.Key
-    result.meta.mode_ext.column = sm.columnCount(notes.chartType)
-    result.meta.preview = int(chart.sampleStart)
-    result.meta.version = $notes.difficulty
+    result.meta.preview = int(chart.sampleStart * 1000)
+    result.meta.background = chart.background
     if not chart.credit.isEmptyOrWhitespace:
         result.meta.creator = chart.credit
-    else:
+    elif notes != nil:
         result.meta.creator = notes.description
 
     for bpm in chart.bpms:
-        let beatIndex = int(bpm.beat)
-        let rest = int(bpm.beat - float(beatIndex)) * 1000
-        let beatTmp = notes.beats.find(proc (nb: sm.Beat): bool = nb.index == beatIndex)
-        let snapSize = if beatTmp > -1: notes.beats[beatTmp].snapSize else: 4
-        let partial = int((1 / snapSize) * 1000)
-        var snapIdx = 0
-        while partial * (snapIdx + 1) > rest:
-            inc snapIdx
+        result.time.add malody.newTimeSignature(getBeat(bpm.beat), bpm.bpm)
 
-        result.time.add malody.newTimeSignature([beatIndex, snapIdx, snapSize], bpm.bpm)
+    if notes != nil:
+        result.meta.mode_ext.column = sm.columnCount(notes.chartType)
+        result.meta.version = $notes.difficulty & " " & $notes.difficultyLevel
+        for beat in notes.beats:
+            for note in beat.notes:
+                let noteBeat = [beat.index, note.snap, beat.snapSize]
 
-    for beat in notes.beats:
-        for note in beat.notes:
-            let noteBeat = [beat.index, note.snap, beat.snapSize]
-            if note.kind == sm.NoteType.Hold or note.kind == sm.NoteType.Roll:
-                let releaseBeat = note.releaseBeat
-                let releaseIndex = notes.beats.find(proc (nb: sm.Beat): bool = nb.index == releaseBeat)
-                let releaseSnapSize = if releaseIndex > -1: notes.beats[releaseIndex].snapSize else: 4
-                result.note.add malody.newColumnHold(noteBeat, note.column, 0, [note.releaseBeat, note.releaseSnap, releaseSnapSize])
-            else:
-                result.note.add malody.newColumnNote(noteBeat, note.column)
+                if note.kind == sm.NoteType.Hold or note.kind == sm.NoteType.Roll:
+                    let releaseBeat = note.releaseBeat
+                    let releaseIndex = notes.beats.find(proc (nb: sm.Beat): bool = nb.index == releaseBeat)
+                    let releaseSnapSize = if releaseIndex > -1: notes.beats[releaseIndex].snapSize else: 4
+                    result.note.add malody.newColumnHold(noteBeat, note.column, 0, [note.releaseBeat, note.releaseSnap, releaseSnapSize])
+
+                elif note.kind == sm.NoteType.Note or note.kind == sm.NoteType.Lift:
+                    result.note.add malody.newColumnNote(noteBeat, note.column)
 
 proc toMalody*(chart: sm.ChartFile, index: int = 0): malody.Chart =
-    result = toMalody(chart, chart.noteData[index])
+    let notes = if chart.noteData.len > index: chart.noteData[index] else: nil
+    result = toMalody(chart, notes)

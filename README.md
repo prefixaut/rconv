@@ -15,17 +15,18 @@ rconv is a library and command-line program to parse and convert various rhythm 
 
 ---
 
-- [Installation](#installation)
+- [rconv](#rconv)
+  - [Installation](#installation)
   - [Installation as CLI](#installation-as-cli)
-  - [Installtion as Library](#installtion-as-library)
-- [Building](#building)
-- [Documentation](#documentation)
-- [Usage](#usage)
-  - [Usage of CLI](#usage-of-cli)
-  - [Usage of Library](#usage-of-library)
-- [Supported Formats](#supported-formats)
-- [Parsing](#parsing)
-- [Convertion](#convertion)
+    - [Installtion as Library](#installtion-as-library)
+  - [Building](#building)
+  - [Documentation](#documentation)
+  - [Usage](#usage)
+    - [Usage of CLI](#usage-of-cli)
+    - [Usage of Library](#usage-of-library)
+  - [Supported Formats](#supported-formats)
+    - [Parsing](#parsing)
+    - [Convertion](#convertion)
 
 ---
 
@@ -105,7 +106,7 @@ Options:
   -q, --quiet                Skip all stdout/stderr messages.
   -r, --resources            Copy all neccessary resources (Sound-File, Jacket) to the output directory. Should only be used in comination with the "song-folders" option.
   -s, --stats                Show stats on the end of the operation.
-  -t, --to=TO                The output type. Possible values: [fxf, malody, memo]
+  -t, --to=TO                The output type. Possible values: [fxf, malody, memo, sm]
   -n, --normalize            Normalize the output-paths (folder/file).
   -V, --verbose              Print verbose messages on internal operations.
   -x, --folder-format=FOLDER_FORMAT
@@ -197,7 +198,7 @@ All listed formats are able to be parsed, have proper types (structs) and output
         <td style="text-align: center;">➖</td>
         <td style="text-align: center;">✔️</td>
         <td style="text-align: center;">❌</td>
-        <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">✔️</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
     </tr>
@@ -227,7 +228,7 @@ All listed formats are able to be parsed, have proper types (structs) and output
         <td style="text-align: center;">StepMania</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
-        <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">✔️</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">➖</td>

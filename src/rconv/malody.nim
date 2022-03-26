@@ -3,11 +3,6 @@ import std/[enumutils, json, jsonutils, sets, streams, tables]
 import ./common
 import ./private/json_helpers
 
-{.experimental: "codeReordering".}
-
-const
-    EmptyBeat*: Beat = [-1, 0, 0]
-
 type
     InvalidModeException* = object of CatchableError ## \
     ## Exception which is thrown when the chart's type can't be converted to the
@@ -219,6 +214,8 @@ type
                 ## Beat when the hold is being released
             else:
                 discard
+const
+    EmptyBeat*: Beat = [-1, 0, 0]
 
 func getPriority*(this: TimedElement): int =
     ## Internal helper function to get the priority of a `TimedElement`.
@@ -266,11 +263,25 @@ func getCatchNoteType*(id: int): CatchNoteType =
     else:
         discard
 
-func newChart*(meta: MetaData = newMetaData(), time: seq[TimedElement] = @[], note: seq[TimedElement] = @[]): Chart =
+func newSongData*(
+    title: string = "",
+    titleorg: string = "",
+    artist: string = "",
+    artistorg: string = "",
+    id: int = 0
+): SongData =
     new result
-    result.meta = meta
-    result.time = time
-    result.note = note
+    result.title = title
+    result.titleorg = titleorg
+    result.artist = artist
+    result.artistorg = artistorg
+    result.id = id
+
+func newModeData*(column: int = 0, bar_begin: int = 0, speed: int = 0): ModeData =
+    new result
+    result.column = column
+    result.bar_begin = bar_begin
+    result.speed = speed
 
 func newMetaData*(
     `$ver`: int = 1,
@@ -296,25 +307,11 @@ func newMetaData*(
     result.song = song
     result.mode_ext = mode_ext
 
-func newSongData*(
-    title: string = "",
-    titleorg: string = "",
-    artist: string = "",
-    artistorg: string = "",
-    id: int = 0
-): SongData =
+func newChart*(meta: MetaData = newMetaData(), time: seq[TimedElement] = @[], note: seq[TimedElement] = @[]): Chart =
     new result
-    result.title = title
-    result.titleorg = titleorg
-    result.artist = artist
-    result.artistorg = artistorg
-    result.id = id
-
-func newModeData*(column: int = 0, bar_begin: int = 0, speed: int = 0): ModeData =
-    new result
-    result.column = column
-    result.bar_begin = bar_begin
-    result.speed = speed
+    result.meta = meta
+    result.time = time
+    result.note = note
 
 func newTimedElement*(beat: Beat = EmptyBeat): TimedElement =
     result = TimedElement(beat: beat, kind: ElementType.Plain, hold: HoldType.None)

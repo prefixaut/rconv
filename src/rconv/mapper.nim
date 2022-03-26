@@ -1,4 +1,4 @@
-import std/[algorithm, math, sets, strutils, strformat, sugar, tables]
+import std/[algorithm, math, sets, strutils, strformat, tables]
 
 import ./common
 import ./private/utils

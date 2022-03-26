@@ -1,9 +1,7 @@
-import std/[streams, strformat]
+import std/[streams]
 
 import ./private/stream_helpers
 import ./common
-
-{.experimental: "codeReordering".}
 
 const
     Version1* = uint32(1)
@@ -114,6 +112,15 @@ type
         ## There is no need to search for the hold end
         ## and animation duration can be calculated really easily
 
+func newChartCollection*(basic: Chart = nil, advanced: Chart = nil, extreme: Chart = nil): ChartCollection =
+    result = ChartCollection()
+    result.bscPresent = uint8(basic != nil)
+    result.basic = basic
+    result.advPresent = uint8(advanced != nil)
+    result.advanced = advanced
+    result.extPresent = uint8(extreme != nil)
+    result.extreme = extreme
+
 func newChartFile*(title: string = "", artist: string = "", audio: string = "", jacket: string = "", offset: int32 = 0, bpmChange: seq[BpmChange] = @[], charts = newChartCollection()): ChartFile =
     result = ChartFile()
     result.version = Version1
@@ -125,15 +132,6 @@ func newChartFile*(title: string = "", artist: string = "", audio: string = "", 
     result.numBpm = uint32(bpmChange.len)
     result.bpmChange = bpmChange
     result.charts = charts
-
-func newChartCollection*(basic: Chart = nil, advanced: Chart = nil, extreme: Chart = nil): ChartCollection =
-    result = ChartCollection()
-    result.bscPresent = uint8(basic != nil)
-    result.basic = basic
-    result.advPresent = uint8(advanced != nil)
-    result.advanced = advanced
-    result.extPresent = uint8(extreme != nil)
-    result.extreme = extreme
 
 func newChart*(rating: uint32 = 1, ticks: seq[Tick] = @[]): Chart =
     result = Chart()
@@ -173,6 +171,53 @@ func asFormattingParams*(chart: ChartFile): FormattingParameters =
         extension = $FileType.FXF,
     )
 
+proc readFXFBpmChange(stream: Stream): BpmChange =
+    result.bpm = stream.readFloat32
+    result.time = stream.readFloat32
+    result.snapSize = stream.readUint16
+    result.snapIndex = stream.readUint16
+
+proc readFXFHold(stream: Stream): Hold =
+    result.`from` = stream.readUint8
+    result.to = stream.readUint8
+    result.releaseOn = stream.readFloat32
+
+proc readFXFTick(stream: Stream): Tick =
+    result.time = stream.readFloat32
+    result.snapSize = stream.readUint16
+    result.snapIndex = stream.readUint16
+    result.numNotes = stream.readUint8
+    result.notes = @[]
+
+    for i in 0..uint32(result.numNotes):
+        result.notes.add stream.readUint8
+
+    result.numHolds = stream.readUint8
+    result.holds = @[]
+
+    for i in 0..uint32(result.numHolds):
+        result.holds.add stream.readFXFHold
+
+proc readFXFChart(stream: Stream): Chart =
+    result.rating = stream.readUint32
+    result.numTick = stream.readUint32
+    result.ticks = @[]
+
+    for i in 0..result.numTick:
+        result.ticks.add stream.readFXFTick
+
+proc readFXFChartCollection(stream: Stream): ChartCollection =
+    result.bscPresent = stream.readUint8
+    result.advPresent = stream.readUint8
+    result.extPresent = stream.readUint8
+
+    if result.bscPresent != 0:
+        result.basic = stream.readFXFChart
+    if result.advPresent != 0:
+        result.advanced = stream.readFXFChart
+    if result.extPresent != 0:
+        result.extreme = stream.readFXFChart
+
 proc parseFXF*(stream: Stream, lenient: bool = false): ChartFile =
     ## Parse a FXF Chart File from the stream
 
@@ -193,53 +238,6 @@ proc parseFXF*(stream: Stream, lenient: bool = false): ChartFile =
         result.bpmChange.add stream.readFXFBpmChange
 
     result.charts = stream.readFXFChartCollection
-
-proc readFXFBpmChange(stream: Stream): BpmChange =
-    result.bpm = stream.readFloat32
-    result.time = stream.readFloat32
-    result.snapSize = stream.readUint16
-    result.snapIndex = stream.readUint16
-
-proc readFXFChartCollection(stream: Stream): ChartCollection =
-    result.bscPresent = stream.readUint8
-    result.advPresent = stream.readUint8
-    result.extPresent = stream.readUint8
-
-    if result.bscPresent != 0:
-        result.basic = stream.readFXFChart
-    if result.advPresent != 0:
-        result.advanced = stream.readFXFChart
-    if result.extPresent != 0:
-        result.extreme = stream.readFXFChart
-
-proc readFXFChart(stream: Stream): Chart =
-    result.rating = stream.readUint32
-    result.numTick = stream.readUint32
-    result.ticks = @[]
-
-    for i in 0..result.numTick:
-        result.ticks.add stream.readFXFTick
-
-proc readFXFTick(stream: Stream): Tick =
-    result.time = stream.readFloat32
-    result.snapSize = stream.readUint16
-    result.snapIndex = stream.readUint16
-    result.numNotes = stream.readUint8
-    result.notes = @[]
-
-    for i in 0..uint32(result.numNotes):
-        result.notes.add stream.readUint8
-
-    result.numHolds = stream.readUint8
-    result.holds = @[]
-
-    for i in 0..uint32(result.numHolds):
-        result.holds.add stream.readFXFHold
-
-proc readFXFHold(stream: Stream): Hold =
-    result.`from` = stream.readUint8
-    result.to = stream.readUint8
-    result.releaseOn = stream.readFloat32
 
 proc write(chart: Chart, stream: Stream): void =
     stream.write(chart.rating)

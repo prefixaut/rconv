@@ -5,8 +5,6 @@ import ./private/[utils, simfile_common, simfile_helper]
 
 export simfile_common
 
-{.experimental: "codeReordering".}
-
 type
     InvalidNoteError* = object of ParseError
         ## Exception which is thrown when a Note is invalidly placed.

@@ -197,8 +197,6 @@ func columnCount*(mode: ChartType): int =
         result = 8
     of ChartType.PumpCouple, ChartType.PumpDouble:
         result = 10
-    else:
-        discard
 
 func newBpmChange*(beat: float, bpm: float): BpmChange =
     new result

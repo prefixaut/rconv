@@ -77,7 +77,7 @@ jobs:
 
       # Testing & Converage
       - name: Run tests with converage
-        run: coco --target 'tests/**/*.nim' --cov '!tests' --cov '!nimcache' -b --compiler '--hints:off' --gen_html=false
+        run: coco --target 'tests/**/*.nim' --cov '!tests,!nimcache' -b --compiler '--hints:off' --gen_html=false
 
       - name: 'Upload converage partial: ${{ runner.os }} - ${{ matrix.nim }}'
         uses: coverallsapp/github-action@master

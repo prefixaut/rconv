@@ -216,14 +216,14 @@ window.addEventListener('DOMContentLoaded', main);
         notes: seq[uint8] = @[]; holds: seq[Hold] = @[]): Tick</a></li>
 
   </ul>
-  <ul class="simple nested-toc-section">readFXFChartFile
-      <li><a class="reference" href="#readFXFChartFile%2CStream"
-    title="readFXFChartFile(stream: Stream): ChartFile">readFXFChartFile(stream: Stream): ChartFile</a></li>
+  <ul class="simple nested-toc-section">parseFXF
+      <li><a class="reference" href="#parseFXF%2CStream%2Cbool"
+    title="parseFXF(stream: Stream; lenient: bool = false): ChartFile">parseFXF(stream: Stream; lenient: bool = false): ChartFile</a></li>
 
   </ul>
-  <ul class="simple nested-toc-section">writeToStream
-      <li><a class="reference" href="#writeToStream%2CChartFile%2CStream"
-    title="writeToStream(chart: ChartFile; stream: Stream): void">writeToStream(chart: ChartFile; stream: Stream): void</a></li>
+  <ul class="simple nested-toc-section">write
+      <li><a class="reference" href="#write%2CChartFile%2CStream"
+    title="write(chart: ChartFile; stream: Stream): void">write(chart: ChartFile; stream: Stream): void</a></li>
 
   </ul>
 
@@ -261,9 +261,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 A change of BPM in the song/chart on a given time
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L61"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L59"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L61" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L59" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -277,9 +277,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 A single FXF chart which holds the note/hold information
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L52"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L50"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L52" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L50" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -296,9 +296,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 Multiple charts keyed by their difficulties
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L37"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L35"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L37" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L35" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -318,9 +318,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 A single file containing all meta information and chart data with multiple difficulties
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L15"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L13"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L15" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L13" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -336,9 +336,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 A hold is a regular note which needs to be held until a certain time. It starts on the <tt class="docutils literal"><span class="pre"><span class="Keyword">from</span></span></tt> position together with an animation which starts on the <tt class="docutils literal"><span class="pre"><span class="Identifier">to</span></span></tt> position. The hold resolves at the <tt class="docutils literal"><span class="pre"><span class="Identifier">releaseOn</span></span></tt> property (chart time, not offset), and is indicated with an animation.
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L102"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L100"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L102" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L100" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -348,9 +348,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L12"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L10"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L12" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L10" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -367,9 +367,9 @@ Range of note indices which need to be pressed/held at some time. e.g. [3, 10] -
 </p>
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L72"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L70"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L72" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L70" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -387,9 +387,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 A tick referres to a time in the chart, where one or more actions need to be performed.
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L84"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L82"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L84" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L82" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -404,9 +404,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L9"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L7"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L9" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L7" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -422,9 +422,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 Creates formatting-parameters from the provided chart-file
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L167"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L165"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L167" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L165" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -435,9 +435,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L144"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L142"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L144" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L142" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -448,9 +448,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L138"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L136"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L138" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L136" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -462,9 +462,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L129"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L115"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L129" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L115" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -477,9 +477,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L117"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L124"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L117" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L124" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -490,9 +490,9 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L161"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L159"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L161" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L159" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -504,35 +504,36 @@ class="link-seesrc" target="_blank">Source</a>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L151"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L149"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L151" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L149" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
-<div id="readFXFChartFile,Stream">
-<dt><pre><span class="Keyword">proc</span> <a href="#readFXFChartFile%2CStream"><span class="Identifier">readFXFChartFile</span></a><span class="Other">(</span><span class="Identifier">stream</span><span class="Other">:</span> <span class="Identifier">Stream</span><span class="Other">)</span><span class="Other">:</span> <a href="fxf.html#ChartFile"><span class="Identifier">ChartFile</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">,</span>
-    <span class="Identifier">InvalidVersionException</span><span class="Other">,</span> <span class="Identifier">ValueError</span><span class="Other">,</span> <span class="Identifier">EncodingError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">ReadIOEffect</span><span class="Other">]</span></span>.}</pre></dt>
+<div id="parseFXF,Stream,bool">
+<dt><pre><span class="Keyword">proc</span> <a href="#parseFXF%2CStream%2Cbool"><span class="Identifier">parseFXF</span></a><span class="Other">(</span><span class="Identifier">stream</span><span class="Other">:</span> <span class="Identifier">Stream</span><span class="Other">;</span> <span class="Identifier">lenient</span><span class="Other">:</span> <span class="Identifier">bool</span> <span class="Other">=</span> <span class="Identifier">false</span><span class="Other">)</span><span class="Other">:</span> <a href="fxf.html#ChartFile"><span class="Identifier">ChartFile</span></a> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">,</span> <span class="Identifier">InvalidVersionException</span><span class="Other">,</span> <span class="Identifier">EncodingError</span><span class="Other">]</span><span class="Other">,</span>
+    <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">ReadIOEffect</span><span class="Other">]</span></span>.}</pre></dt>
 <dd>
 
-Load a FXF Chart File from the stream
+Parse a FXF Chart File from the stream
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L176"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L221"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L176" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L221" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
-<div id="writeToStream,ChartFile,Stream">
-<dt><pre><span class="Keyword">proc</span> <a href="#writeToStream%2CChartFile%2CStream"><span class="Identifier">writeToStream</span></a><span class="Other">(</span><span class="Identifier">chart</span><span class="Other">:</span> <a href="fxf.html#ChartFile"><span class="Identifier">ChartFile</span></a><span class="Other">;</span> <span class="Identifier">stream</span><span class="Other">:</span> <span class="Identifier">Stream</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">void</span> {.
-    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">]</span></span>.}</pre></dt>
+<div id="write,ChartFile,Stream">
+<dt><pre><span class="Keyword">proc</span> <a href="#write%2CChartFile%2CStream"><span class="Identifier">write</span></a><span class="Other">(</span><span class="Identifier">chart</span><span class="Other">:</span> <a href="fxf.html#ChartFile"><span class="Identifier">ChartFile</span></a><span class="Other">;</span> <span class="Identifier">stream</span><span class="Other">:</span> <span class="Identifier">Stream</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">void</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">IOError</span><span class="Other">,</span> <span class="Identifier">OSError</span><span class="Other">]</span><span class="Other">,</span>
+    <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">WriteIOEffect</span><span class="Other">]</span></span>.}</pre></dt>
 <dd>
 
 
 &nbsp;&nbsp;<a
-href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L244"
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/fxf.nim#L262"
 class="link-seesrc" target="_blank">Source</a>
-&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L244" class="link-seesrc" target="_blank" >Edit</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/fxf.nim#L262" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -546,7 +547,7 @@ class="link-seesrc" target="_blank">Source</a>
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br/>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2022-03-05 15:33:25 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2022-03-27 13:02:06 UTC</small>
       </div>
     </div>
   </div>

@@ -1,0 +1,10 @@
+parseFloatSafe	rconv/private/utils.html#parseFloatSafe,string,Option[float]	utils: parseFloatSafe(value: string; default: Option[float] = none[float]()): Option[\n    float]	
+parseIntSafe	rconv/private/utils.html#parseIntSafe,string,Option[int]	utils: parseIntSafe(value: string; default: Option[int] = none[int]()): Option[int]	
+parseBoolSafe	rconv/private/utils.html#parseBoolSafe,string,Option[bool]	utils: parseBoolSafe(value: string; default: Option[bool] = none[bool]()): Option[bool]	
+splitMin	rconv/private/utils.html#splitMin,string,string,int,string	utils: splitMin(str: string; sep: string; minCount: int; default: string = &quot;&quot;): seq[\n    string]	
+stripSplit	rconv/private/utils.html#stripSplit,string,string,int	utils: stripSplit(str: string; sep: string; maxSplit: int = -1): seq[string]	
+stripSplitMin	rconv/private/utils.html#stripSplitMin,string,string,int,string	utils: stripSplitMin(str: string; sep: string; minCount: int; default: string = &quot;&quot;): seq[\n    string]	
+last	rconv/private/utils.html#last,seq[T]	utils: last[T](collection: seq[T]): T	
+unshift	rconv/private/utils.html#unshift,seq[T]	utils: unshift[T](collection: var seq[T]): T	
+find	rconv/private/utils.html#find,seq[T],proc(T),int	utils: find[T](collection: seq[T]; fn: proc (element: T): bool; start: int = 0): int	
+existsOrCreateDirRecursive	rconv/private/utils.html#existsOrCreateDirRecursive,string	utils: existsOrCreateDirRecursive(path: string): void	

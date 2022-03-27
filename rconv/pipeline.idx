@@ -1,9 +1,1 @@
-toMalodyTimedElement	rconv/pipeline.html#toMalodyTimedElement,JsonNode	pipeline: toMalodyTimedElement(self: JsonNode): malody.TimedElement	
-toMalodyChart	rconv/pipeline.html#toMalodyChart,JsonNode	pipeline: toMalodyChart(self: JsonNode): malody.Chart	
-toJsonHook	rconv/pipeline.html#toJsonHook,T	pipeline: toJsonHook[T: memson.BpmRange](this: T): JsonNode	
-toJsonHook	rconv/pipeline.html#toJsonHook,T_2	pipeline: toJsonHook[T: OrderedTable[NoteRange, Note]](this: T): JsonNode	
-toJsonHook	rconv/pipeline.html#toJsonHook,T_3	pipeline: toJsonHook[T: memson.Note](this: T): JsonNode	
-toJsonHook	rconv/pipeline.html#toJsonHook,T_4	pipeline: toJsonHook[T: malody.Chart](this: T): JsonNode	
-toJsonHook	rconv/pipeline.html#toJsonHook,T_5	pipeline: toJsonHook[T: malody.TimedElement](this: T): JsonNode	
-toJsonHook	rconv/pipeline.html#toJsonHook,T_6	pipeline: toJsonHook[T: malody.Beat](this: T): JsonNode	
 convert	rconv/pipeline.html#convert,string,Option[FileType],FileType,Option[ConvertOptions]	pipeline: convert(file: string; fromType: Option[FileType]; to: FileType;\n        options: Option[ConvertOptions]): ConvertResult	

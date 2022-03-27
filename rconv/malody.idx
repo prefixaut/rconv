@@ -1,16 +1,18 @@
-Beat	rconv/malody.html#Beat	malody: Beat	
-EmptyBeat	rconv/malody.html#EmptyBeat	malody: EmptyBeat	
 InvalidModeException	rconv/malody.html#InvalidModeException	malody: InvalidModeException	
+Chart	rconv/malody.html#Chart	malody: Chart	
 ChartMode	rconv/malody.html#ChartMode	malody: ChartMode	
+SlideNoteType	rconv/malody.html#SlideNoteType	malody: SlideNoteType	
+MetaData	rconv/malody.html#MetaData	malody: MetaData	
 SongData	rconv/malody.html#SongData	malody: SongData	
 ModeData	rconv/malody.html#ModeData	malody: ModeData	
-MetaData	rconv/malody.html#MetaData	malody: MetaData	
-SlideNoteType	rconv/malody.html#SlideNoteType	malody: SlideNoteType	
+ExtraData	rconv/malody.html#ExtraData	malody: ExtraData	
+ExtraTestData	rconv/malody.html#ExtraTestData	malody: ExtraTestData	
+Beat	rconv/malody.html#Beat	malody: Beat	
 SoundCueType	rconv/malody.html#SoundCueType	malody: SoundCueType	
 ElementType	rconv/malody.html#ElementType	malody: ElementType	
 HoldType	rconv/malody.html#HoldType	malody: HoldType	
 TimedElement	rconv/malody.html#TimedElement	malody: TimedElement	
-Chart	rconv/malody.html#Chart	malody: Chart	
+EmptyBeat	rconv/malody.html#EmptyBeat	malody: EmptyBeat	
 getPriority	rconv/malody.html#getPriority,TimedElement	malody: getPriority(this: TimedElement): int	
 getSoundCueType	rconv/malody.html#getSoundCueType,int	malody: getSoundCueType(id: int): SoundCueType	
 getSlideNoteType	rconv/malody.html#getSlideNoteType,int	malody: getSlideNoteType(id: int): SlideNoteType	
@@ -30,3 +32,12 @@ newIndexHold	rconv/malody.html#newIndexHold,Beat,IndexRange,Beat,IndexRange	malo
 newColumnHold	rconv/malody.html#newColumnHold,Beat,KeyColumnRange,int,Beat,int	malody: newColumnHold(beat: Beat = EmptyBeat; column: KeyColumnRange = 0;\n              style: int = 0; endBeat: Beat = EmptyBeat; hits: int = 1): TimedElement	
 newCatchHold	rconv/malody.html#newCatchHold,Beat,int,CatchNoteType,Beat	malody: newCatchHold(beat: Beat = EmptyBeat; x: int = 0;\n             type: CatchNoteType = CatchNoteType.Hold; endBeat: Beat = EmptyBeat): TimedElement	
 asFormattingParams	rconv/malody.html#asFormattingParams,Chart	malody: asFormattingParams(chart: Chart): FormattingParameters	
+toTimedElement	rconv/malody.html#toTimedElement,JsonNode,bool	malody: toTimedElement(self: JsonNode; lenient: bool = false): TimedElement	
+toChart	rconv/malody.html#toChart,JsonNode,bool	malody: toChart(self: JsonNode; lenient: bool = false): Chart	
+toJsonHook	rconv/malody.html#toJsonHook,T	malody: toJsonHook[T: Chart](this: T): JsonNode	
+toJsonHook	rconv/malody.html#toJsonHook,T_2	malody: toJsonHook[T: TimedElement](this: T): JsonNode	
+toJsonHook	rconv/malody.html#toJsonHook,T_3	malody: toJsonHook[T: Beat](this: T): JsonNode	
+parseMalody	rconv/malody.html#parseMalody,string,bool	malody: parseMalody(data: string; lenient: bool = false): Chart	
+parseMalody	rconv/malody.html#parseMalody,Stream,bool	malody: parseMalody(stream: Stream; lenient: bool = false): Chart	
+write	rconv/malody.html#write,Chart,bool	malody: write(chart: Chart; pretty: bool = false): string	
+write	rconv/malody.html#write,Chart,Stream,bool	malody: write(chart: Chart; stream: Stream; pretty: bool = false): void	

@@ -7,4 +7,9 @@ Note	rconv/memson.html#Note	memson: Note
 Section	rconv/memson.html#Section	memson: Section	
 Snap	rconv/memson.html#Snap	memson: Snap	
 Memson	rconv/memson.html#Memson	memson: Memson	
+newMemson	rconv/memson.html#newMemson,string,string,Difficulty,int,float,BpmRange,seq[Section]	memson: newMemson(songTitle: string = &quot;&quot;; artist: string = &quot;&quot;;\n          difficulty: Difficulty = Difficulty.Basic; level: int = 1;\n          bpm: float = 0.0; bpmRange: BpmRange; sections: seq[Section] = @[]): Memson	
+newSection	rconv/memson.html#newSection,int,float,int,seq[int],seq[Snap],uint,OrderedTable[NoteRange,seq[Note]]	memson: newSection(index: int = 1; bpm: float = 0.0; partCount: int = 1;\n           timings: seq[int] = @[]; snaps: seq[Snap] = @[]; noteCount: uint = 0;\n           notes: OrderedTable[NoteRange, seq[Note]] = initOrderedTable()): Section	
+newSnap	rconv/memson.html#newSnap,int,int,int	memson: newSnap(length: int = 1; partIndex: int = 0; row = 0): Snap	
+newNote	rconv/memson.html#newNote,int,int	memson: newNote(time: int = 0; partIndex: int = 0): Note	
+newHold	rconv/memson.html#newHold,int,int,int,int,int,int	memson: newHold(time: int = 0; partIndex: int = 0; animationStartIndex: int = 0;\n        releaseTime: int = 0; releasePart: int = 0; releaseSection: int = 1): Note	
 parseDifficulty	rconv/memson.html#parseDifficulty,string	memson: parseDifficulty(input: string): Difficulty	

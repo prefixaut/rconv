@@ -1,0 +1,68 @@
+ChartType	rconv/private/simfile_common.html#ChartType	simfile_common: ChartType	
+Difficulty	rconv/private/simfile_common.html#Difficulty	simfile_common: Difficulty	
+Color	rconv/private/simfile_common.html#Color	simfile_common: Color	
+RadarValues	rconv/private/simfile_common.html#RadarValues	simfile_common: RadarValues	
+BpmChange	rconv/private/simfile_common.html#BpmChange	simfile_common: BpmChange	
+Stop	rconv/private/simfile_common.html#Stop	simfile_common: Stop	
+Delay	rconv/private/simfile_common.html#Delay	simfile_common: Delay	
+TimeSignature	rconv/private/simfile_common.html#TimeSignature	simfile_common: TimeSignature	
+InstrumentTrack	rconv/private/simfile_common.html#InstrumentTrack	simfile_common: InstrumentTrack	
+TickCount	rconv/private/simfile_common.html#TickCount	simfile_common: TickCount	
+BackgroundChange	rconv/private/simfile_common.html#BackgroundChange	simfile_common: BackgroundChange	
+Modifier	rconv/private/simfile_common.html#Modifier	simfile_common: Modifier	
+Attack	rconv/private/simfile_common.html#Attack	simfile_common: Attack	
+TimedAttack	rconv/private/simfile_common.html#TimedAttack	simfile_common: TimedAttack	
+ComboChange	rconv/private/simfile_common.html#ComboChange	simfile_common: ComboChange	
+SpeedChange	rconv/private/simfile_common.html#SpeedChange	simfile_common: SpeedChange	
+ScollSpeedChange	rconv/private/simfile_common.html#ScollSpeedChange	simfile_common: ScollSpeedChange	
+FakeSection	rconv/private/simfile_common.html#FakeSection	simfile_common: FakeSection	
+Label	rconv/private/simfile_common.html#Label	simfile_common: Label	
+columnCount	rconv/private/simfile_common.html#columnCount,ChartType	simfile_common: columnCount(mode: ChartType): int	
+newBpmChange	rconv/private/simfile_common.html#newBpmChange,float,float	simfile_common: newBpmChange(beat: float; bpm: float): BpmChange	
+newBpmChange	rconv/private/simfile_common.html#newBpmChange,Option[float],Option[float]	simfile_common: newBpmChange(beat: Option[float]; bpm: Option[float]): BpmChange	
+newStop	rconv/private/simfile_common.html#newStop,float,float	simfile_common: newStop(beat: float; duration: float): Stop	
+newStop	rconv/private/simfile_common.html#newStop,Option[float],Option[float]	simfile_common: newStop(beat: Option[float]; duration: Option[float]): Stop	
+newDelay	rconv/private/simfile_common.html#newDelay,float,float	simfile_common: newDelay(beat: float; duration: float): Delay	
+newDelay	rconv/private/simfile_common.html#newDelay,Option[float],Option[float]	simfile_common: newDelay(beat: Option[float]; duration: Option[float]): Delay	
+newTimeSignature	rconv/private/simfile_common.html#newTimeSignature,float,int,int	simfile_common: newTimeSignature(beat: float; numerator: int; denominator: int): TimeSignature	
+newTimeSignature	rconv/private/simfile_common.html#newTimeSignature,Option[float],Option[int],Option[int]	simfile_common: newTimeSignature(beat: Option[float]; numerator: Option[int];\n                 denominator: Option[int]): TimeSignature	
+newInstrumentTrack	rconv/private/simfile_common.html#newInstrumentTrack,string,string	simfile_common: newInstrumentTrack(instrument: string = &quot;&quot;; file: string = &quot;&quot;): InstrumentTrack	
+newComboChange	rconv/private/simfile_common.html#newComboChange,float,int,int	simfile_common: newComboChange(beat: float; hit: int; miss: int): ComboChange	
+newComboChange	rconv/private/simfile_common.html#newComboChange,Option[float],Option[int],Option[int]	simfile_common: newComboChange(beat: Option[float]; hit: Option[int]; miss: Option[int]): ComboChange	
+newSpeedChange	rconv/private/simfile_common.html#newSpeedChange,float,float,float,bool	simfile_common: newSpeedChange(beat: float; ratio: float; duration: float; inSeconds: bool): SpeedChange	
+newSpeedChange	rconv/private/simfile_common.html#newSpeedChange,Option[float],Option[float],Option[float],Option[bool]	simfile_common: newSpeedChange(beat: Option[float]; ratio: Option[float];\n               duration: Option[float]; inSeconds: Option[bool]): SpeedChange	
+newScollSpeedChange	rconv/private/simfile_common.html#newScollSpeedChange,float,float	simfile_common: newScollSpeedChange(beat: float; factor: float): ScollSpeedChange	
+newScollSpeedChange	rconv/private/simfile_common.html#newScollSpeedChange,Option[float],Option[float]	simfile_common: newScollSpeedChange(beat: Option[float]; factor: Option[float]): ScollSpeedChange	
+newFakeSection	rconv/private/simfile_common.html#newFakeSection,float,float	simfile_common: newFakeSection(beat: float; duration: float): FakeSection	
+newFakeSection	rconv/private/simfile_common.html#newFakeSection,Option[float],Option[float]	simfile_common: newFakeSection(beat: Option[float]; duration: Option[float]): FakeSection	
+newLabel	rconv/private/simfile_common.html#newLabel,float,string	simfile_common: newLabel(beat: float = 0.0; content: string = &quot;&quot;): Label	
+newBackgroundChange	rconv/private/simfile_common.html#newBackgroundChange,float,string,float,bool,bool,bool,string,string,string,Color,Color	simfile_common: newBackgroundChange(beat: float = 0.0; path: string = &quot;&quot;;\n                    updateRate: float = 0.0; crossFade: bool = false;\n                    stretchRewind: bool = false; stretchNoLoop: bool = false;\n                    effect: string = &quot;&quot;; file2: string = &quot;&quot;;\n                    transition: string = &quot;&quot;;\n                    color1: Color = [0.0, 0.0, 0.0, 0.0];\n                    color2: Color = [0.0, 0.0, 0.0, 0.0]): BackgroundChange	
+newModifier	rconv/private/simfile_common.html#newModifier,string,string,int,float,bool	simfile_common: newModifier(name: string; player: string = &quot;&quot;; approachRate: int = 1;\n            magnitude: float = 100; isPercent: bool = true): Modifier	
+newAttack	rconv/private/simfile_common.html#newAttack,float,seq[string]	simfile_common: newAttack(length: float = 0.0; mods: seq[string] = @[]): Attack	
+newTickCount	rconv/private/simfile_common.html#newTickCount,float,int	simfile_common: newTickCount(beat: float; count: int): TickCount	
+newTickCount	rconv/private/simfile_common.html#newTickCount,Option[float],Option[int]	simfile_common: newTickCount(beat: Option[float]; count: Option[int]): TickCount	
+splitByComma	rconv/private/simfile_common.html#splitByComma,string,bool	simfile_common: splitByComma(data: string; doStrip: bool = false): seq[string]	
+parseIntrumentTracks	rconv/private/simfile_common.html#parseIntrumentTracks,string	simfile_common: parseIntrumentTracks(data: string): seq[InstrumentTrack]	
+parseColor	rconv/private/simfile_common.html#parseColor,string	simfile_common: parseColor(data: string): Color	
+parseBackgroundChanges	rconv/private/simfile_common.html#parseBackgroundChanges,string	simfile_common: parseBackgroundChanges(data: string): seq[BackgroundChange]	
+parseStops	rconv/private/simfile_common.html#parseStops,string	simfile_common: parseStops(data: string): seq[Stop]	
+parseBpms	rconv/private/simfile_common.html#parseBpms,string	simfile_common: parseBpms(data: string): seq[BpmChange]	
+parseTimeSignatures	rconv/private/simfile_common.html#parseTimeSignatures,string	simfile_common: parseTimeSignatures(data: string): seq[TimeSignature]	
+parseModifier	rconv/private/simfile_common.html#parseModifier,string	simfile_common: parseModifier(data: string): Modifier	
+parseAttack	rconv/private/simfile_common.html#parseAttack,string	simfile_common: parseAttack(data: string): Attack	
+parseDelays	rconv/private/simfile_common.html#parseDelays,string	simfile_common: parseDelays(data: string): seq[Delay]	
+parseTickCounts	rconv/private/simfile_common.html#parseTickCounts,string	simfile_common: parseTickCounts(data: string): seq[TickCount]	
+parseComboChanges	rconv/private/simfile_common.html#parseComboChanges,string	simfile_common: parseComboChanges(data: string): seq[ComboChange]	
+parseSpeedChanges	rconv/private/simfile_common.html#parseSpeedChanges,string	simfile_common: parseSpeedChanges(data: string): seq[SpeedChange]	
+parseScollSpeedChanges	rconv/private/simfile_common.html#parseScollSpeedChanges,string	simfile_common: parseScollSpeedChanges(data: string): seq[ScollSpeedChange]	
+parseFakeSections	rconv/private/simfile_common.html#parseFakeSections,string	simfile_common: parseFakeSections(data: string): seq[FakeSection]	
+parseLabels	rconv/private/simfile_common.html#parseLabels,string	simfile_common: parseLabels(data: string): seq[Label]	
+parseRadarValues	rconv/private/simfile_common.html#parseRadarValues,string	simfile_common: parseRadarValues(data: string): RadarValues	
+boolFlag	rconv/private/simfile_common.html#boolFlag,bool	simfile_common: boolFlag(val: bool): string	
+putTag	rconv/private/simfile_common.html#putTag,string,string,string	simfile_common: putTag(str: var string; tag: string; value: string): void	
+write	rconv/private/simfile_common.html#write,Color	simfile_common: write(color: Color): string	
+write	rconv/private/simfile_common.html#write,BackgroundChange	simfile_common: write(change: BackgroundChange): string	
+write	rconv/private/simfile_common.html#write,Modifier	simfile_common: write(modi: Modifier): string	
+write	rconv/private/simfile_common.html#write,TimedAttack	simfile_common: write(attack: TimedAttack): string	
+`$`	rconv/private/simfile_common.html#$,ChartType	simfile_common: `$`(ct: ChartType): string	
+`$`	rconv/private/simfile_common.html#$,Difficulty	simfile_common: `$`(diff: Difficulty): string	

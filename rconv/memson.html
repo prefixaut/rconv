@@ -149,7 +149,7 @@ window.addEventListener('DOMContentLoaded', main);
                                              ## _`NoteRange`">Section</a></li>
   <li><a class="reference" href="#Snap"
     title="Snap = ref object
-  len*: int                  ## How many notes fit into a Snap.
+  length*: int               ## How many notes fit into a Snap.
   partIndex*: int            ## In which part of the original section this snap is defined.
   row*: RowIndex             ## The row in which this snap is defined.">Snap</a></li>
 
@@ -158,7 +158,42 @@ window.addEventListener('DOMContentLoaded', main);
 <li>
   <a class="reference reference-toplevel" href="#12" id="62">Procs</a>
   <ul class="simple simple-toc-section">
-      <ul class="simple nested-toc-section">parseDifficulty
+      <ul class="simple nested-toc-section">newHold
+      <li><a class="reference" href="#newHold%2Cint%2Cint%2Cint%2Cint%2Cint%2Cint"
+    title="newHold(time: int = 0; partIndex: int = 0; animationStartIndex: int = 0;
+        releaseTime: int = 0; releasePart: int = 0; releaseSection: int = 1): Note">newHold(time: int = 0; partIndex: int = 0; animationStartIndex: int = 0;
+        releaseTime: int = 0; releasePart: int = 0; releaseSection: int = 1): Note</a></li>
+
+  </ul>
+  <ul class="simple nested-toc-section">newMemson
+      <li><a class="reference" href="#newMemson%2Cstring%2Cstring%2CDifficulty%2Cint%2Cfloat%2CBpmRange%2Cseq%5BSection%5D"
+    title="newMemson(songTitle: string = &quot;&quot;; artist: string = &quot;&quot;;
+          difficulty: Difficulty = Difficulty.Basic; level: int = 1;
+          bpm: float = 0.0; bpmRange: BpmRange; sections: seq[Section] = @[]): Memson">newMemson(songTitle: string = &quot;&quot;; artist: string = &quot;&quot;;
+          difficulty: Difficulty = Difficulty.Basic; level: int = 1;
+          bpm: float = 0.0; bpmRange: BpmRange; sections: seq[Section] = @[]): Memson</a></li>
+
+  </ul>
+  <ul class="simple nested-toc-section">newNote
+      <li><a class="reference" href="#newNote%2Cint%2Cint"
+    title="newNote(time: int = 0; partIndex: int = 0): Note">newNote(time: int = 0; partIndex: int = 0): Note</a></li>
+
+  </ul>
+  <ul class="simple nested-toc-section">newSection
+      <li><a class="reference" href="#newSection%2Cint%2Cfloat%2Cint%2Cseq%5Bint%5D%2Cseq%5BSnap%5D%2Cuint%2COrderedTable%5BNoteRange%2Cseq%5BNote%5D%5D"
+    title="newSection(index: int = 1; bpm: float = 0.0; partCount: int = 1;
+           timings: seq[int] = @[]; snaps: seq[Snap] = @[]; noteCount: uint = 0;
+           notes: OrderedTable[NoteRange, seq[Note]] = initOrderedTable()): Section">newSection(index: int = 1; bpm: float = 0.0; partCount: int = 1;
+           timings: seq[int] = @[]; snaps: seq[Snap] = @[]; noteCount: uint = 0;
+           notes: OrderedTable[NoteRange, seq[Note]] = initOrderedTable()): Section</a></li>
+
+  </ul>
+  <ul class="simple nested-toc-section">newSnap
+      <li><a class="reference" href="#newSnap%2Cint%2Cint%2Cint"
+    title="newSnap(length: int = 1; partIndex: int = 0; row = 0): Snap">newSnap(length: int = 1; partIndex: int = 0; row = 0): Snap</a></li>
+
+  </ul>
+  <ul class="simple nested-toc-section">parseDifficulty
       <li><a class="reference" href="#parseDifficulty%2Cstring"
     title="parseDifficulty(input: string): Difficulty">parseDifficulty(input: string): Difficulty</a></li>
 
@@ -321,7 +356,7 @@ class="link-seesrc" target="_blank">Source</a>
 </div>
 <div id="Snap">
 <dt><pre><a href="memson.html#Snap"><span class="Identifier">Snap</span></a> <span class="Other">=</span> <span class="Keyword">ref</span> <span class="Keyword">object</span>
-  <span class="Identifier">len</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>                  <span class="Comment">## How many notes fit into a Snap.</span>
+  <span class="Identifier">length</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>               <span class="Comment">## How many notes fit into a Snap.</span>
   <span class="Identifier">partIndex</span><span class="Operator">*</span><span class="Other">:</span> <span class="Identifier">int</span>            <span class="Comment">## In which part of the original section this snap is defined.</span>
   <span class="Identifier">row</span><span class="Operator">*</span><span class="Other">:</span> <a href="memson.html#RowIndex"><span class="Identifier">RowIndex</span></a>             <span class="Comment">## The row in which this snap is defined.</span>
   </pre></dt>
@@ -340,8 +375,25 @@ class="link-seesrc" target="_blank">Source</a>
 <div class="section" id="12">
 <h1><a class="toc-backref" href="#12">Procs</a></h1>
 <dl class="item">
-<div id="parseDifficulty,string">
-<dt><pre><span class="Keyword">func</span> <a href="#parseDifficulty%2Cstring"><span class="Identifier">parseDifficulty</span></a><span class="Other">(</span><span class="Identifier">input</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <a href="memson.html#Difficulty"><span class="Identifier">Difficulty</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+<div id="newHold,int,int,int,int,int,int">
+<dt><pre><span class="Keyword">func</span> <a href="#newHold%2Cint%2Cint%2Cint%2Cint%2Cint%2Cint"><span class="Identifier">newHold</span></a><span class="Other">(</span><span class="Identifier">time</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">;</span> <span class="Identifier">partIndex</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">;</span> <span class="Identifier">animationStartIndex</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">;</span>
+             <span class="Identifier">releaseTime</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">;</span> <span class="Identifier">releasePart</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">;</span> <span class="Identifier">releaseSection</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">1</span><span class="Other">)</span><span class="Other">:</span> <a href="memson.html#Note"><span class="Identifier">Note</span></a> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+<dd>
+
+
+&nbsp;&nbsp;<a
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L145"
+class="link-seesrc" target="_blank">Source</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L145" class="link-seesrc" target="_blank" >Edit</a>
+
+</dd>
+</div>
+<div id="newMemson,string,string,Difficulty,int,float,BpmRange,seq[Section]">
+<dt><pre><span class="Keyword">func</span> <a href="#newMemson%2Cstring%2Cstring%2CDifficulty%2Cint%2Cfloat%2CBpmRange%2Cseq%5BSection%5D"><span class="Identifier">newMemson</span></a><span class="Other">(</span><span class="Identifier">songTitle</span><span class="Other">:</span> <span class="Identifier">string</span> <span class="Other">=</span> <span class="StringLit">&quot;&quot;</span><span class="Other">;</span> <span class="Identifier">artist</span><span class="Other">:</span> <span class="Identifier">string</span> <span class="Other">=</span> <span class="StringLit">&quot;&quot;</span><span class="Other">;</span>
+               <span class="Identifier">difficulty</span><span class="Other">:</span> <a href="memson.html#Difficulty"><span class="Identifier">Difficulty</span></a> <span class="Other">=</span> <a href="memson.html#Difficulty"><span class="Identifier">Difficulty</span></a><span class="Other">.</span><span class="Identifier">Basic</span><span class="Other">;</span> <span class="Identifier">level</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">1</span><span class="Other">;</span>
+               <span class="Identifier">bpm</span><span class="Other">:</span> <span class="Identifier">float</span> <span class="Other">=</span> <span class="FloatNumber">0.0</span><span class="Other">;</span> <span class="Identifier">bpmRange</span><span class="Other">:</span> <a href="memson.html#BpmRange"><span class="Identifier">BpmRange</span></a><span class="Other">;</span>
+               <span class="Identifier">sections</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><a href="memson.html#Section"><span class="Identifier">Section</span></a><span class="Other">]</span> <span class="Other">=</span> <span class="Operator">@</span><span class="Other">[</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <a href="memson.html#Memson"><span class="Identifier">Memson</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
 <dd>
 
 
@@ -349,6 +401,59 @@ class="link-seesrc" target="_blank">Source</a>
 href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L99"
 class="link-seesrc" target="_blank">Source</a>
 &nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L99" class="link-seesrc" target="_blank" >Edit</a>
+
+</dd>
+</div>
+<div id="newNote,int,int">
+<dt><pre><span class="Keyword">func</span> <a href="#newNote%2Cint%2Cint"><span class="Identifier">newNote</span></a><span class="Other">(</span><span class="Identifier">time</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">;</span> <span class="Identifier">partIndex</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">)</span><span class="Other">:</span> <a href="memson.html#Note"><span class="Identifier">Note</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+<dd>
+
+
+&nbsp;&nbsp;<a
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L140"
+class="link-seesrc" target="_blank">Source</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L140" class="link-seesrc" target="_blank" >Edit</a>
+
+</dd>
+</div>
+<div id="newSection,int,float,int,seq[int],seq[Snap],uint,OrderedTable[NoteRange,seq[Note]]">
+<dt><pre><span class="Keyword">func</span> <a href="#newSection%2Cint%2Cfloat%2Cint%2Cseq%5Bint%5D%2Cseq%5BSnap%5D%2Cuint%2COrderedTable%5BNoteRange%2Cseq%5BNote%5D%5D"><span class="Identifier">newSection</span></a><span class="Other">(</span><span class="Identifier">index</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">1</span><span class="Other">;</span> <span class="Identifier">bpm</span><span class="Other">:</span> <span class="Identifier">float</span> <span class="Other">=</span> <span class="FloatNumber">0.0</span><span class="Other">;</span> <span class="Identifier">partCount</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">1</span><span class="Other">;</span>
+                <span class="Identifier">timings</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">int</span><span class="Other">]</span> <span class="Other">=</span> <span class="Operator">@</span><span class="Other">[</span><span class="Other">]</span><span class="Other">;</span> <span class="Identifier">snaps</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><a href="memson.html#Snap"><span class="Identifier">Snap</span></a><span class="Other">]</span> <span class="Other">=</span> <span class="Operator">@</span><span class="Other">[</span><span class="Other">]</span><span class="Other">;</span>
+                <span class="Identifier">noteCount</span><span class="Other">:</span> <span class="Identifier">uint</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">;</span>
+                <span class="Identifier">notes</span><span class="Other">:</span> <span class="Identifier">OrderedTable</span><span class="Other">[</span><a href="memson.html#NoteRange"><span class="Identifier">NoteRange</span></a><span class="Other">,</span> <span class="Identifier">seq</span><span class="Other">[</span><a href="memson.html#Note"><span class="Identifier">Note</span></a><span class="Other">]</span><span class="Other">]</span> <span class="Other">=</span> <span class="Identifier">initOrderedTable</span><span class="Other">(</span><span class="Other">)</span><span class="Other">)</span><span class="Other">:</span> <a href="memson.html#Section"><span class="Identifier">Section</span></a> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+<dd>
+
+
+&nbsp;&nbsp;<a
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L117"
+class="link-seesrc" target="_blank">Source</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L117" class="link-seesrc" target="_blank" >Edit</a>
+
+</dd>
+</div>
+<div id="newSnap,int,int,int">
+<dt><pre><span class="Keyword">func</span> <a href="#newSnap%2Cint%2Cint%2Cint"><span class="Identifier">newSnap</span></a><span class="Other">(</span><span class="Identifier">length</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">1</span><span class="Other">;</span> <span class="Identifier">partIndex</span><span class="Other">:</span> <span class="Identifier">int</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">;</span> <span class="Identifier">row</span> <span class="Other">=</span> <span class="DecNumber">0</span><span class="Other">)</span><span class="Other">:</span> <a href="memson.html#Snap"><span class="Identifier">Snap</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span>
+    <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+<dd>
+
+
+&nbsp;&nbsp;<a
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L134"
+class="link-seesrc" target="_blank">Source</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L134" class="link-seesrc" target="_blank" >Edit</a>
+
+</dd>
+</div>
+<div id="parseDifficulty,string">
+<dt><pre><span class="Keyword">func</span> <a href="#parseDifficulty%2Cstring"><span class="Identifier">parseDifficulty</span></a><span class="Other">(</span><span class="Identifier">input</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <a href="memson.html#Difficulty"><span class="Identifier">Difficulty</span></a> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+<dd>
+
+
+&nbsp;&nbsp;<a
+href="https://github.com/prefixaut/rconv/tree/master/src/rconv/memson.nim#L161"
+class="link-seesrc" target="_blank">Source</a>
+&nbsp;&nbsp;<a href="https://github.com/prefixaut/rconv/edit/master/src/rconv/memson.nim#L161" class="link-seesrc" target="_blank" >Edit</a>
 
 </dd>
 </div>
@@ -362,7 +467,7 @@ class="link-seesrc" target="_blank">Source</a>
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br/>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2022-03-05 15:33:25 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2022-03-27 13:02:06 UTC</small>
       </div>
     </div>
   </div>

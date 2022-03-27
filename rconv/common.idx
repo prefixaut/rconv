@@ -13,16 +13,16 @@ OneMinute	rconv/common.html#OneMinute	common: OneMinute
 PlaceholderTitle	rconv/common.html#PlaceholderTitle	common: PlaceholderTitle	
 PlaceholderArtist	rconv/common.html#PlaceholderArtist	common: PlaceholderArtist	
 PlaceholderDifficulty	rconv/common.html#PlaceholderDifficulty	common: PlaceholderDifficulty	
-PlaceholderExtension	rconv/common.html#PlaceholderExtension	common: PlaceholderExtension	
+PlaceholderLevel	rconv/common.html#PlaceholderLevel	common: PlaceholderLevel	
+PlaceholderMode	rconv/common.html#PlaceholderMode	common: PlaceholderMode	
 DefaultFolderFormat	rconv/common.html#DefaultFolderFormat	common: DefaultFolderFormat	
 DefaultChartFormat	rconv/common.html#DefaultChartFormat	common: DefaultChartFormat	
 DefaultNonDifficultyChartFormat	rconv/common.html#DefaultNonDifficultyChartFormat	common: DefaultNonDifficultyChartFormat	
 newConvertOptions	rconv/common.html#newConvertOptions,bool,bool,bool,bool,bool,string,bool,bool,bool,string,string	common: newConvertOptions(bundle: bool = false; songFolders: bool = false;\n                  jsonPretty: bool = false; keep: bool = false;\n                  merge: bool = false; output: string = &quot;.&quot;;\n                  preserve: bool = false; resources: bool = false;\n                  normalize: bool = false;\n                  folderFormat: string = DefaultFolderFormat;\n                  chartFormat: string = &quot;&quot;): ConvertOptions	
-newFormattingParameters	rconv/common.html#newFormattingParameters,string,string,string,string	common: newFormattingParameters(title: string = &quot;untitled&quot;; artist: string = &quot;unknown&quot;;\n                        difficulty: string = &quot;edit&quot;; extension: string = &quot;txt&quot;): FormattingParameters	
+newFormattingParameters	rconv/common.html#newFormattingParameters,string,string,string,string,string,string	common: newFormattingParameters(title: string = &quot;untitled&quot;; artist: string = &quot;unknown&quot;;\n                        difficulty: string = &quot;edit&quot;; level: string = &quot;&quot;;\n                        mode: string = &quot;&quot;; extension: string = &quot;txt&quot;): FormattingParameters	
 formatFileName	rconv/common.html#formatFileName,ConvertOptions,FormattingParameters	common: formatFileName(this: ConvertOptions; params: FormattingParameters): string	
 formatFolderName	rconv/common.html#formatFolderName,ConvertOptions,FormattingParameters	common: formatFolderName(this: ConvertOptions; params: FormattingParameters): string	
 detectFileType	rconv/common.html#detectFileType,string	common: detectFileType(file: string): Option[FileType]	
 getFileExtension	rconv/common.html#getFileExtension,FileType	common: getFileExtension(fileType: FileType): string	
 getDefaultChartFormat	rconv/common.html#getDefaultChartFormat,FileType	common: getDefaultChartFormat(fileType: FileType): string	
 getDefaultOptions	rconv/common.html#getDefaultOptions,FileType	common: getDefaultOptions(to: FileType): ConvertOptions	
-log	rconv/common.html#log.m,string	common: log(message: string): untyped	

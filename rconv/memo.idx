@@ -1,1 +1,3 @@
-parseMemoToMemson	rconv/memo.html#parseMemoToMemson,string	memo: parseMemoToMemson(content: string): Memson	
+parseMemo	rconv/memo.html#parseMemo,string	memo: parseMemo(content: string): Memson	
+write	rconv/memo.html#write,Memson	memo: write(chart: Memson): string	
+write	rconv/memo.html#write,Memson,Stream	memo: write(chart: Memson; stream: Stream): void	

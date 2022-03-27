@@ -139,7 +139,7 @@ BPM: 160
 口口⑤口 |⑦－⑧－|
     """
 
-    let parsed = parseMemoToMemson(testFile)
+    let parsed = parseMemo(testFile)
 
     test "Chart: Meta-Data":
         check:
@@ -159,7 +159,7 @@ BPM: 160
             parsed.sections[0].noteCount == 0
             parsed.sections[0].notes.len == 0
             parsed.sections[0].snaps.len == 4
-            parsed.sections[0].snaps.all (snap) => snap.len == 4
+            parsed.sections[0].snaps.all (snap) => snap.length == 4
             parsed.sections[0].timings.len == 16
             parsed.sections[0].timings.all (timing) => timing == -1
 
@@ -171,7 +171,7 @@ BPM: 160
             parsed.sections[1].noteCount == 7
             parsed.sections[1].notes.len == 7
             parsed.sections[1].snaps.len == 4
-            parsed.sections[1].snaps.all (snap) => snap.len == 4
+            parsed.sections[1].snaps.all (snap) => snap.length == 4
 
     noteBlock "Section 2", parsed.sections[1].notes:
         verifyNote(index = 0, time = 4)
@@ -209,7 +209,7 @@ BPM: 160
             parsed.sections[2].noteCount == 14
             parsed.sections[2].notes.len == 14
             parsed.sections[2].snaps.len == 4
-            parsed.sections[2].snaps.all (snap) => snap.len == 4
+            parsed.sections[2].snaps.all (snap) => snap.length == 4
 
 
     noteBlock "Section 3", parsed.sections[2].notes:
@@ -255,10 +255,10 @@ BPM: 160
             parsed.sections[3].noteCount == 12
             parsed.sections[3].notes.len == 12
             parsed.sections[3].snaps.len == 4
-            parsed.sections[3].snaps[0].len == 6
-            parsed.sections[3].snaps[1].len == 4
-            parsed.sections[3].snaps[2].len == 8
-            parsed.sections[3].snaps[3].len == 4
+            parsed.sections[3].snaps[0].length == 6
+            parsed.sections[3].snaps[1].length == 4
+            parsed.sections[3].snaps[2].length == 8
+            parsed.sections[3].snaps[3].length == 4
 
     noteBlock "Section 4", notes = parsed.sections[3].notes:
         verifyNote(index = 0, time = 19, part = 1)
@@ -320,7 +320,7 @@ BPM: 160
             parsed.sections[4].noteCount == 14
             parsed.sections[4].notes.len == 13
             parsed.sections[4].snaps.len == 4
-            parsed.sections[4].snaps.all (snap) => snap.len == 4
+            parsed.sections[4].snaps.all (snap) => snap.length == 4
             parsed.sections[4].snaps[0].partIndex == 0
             parsed.sections[4].snaps[1].partIndex == 0
             parsed.sections[4].snaps[2].partIndex == 1

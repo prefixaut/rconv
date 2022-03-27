@@ -10,7 +10,7 @@ let cli = newParser:
 
     flag("-b", "--bundle",
         help="All output files should instead be bundles (if the output type supports it).")
-    flag("-c", "--color", 
+    flag("-c", "--color",
         help="Enable print messages to be in color.")
     flag("-C", "--clean",
         help="If it should clean (delete all contents) of the output folder. Disabled if 'preserve' is enabled.")
@@ -24,6 +24,8 @@ let cli = newParser:
         help="Output JSON data prettily.")
     flag("-k", "--keep",
         help="If it should keep the original meta data when merging a file.")
+    flag("-l", "--lenient",
+        help="If parsing of the files should be lenient/not strict - Ignores certain syntax errors.")
     flag("-m", "--merge",
         help="Merge all possible charts into existing files.")
     option("-o", "--output", default=some("."),
@@ -38,17 +40,17 @@ let cli = newParser:
         help="Copy all neccessary resources (Sound-File, Jacket) to the output directory. Should only be used in comination with the \"song-folders\" option.")
     flag("-s", "--stats",
         help="Show stats on the end of the operation.")
-    option("-t", "--to", required=true, choices=(@["fxf", "malody", "memo"]),
+    option("-t", "--to", required=true, choices=(@["fxf", "malody", "memo", "sm"]),
         help="The output type.")
     flag("-n", "--normalize",
         help="Normalize the output-paths (folder/file).")
     flag("-V", "--verbose",
         help="Print verbose messages on internal operations.")
     option("-x", "--folder-format", default=some(DefaultFolderFormat),
-        help=fmt"The format for song-folders. You may use the following placeholders: '{PlaceholderArtist}', '{PlaceholderTitle}'.")
+        help=fmt"The format for song-folders. You may use the following placeholders: '{PlaceholderArtist}', and '{PlaceholderTitle}'.")
     option("-z", "--chart-format",
-        help=fmt"The format for the output file-name. You may use the following placeholders: '{PlaceholderArtist}', '{PlaceholderTitle}', '{PlaceholderDifficulty}', and '{PlaceholderExtension}'." &
-            fmt"Defaults to '{DefaultNonDifficultyChartFormat}' on type 'fxf', otherwise to '{DefaultChartFormat}'")
+        help=fmt"The format for the output file-name. You may use the following placeholders: '{PlaceholderArtist}', '{PlaceholderTitle}', '{PlaceholderDifficulty}', '{PlaceholderLevel}', and '{PlaceholderMode}''." &
+        fmt"Defaults to a reasonable Format depending on the output format.")
     arg("files", nargs=(-1),
         help="Input-Files to convert. At least one has to be specified")
 
@@ -57,7 +59,11 @@ try:
     if params.files.len == 0:
         raise newException(ValueError, "No input-files specified!")
 
-    let to = parseEnum[FileType](params.to.toLower)
+    let to = try:
+        parseEnum[FileType](params.to.toLower)
+    except ValueError:
+        raise newException(ValueError, fmt"Specified invalid output type '{params.to}'!")
+
     if params.chart_format.isEmptyOrWhitespace:
         params.chart_format = getDefaultChartFormat(to)
     if not isAbsolute(params.output):
@@ -66,7 +72,7 @@ try:
     let convOptions = newConvertOptions(
         bundle = params.bundle,
         songFolders = params.song_folders,
-        jsonpretty = params.json_pretty,
+        jsonPretty = params.json_pretty,
         keep = params.keep,
         merge = params.merge,
         output = params.output,
@@ -96,7 +102,7 @@ try:
         for filePath in walkGlob(path):
             try:
                 discard convert(filePath, none(FileType), to, some(convOptions))
-            except malody.InvalidModeException:
+            except malody.InvalidModeException, InvalidTypeException, MissingTypeException, MissingConversionException:
                 discard
             except:
                 let e = newException(ConvertException, fmt"Failed to convert file '{filePath}'! Error: {getCurrentExceptionMsg()}", getCurrentException())

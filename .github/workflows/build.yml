@@ -1,12 +1,7 @@
 ---
-name: 'Build the application'
+name: Building & Testing
 
-on:
-  push:
-    branches: [ '*' ]
-    tags: [ '*' ]
-  pull_request:
-    branches: [ master ]
+on: ['push', 'pull_request']
 
 jobs:
   build:
@@ -14,8 +9,14 @@ jobs:
 
     strategy:
       matrix:
-        nim: [ '1.6.x', 'stable', 'devel' ]
-        os: [ 'ubuntu-latest', 'windows-latest', 'macos-latest' ]
+        nim:
+          - '1.6.x'
+          #- 'stable'
+          #- 'devel'
+        os:
+          - 'ubuntu-latest'
+          #- 'windows-latest'
+          #- 'macos-latest'
 
     runs-on: ${{ matrix.os }}
 
@@ -34,97 +35,69 @@ jobs:
           key: ${{ runner.os }}-nimble-${{ matrix.nim }}-${{ hashFiles('*.nimble') }}
         if: runner.os != 'Windows'
 
-      # Building & Testing
+      # Building
       - name: Install dependencies
         run: nimble install -Y
 
-      - name: Run tests
-        # Tests need to be added like this, because when you
-        # try to import/include them properly, they won't compile
-        # update correctly, and will forever fail for no reason.
-        run: |
-          nim r tests/tmemo.nim
-          nim r tests/tmemson.nim
-
       - name: Build CLI
-        run: nim cli
+        run: nimble build
 
       - name: Build library
-        run: nim lib
+        run: nimble clib
 
-  update-docs:
-    name: Update documentation
+      # Install perl on windows (linux and macos already have it installed)
+      - uses: shogo82148/actions-setup-perl@v1
+        if: runner.os == 'Windows'
+        with:
+          perl-version: '5.32'
+          distribution: strawberry
+      
+      # Install lcov
+      - name: Clone lcov
+        if: runner.os != 'Linux'
+        uses: actions/checkout@v2
+        with:
+          repository: 'linux-test-project/lcov'
+          path: './clones/lcov'
+      - name: Install lcov (Unix)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y lcov
+      - name: Install lcov (MacOS)
+        if: runner.os == 'macOS'
+        run: echo "todo"
+      - name: Install lcov (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          echo "perl .\clones\lcov\bin\lcov %*" > lcov
+          echo "perl .\clones\lcov\bin\gendesc %*" > gendesc
+          echo "perl .\clones\lcov\bin\genhtml %*" > genhtml
+          echo "perl .\clones\lcov\bin\geninfo %*" > geninfo
+          echo "perl .\clones\lcov\bin\genpng %*" > genpng
+          echo "PATH=%PATH%;%cd%" >> $GITHUB_ENV
 
-    if: ${{ github.ref == 'refs/heads/master' }}
-    needs: [build]
+      # Testing & Converage
+      - name: Run tests with converage
+        run: coco --target 'tests/**/*.nim' --cov '!tests,!nimcache' -b --compiler '--hints:off' --gen_html=false
+
+      - name: 'Upload converage partial: ${{ runner.os }} - ${{ matrix.nim }}'
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.github_token }}
+          flag-name: run-${{ runner.os }}-${{ matrix.nim }}
+          parallel: true
+          path-to-lcov: ./lcov.info
+
+  upload-coverage:
+    name: Upload converage
 
     runs-on: ubuntu-latest
 
-    steps:
-      # Basic Setup
-      - uses: actions/checkout@v2
-      - name: Setup Nim Environment 1.6.x
-        uses: jiro4989/setup-nim-action@v1
-        with:
-          nim-version: 1.6.x
-      - name: Cache nimble
-        id: cache-nimble
-        uses: actions/cache@v1
-        with:
-          path: ~/.nimble
-          key: ${{ runner.os }}-nimble-${{ matrix.nim }}-${{ hashFiles('*.nimble') }}
-
-      # Update documentation
-      - name: Build documentation
-        run: nim docs
-        if: ${{ runner.os == 'Linux' && github.ref == 'refs/heads/master' }}
-      - name: Deploy to GitHub-Pages
-        uses: JamesIves/github-pages-deploy-action@v4.2.3
-        if: ${{ runner.os == 'Linux' && github.ref == 'refs/heads/master' }}
-        with:
-          branch: gh-pages
-          folder: docs
-
-  release:
-    name: Release ${{ matrix.os }} with nim 1.6.x
-
-    if: ${{ startsWith(github.ref, 'refs/tags/') }}
-    needs: [build]
-
-    strategy:
-      matrix:
-        os: [ 'ubuntu-latest', 'windows-latest', 'macos-latest' ]
-
-    runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write
+    if: ${{ always() }}
+    needs: [ 'build' ]
 
     steps:
-      # Basic Setup
-      - uses: actions/checkout@v2
-      - name: Setup Nim Environment 1.6.x
-        uses: jiro4989/setup-nim-action@v1
+      - name: Coveralls Finished
+        uses: coverallsapp/github-action@master
         with:
-          nim-version: 1.6.x
-      - name: Cache nimble
-        id: cache-nimble
-        uses: actions/cache@v1
-        with:
-          path: ~/.nimble
-          key: ${{ runner.os }}-nimble-${{ matrix.nim }}-${{ hashFiles('*.nimble') }}
-        if: runner.os != 'Windows'
-
-      # Releases
-      - name: Create CLI Release Build
-        run: nim cli -d:release
-
-      - name: Create Library Release Build
-        run: nim build -d:release
-
-      - name: Release
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: "dist/*"
-          allowUpdates: true
-          prerelease: ${{ endsWith(github.ref, 'rc') || endsWith(github.ref, 'snapshot') }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.github_token }}
+          parallel-finished: true

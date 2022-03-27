@@ -1,0 +1,37 @@
+---
+name: Documentation update
+
+on:
+  push:
+    branches: [ 'master' ]
+
+jobs:
+  update-docs:
+    name: Update Documentation
+
+    runs-on: ubuntu-latest
+
+    steps:
+      # Basic Setup
+      - uses: actions/checkout@v2
+      - name: Setup Nim Environment 1.6.x
+        uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: 1.6.x
+      - name: Cache nimble
+        id: cache-nimble
+        uses: actions/cache@v1
+        with:
+          path: ~/.nimble
+          key: ${{ runner.os }}-nimble-${{ matrix.nim }}-${{ hashFiles('*.nimble') }}
+
+      # Build documentation
+      - name: Build documentation
+        run: nimble docs
+
+      # Deploy the documentation
+      - name: Deploy to GitHub-Pages
+        uses: JamesIves/github-pages-deploy-action@v4.2.3
+        with:
+          branch: gh-pages
+          folder: docs

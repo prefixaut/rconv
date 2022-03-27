@@ -1,12 +1,16 @@
-import std/[macros, options, strformat, strutils]
+import std/[options, strformat, strutils]
+
+import pkg/regex
 
 type
     FileType* {.pure.} = enum
         ## File types which are supported
-        Memo = "memo",
-        Memo2 = "memo2",
-        Malody = "malody",
-        StepMania = "stepmania",
+        Memo = "memo"
+        Memo2 = "memo2"
+        Malody = "malody"
+        StepMania = "sm"
+        StepMania5 = "sm5"
+        KickItUp = "ksf"
         FXF = "fxf"
 
     ConvertOptions* = object
@@ -19,6 +23,8 @@ type
         ## If the output-type is json based, if it should format it prettyly
         keep*: bool
         ## If it should keep the original meta-data when merging a file
+        lenient*: bool
+        ## If parsing of the files should be lenient/not strict - Ignores certain syntax errors
         merge*: bool
         ## If the output-type supports multiple charts to be in a single file,
         ## if it should merge existing and new charts together.
@@ -28,7 +34,7 @@ type
         ## If it should preserve any existing output-files.
         ## Doesn't save the convertion at all then.
         resources*: bool
-        ## If it should copy over all referenced resources (audio, graphics, etc.) 
+        ## If it should copy over all referenced resources (audio, graphics, etc.)
         ## to the charts output folder.
         normalize*: bool
         ## If it should normalize the output-paths (folder/file).
@@ -42,6 +48,8 @@ type
         title*: string
         artist*: string
         difficulty*: string
+        level*: string
+        mode*: string
         extension*: string
 
     ConvertResult* = object
@@ -54,8 +62,9 @@ type
         ## Absolute file-path to the file.
 
     CombinedError* = object of CatchableError
-        ## An error which combines multiple error messages into one.
+        ## An error which combines/collects multiple error messages into one.
         errors*: seq[ref Exception]
+        ## The combined/collected errors.
 
     ParseError* = object of CatchableError ## \
     ## Error which occurs when parsing of a file failed.
@@ -98,15 +107,20 @@ const
     ## Placeholder for the charts artist
     PlaceholderDifficulty* = "%difficulty%" ## \
     ## Placeholder for the charts difficulty
-    PlaceholderExtension* = "%ext%" ## \
-    ## Placeholder for the file extension
+    PlaceholderLevel* = "%level%" ## \
+    ## Placeholder for the charts difficulty-level
+    PlaceholderMode* = "%mode%" ## \
+    ## Placeholder for the chart mode
     DefaultFolderFormat* = fmt"{PlaceholderTitle} ({PlaceholderArtist})" ## \
     ## Default format for folders
-    DefaultChartFormat* = fmt"{PlaceholderArtist} - {PlaceholderTitle}_{PlaceholderDifficulty}.{PlaceholderExtension}" ## \
+    DefaultChartFormat* = fmt"{PlaceholderArtist} - {PlaceholderTitle}_{PlaceholderDifficulty}_{PlaceholderLevel}_{PlaceholderMode}" ## \
     ## Default format for charts which have a separate file per difficulty
-    DefaultNonDifficultyChartFormat* = fmt"{PlaceholderArtist} - {PlaceholderTitle}.{PlaceholderExtension}" ## \
+    DefaultNonDifficultyChartFormat* = fmt"{PlaceholderArtist} - {PlaceholderTitle}" ## \
     ## Default format for charts which have all difficulties in one file
-    debug = true
+    FormatReplaceRegex = re"([[:punct:][:cntrl:]]+)" ## \
+    ## Regex to replace multiple separators and other invalid entities with dashes
+    FormatCleanupRegex = re"([[:space:]_]+)|([[:space:][:punct:]])+$|(\([[:space:]_\-\+]*\))|^([[:space:][:punct:]])+" ## \
+    ## Regex to remove ending separators and empty brackets
 
 func newConvertOptions*(
     bundle: bool = false,
@@ -139,6 +153,8 @@ func newFormattingParameters*(
     title: string = "untitled",
     artist: string = "unknown",
     difficulty: string = "edit",
+    level: string = "",
+    mode: string = "",
     extension: string = "txt",
 ): FormattingParameters =
     ## Function to create a new `FormattingParameters` instance.
@@ -147,10 +163,12 @@ func newFormattingParameters*(
         title: title,
         artist: artist,
         difficulty: difficulty,
+        level: level,
+        mode: mode,
         extension: extension,
     )
 
-func formatFileName*(this: ConvertOptions, params: FormattingParameters): string =
+proc formatFileName*(this: ConvertOptions, params: FormattingParameters): string =
     ## Formats the `ConvertOptions`' `chartFormat` by replacing the Placeholders
     ## with the provided formatting parameters.
 
@@ -158,7 +176,11 @@ func formatFileName*(this: ConvertOptions, params: FormattingParameters): string
         .replace(PlaceholderTitle, params.title)
         .replace(PlaceholderArtist, params.artist)
         .replace(PlaceholderDifficulty, params.difficulty)
-        .replace(PlaceholderExtension, params.extension)
+        .replace(PlaceholderLevel, params.level)
+        .replace(PlaceholderMode, params.mode)
+        .replace(FormatReplaceRegex, "-")
+        .replace(FormatCleanupRegex, "")
+    result &= "." & params.extension
 
     if this.normalize:
         result = normalize(result)
@@ -193,6 +215,10 @@ func detectFileType*(file: string): Option[FileType] =
             result = some(FileType.FXF)
         of "sm":
             result = some(FileType.StepMania)
+        of "ssc":
+            result = some(FileType.StepMania5)
+        of "ksf":
+            result = some(FileType.KickItUp)
 
 func getFileExtension*(fileType: FileType): string =
     ## Get's the file-extension for the provided file-type
@@ -205,32 +231,28 @@ func getFileExtension*(fileType: FileType): string =
     of FileType.Malody:
         result = "mc"
     of FileType.FXF:
-        result = "fxfc"
+        result = "fxf"
     of FileType.StepMania:
         result = "sm"
+    of FileType.StepMania5:
+        result = "ssc"
+    of FileType.KickItUp:
+        result = "ksf"
 
 func getDefaultChartFormat*(fileType: FileType): string =
     ## Gets the default chart-format for the provided file-type
 
     case fileType:
-    of FileType.FXF:
+    of FileType.FXF, FileType.StepMania:
         return DefaultNonDifficultyChartFormat
     else:
         return DefaultChartFormat
 
 func getDefaultOptions*(to: FileType): ConvertOptions =
     ## Creates file-type specific default-options.
-    ## 
+    ##
     ## See also:
     ## * `getDefaultChartFormat,FileType`_
 
     let format = getDefaultChartFormat(to)
     result = newConvertOptions(chartFormat = format)
-
-macro log*(message: string): untyped =
-    ## Internal logging function which will be removed soon
-
-    if debug:
-        result = quote do:
-            {.cast(noSideEffect).}:
-                echo `message`

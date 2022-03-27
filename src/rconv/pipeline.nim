@@ -1,6 +1,7 @@
-import std/[json, jsonutils, tables, streams, strformat, options, os]
+import std/[streams, strformat, options, os]
 
 import ./common, mapper
+import ./private/utils
 
 # Import different game-modes into own scopes, as they often
 # have colliding types
@@ -8,8 +9,7 @@ import ./fxf as fxf
 import ./malody as malody
 import ./memo as memo
 import ./memson as memson
-
-include ./private/json_hooks
+import ./step_mania as sm
 
 {.experimental: "codeReordering".}
 
@@ -37,27 +37,63 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
 
     case actualFrom:
     of FileType.Memo:
+        let raw = readFile(file)
+        let parsed = memo.parseMemo(raw)
+
         case to:
         of FileType.FXF:
-            let raw = readFile(file)
-            let parsed = memo.parseMemoToMemson(raw)
             var chart = parsed.toFXF
             result = saveChart(chart, actualOptions, some($parsed.difficulty))
+
         of FileType.Malody:
-            let raw = readFile(file)
-            let parsed = memo.parseMemoToMemson(raw)
-            var chart = parsed.toMalody
+            let chart = parsed.toMalody
             result = saveChart(chart, actualOptions)
+
         else:
             raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
 
     of FileType.Malody:
+        var raw = readFile(file)
+        var parsed = malody.parseMalody(raw, actualOptions.lenient)
+
         case to:
         of FileType.FXF:
-            var raw = parseJson(readFile(file))
-            var mc = raw.toMalodyChart()
-            var chart = mc.toFXF
+            var chart = parsed.toFXF
             result = saveChart(chart, actualOptions, none(string))
+
+        of FileType.Malody:
+            result = saveChart(parsed, actualOptions)
+
+        of FileType.StepMania:
+            let chart = parsed.toStepMania
+            result = saveChart(chart, actualOptions)
+
+        else:
+            raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
+
+    of FileType.StepMania:
+        let raw = readFile(file)
+        let parsed = sm.parseStepMania(raw, actualOptions.lenient)
+
+        case to:
+        of FileType.Malody:
+            let chart = parsed.toMalody
+            result = saveChart(chart, actualOptions)
+
+        of FileType.StepMania:
+            result = saveChart(parsed, actualOptions)
+
+        else:
+            raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
+
+    of FileType.FXF:
+        var stream = openFileStream(file)
+        var parsed = fxf.parseFXF(stream)
+
+        case to:
+        of FileType.FXF:
+            result = saveChart(parsed, actualOptions)
+
         else:
             raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
 
@@ -85,15 +121,15 @@ proc saveChart(chart: var fxf.ChartFile, options: ConvertOptions, diff: Option[s
     let filePath = joinPath(outDir, options.formatFileName(params))
 
     if fileExists(filePath) and options.preserve:
-        # TODO: Logging?
         raise newException(PreserveFileException, fmt"Output-File already exists: {filePath}")
 
-    discard existsOrCreateDir(outDir & DirSep)
+    existsOrCreateDirRecursive(outDir)
 
     if fileExists(filePath) and options.merge:
+        # TODO: Merge it the other way, to make the `chart` parameter not editable
         try:
             var readStrm = newFileStream(filePath, fmRead)
-            var existing = readStrm.readFXFChartFile
+            var existing = fxf.parseFXF(readStrm)
             readStrm.close
 
             if options.keep:
@@ -114,7 +150,7 @@ proc saveChart(chart: var fxf.ChartFile, options: ConvertOptions, diff: Option[s
             raise newException(ConvertException, fmt"Error while merging existing file {filePath}", getCurrentException())
 
     var writeStrm = newFileStream(filePath, fmWrite)
-    chart.writeToStream(writeStrm)
+    chart.write(writeStrm)
     writeStrm.flush
     writeStrm.close
 
@@ -123,8 +159,7 @@ proc saveChart(chart: var fxf.ChartFile, options: ConvertOptions, diff: Option[s
         filePath: filePath
     )
 
-proc saveChart(chart: var malody.Chart, options: ConvertOptions): ConvertResult =
-
+proc saveChart(chart: malody.Chart, options: ConvertOptions): ConvertResult =
     let params = malody.asFormattingParams(chart)
 
     var outDir = options.output
@@ -137,16 +172,36 @@ proc saveChart(chart: var malody.Chart, options: ConvertOptions): ConvertResult 
     let filePath = joinPath(outDir, options.formatFileName(params))
 
     if fileExists(filePath) and options.preserve:
-        # TODO: Logging?
         raise newException(PreserveFileException, fmt"Output-File already exists: {filePath}")
 
-    discard existsOrCreateDir(outDir & DirSep)
+    existsOrCreateDirRecursive(outDir)
 
-    var str = ""
-    if options.jsonPretty:
-        str = toJsonHook(chart).pretty
-    else:
-        toUgly(str, toJson(chart))
+    var str = chart.write(options.jsonPretty)
+    writeFile(filePath, str)
+
+    result = ConvertResult(
+        folderName: folderName,
+        filePath: filePath
+    )
+
+proc saveChart(chart: sm.ChartFile, options: ConvertOptions): ConvertResult =
+    let params = sm.asFormattingParams(chart)
+
+    var outDir = options.output
+    if not isAbsolute(outDir):
+        outDir = joinPath(getCurrentDir(), outDir)
+    var folderName = ""
+    if options.songFolders:
+        folderName = options.formatFolderName(params)
+        outDir = joinPath(outDir, folderName)
+    let filePath = joinPath(outDir, options.formatFileName(params))
+
+    if fileExists(filePath) and options.preserve:
+        raise newException(PreserveFileException, fmt"Output-File already exists: {filePath}")
+
+    existsOrCreateDirRecursive(outDir)
+
+    var str = chart.write()
     writeFile(filePath, str)
 
     result = ConvertResult(

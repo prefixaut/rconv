@@ -35,10 +35,10 @@ jobs:
           key: ${{ runner.os }}-nimble-${{ matrix.nim }}-${{ hashFiles('*.nimble') }}
         if: runner.os != 'Windows'
 
-      # Building
       - name: Install dependencies
         run: nimble install -Y
 
+      # Building
       - name: Build CLI
         run: nimble build
 

@@ -25,6 +25,9 @@ jobs:
           path: ~/.nimble
           key: ${{ runner.os }}-nimble-${{ matrix.nim }}-${{ hashFiles('*.nimble') }}
 
+      - name: Install dependencies
+        run: nimble install -Y
+
       # Build documentation
       - name: Build documentation
         run: nimble docs

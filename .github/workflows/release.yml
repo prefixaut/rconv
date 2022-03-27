@@ -32,6 +32,9 @@ jobs:
           key: ${{ runner.os }}-nimble-${{ matrix.nim }}-${{ hashFiles('*.nimble') }}
         if: runner.os != 'Windows'
 
+      - name: Install dependencies
+        run: nimble install -Y
+
       # Build the release elements
       - name: Create Library Release Build
         run: nimble clib -d:release

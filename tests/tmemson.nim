@@ -5,7 +5,7 @@ import rconv/fxf as fxf
 import rconv/malody as malody
 import rconv/private/test_utils
 
-suite "memson: convert":
+suite "memson":
     let testFile = """
 Song-Title-BlaFoo
 Artist-Foobar

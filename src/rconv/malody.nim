@@ -23,6 +23,9 @@ type
         note*: seq[TimedElement]
         ## Notes, Holds and other timed gameplay elements
 
+        extra*: ExtraData
+        ## Additional/Extra chart data
+
     ChartMode* {.pure.} = enum
         ## The mode for a malody chart.
         Key = 0
@@ -44,6 +47,8 @@ type
         ## Reflect Beat
         Slide = 7
         ## Mania but for touchscreen
+        Live = 8
+        ## No Idea
 
     CatchNoteType {.pure.} = enum
         Unused_0 = 0
@@ -71,7 +76,7 @@ type
         background*: string
         ## Background image of the chart
         version*: string
-        ## Chart version (only for ranked)
+        ## Chart version (difficulty information)
         preview*: int
         ## Offset in ms when the preview should start
         id*: uint
@@ -107,6 +112,24 @@ type
         ## Usually it's the (index of the first note)-1 or 0
         speed: int
         ## The fall speed of the notes
+
+    ExtraData* = ref object
+        ## Extra data for a chart
+        test*: ExtraTestData
+        ## Data which is only used for testing (?)
+    
+    ExtraTestData* = ref object
+        ## Data used for testing (?)
+        divide*: int
+        ## The time signature (?) Usually 4 as in 4/4
+        speed*: int
+        ## The scroll-speed modifier (?)
+        save*: int
+        ## Unknown
+        lock*: int
+        ## Unknown
+        edit_mode*: int
+        ## Unknown
 
     Beat* = array[3, int] ## \
     ## A beat is the time when something happens
@@ -413,7 +436,7 @@ func asFormattingParams*(chart: Chart): FormattingParameters =
         extension = FileType.Malody.getFileExtension,
     )
 
-func getBeatSafe(self: JsonNode, field: string = "beat", default: malody.Beat = malody.EmptyBeat): malody.Beat =
+func getBeatSafe(self: JsonNode, field: string = "beat", default: Beat = EmptyBeat): Beat =
     ## Internal helper function to safely get a beat from a JsonNode
 
     result = default
@@ -427,42 +450,42 @@ func getBeatSafe(self: JsonNode, field: string = "beat", default: malody.Beat = 
         except:
             discard
 
-func toTimedElement*(self: JsonNode, lenient: bool = false): malody.TimedElement {.raises: [ParseError,ValueError].} =
+func toTimedElement*(self: JsonNode, lenient: bool = false): TimedElement {.raises: [ParseError,ValueError].} =
     ## Hook to convert the provided JsonNode to the appropiate `TimeElement`.
 
     if self.kind != JsonNodeKind.JObject:
         if lenient:
-            return malody.newTimedElement()
+            return newTimedElement()
         raise newException(ParseError, "The kind of `JsonNode` must be `JObject`, but it's actual kind is `" & $self.kind & "`.")
 
     let beat = self.getBeatSafe()
 
     if self.hasField("bpm", JsonNodeKind.JFloat):
-        result = malody.newTimeSignature(beat = beat, bpm = self.getFloatSafe("bpm"))
+        result = newTimeSignature(beat = beat, bpm = self.getFloatSafe("bpm"))
 
     elif self.hasField("type", JsonNodeKind.JInt) and self.hasField("sound", JsonNodeKind.JString):
-        result = malody.newSoundCue(
+        result = newSoundCue(
             beat = beat,
-            `type` = malody.getSoundCueType(self.getIntSafe("type")),
+            `type` = getSoundCueType(self.getIntSafe("type")),
             offset = self.getFloatSafe("offset"),
             volume = self.getFloatSafe("vol")
         )
     elif self.hasField("index", JsonNodeKind.JInt):
         if self.fields.hasKey("endbeat"):
-            result = malody.newIndexHold(
+            result = newIndexHold(
                 beat = beat,
                 index = self.getIntSafe("index"),
                 endBeat = self.getBeatSafe("endbeat"),
                 endIndex = self.getIntSafe("endindex")
             )
         else:
-            result = malody.newIndexNote(
+            result = newIndexNote(
                 beat = beat,
                 index = self.getIntSafe("index")
             )
     elif self.hasField("column", JsonNodeKind.JInt):
         if self.fields.hasKey("endbeat"):
-            result = malody.newColumnHold(
+            result = newColumnHold(
                 beat = beat,
                 column = self.getIntSafe("column"),
                 style = self.getIntSafe("style", -1),
@@ -470,7 +493,7 @@ func toTimedElement*(self: JsonNode, lenient: bool = false): malody.TimedElement
                 hits = self.getIntSafe("hits", 1)
             )
         else:
-            result = malody.newColumnNote(
+            result = newColumnNote(
                 beat = beat,
                 column = self.getIntSafe("column"),
                 style = self.getIntSafe("style", -1)
@@ -481,7 +504,7 @@ func toTimedElement*(self: JsonNode, lenient: bool = false): malody.TimedElement
             if self.fields.hasKey("seg"):
                 seg.fromJson(self.fields["seg"], Joptions(allowMissingKeys: true, allowExtraKeys: true))
 
-            result = malody.newSlideNote(
+            result = newSlideNote(
                 beat = beat,
                 x = self.getIntSafe("x"),
                 width = self.getIntSafe("w"),
@@ -490,33 +513,36 @@ func toTimedElement*(self: JsonNode, lenient: bool = false): malody.TimedElement
             )
         elif self.hasField("type", JsonNodeKind.JInt):
             if self.fields.hasKey("endbeat"):
-                result = malody.newCatchHold(
+                result = newCatchHold(
                     beat = beat,
                     `type` = getCatchNoteType(self.getIntSafe("type")),
                     endBeat = self.getBeatSafe("endbeat")
                 )
             else:
-                result = malody.newCatchNote(
+                result = newCatchNote(
                     beat = beat,
                     `type` = getCatchNoteType(self.getIntSafe("type"))
                 )
         else:
-            result = malody.newTimedElement(beat = beat)
+            result = newTimedElement(beat = beat)
     else:
-        result = malody.newTimedElement(beat = beat)
+        result = newTimedElement(beat = beat)
 
-func toChart*(self: JsonNode, lenient: bool = false): malody.Chart {.raises:[ParseError,ValueError].} =
+func toChart*(self: JsonNode, lenient: bool = false): Chart {.raises:[ParseError,ValueError].} =
     ## Additional hook to make the hook for `TimedElement` work.
 
     if self.kind != JsonNodeKind.JObject:
         if lenient:
-            return malody.newChart()
+            return newChart()
         raise newException(ParseError, "The kind of `JsonNode` must be `JObject`, but it's actual kind is `" & $self.kind & "`.")
 
-    result = malody.newChart()
+    result = newChart()
 
     if self.hasField("meta", JsonNodeKind.JObject):
-        result.meta = self.fields["meta"].jsonTo(malody.MetaData, Joptions(allowMissingKeys: true, allowExtraKeys: true))
+        result.meta = self.fields["meta"].jsonTo(MetaData, Joptions(allowMissingKeys: true, allowExtraKeys: true))
+
+    if self.hasField("extra", JsonNodeKind.JObject):
+        result.extra = self.fields["extra"].jsonTo(ExtraData, Joptions(allowMissingKeys: true, allowExtraKeys: true))
 
     if self.hasField("note", JsonNodeKind.JArray):
         for data in self.fields["note"].elems:
@@ -528,7 +554,7 @@ func toChart*(self: JsonNode, lenient: bool = false): malody.Chart {.raises:[Par
             let time = toTimedElement(data, lenient)
             result.time.add(time)
 
-func toJsonHook*[T: malody.Chart](this: T): JsonNode =
+func toJsonHook*[T: Chart](this: T): JsonNode =
     result = newJObject()
     result["meta"] = toJson(this.meta)
     result["time"] = newJArray()
@@ -539,39 +565,39 @@ func toJsonHook*[T: malody.Chart](this: T): JsonNode =
     for note in this.note:
         result["note"].elems.add toJsonHook(note)
 
-func toJsonHook*[T: malody.TimedElement](this: T): JsonNode =
+func toJsonHook*[T: TimedElement](this: T): JsonNode =
     result = newJObject()
     result["beat"] = toJsonHook(this.beat)
 
     case this.kind:
-    of malody.ElementType.TimeSignature:
+    of ElementType.TimeSignature:
         result["bpm"] = newJFloat(this.sigBpm)
 
-    of malody.ElementType.SoundCue:
+    of ElementType.SoundCue:
         result["type"] = newJInt(this.cueType.symbolRank)
         result["sound"] = newJString(this.cueSound)
         result["vol"] = newJFloat(this.cueVolume)
 
-    of malody.ElementType.IndexNote:
+    of ElementType.IndexNote:
         result["index"] = newJInt(this.index)
-        if this.hold == malody.HoldType.IndexHold:
+        if this.hold == HoldType.IndexHold:
             result["endbeat"] = toJsonHook(this.indexEndBeat)
             result["endindex"] = newJInt(this.indexEnd)
 
-    of malody.ElementType.ColumnNote:
+    of ElementType.ColumnNote:
         result["column"] = newJInt(this.column)
         result["style"] = newJInt(this.colStyle)
-        if this.hold == malody.HoldType.ColumnHold:
+        if this.hold == HoldType.ColumnHold:
             result["endbeat"] = toJsonHook(this.colEndBeat)
             result["hits"] = newJInt(this.colHits)
 
-    of malody.ElementType.CatchNote:
+    of ElementType.CatchNote:
         result["x"] = newJInt(this.catchX)
         result["type"] = newJInt(this.catchType.symbolRank)
-        if this.hold == malody.HoldType.CatchHold:
+        if this.hold == HoldType.CatchHold:
             result["endbeat"] = toJsonHook(this.catchEndBeat)
 
-    of malody.ElementType.SlideNote:
+    of ElementType.SlideNote:
         result["x"] = newJInt(this.slideX)
         result["w"] = newJInt(this.slideWidth)
         result["type"] = newJInt(this.slideType.symbolRank)
@@ -582,7 +608,7 @@ func toJsonHook*[T: malody.TimedElement](this: T): JsonNode =
     else:
         discard
 
-func toJsonHook*[T: malody.Beat](this: T): JsonNode =
+func toJsonHook*[T: Beat](this: T): JsonNode =
     result = newJArray()
     result.elems.add newJInt(this[0])
     result.elems.add newJInt(this[1])

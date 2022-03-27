@@ -18,17 +18,17 @@ jobs:
             libName: 'librconv-linux-amd64.so'
             binName: 'rconv-linux-amd64'
 
-          - os: 'ubuntu-latest'
-            nimOs: 'linux'
-            nimCpu: 'i386'
-            libName: 'librconv-linux-i386.so'
-            binName: 'rconv-linux-i386'
+          #- os: 'ubuntu-latest'
+          #  nimOs: 'linux'
+          #  nimCpu: 'i386'
+          #  libName: 'librconv-linux-i386.so'
+          #  binName: 'rconv-linux-i386'
 
-          - os: 'ubuntu-latest'
-            nimOs: 'linux'
-            nimCpu: 'arm'
-            libName: 'librconv-linux-arm.so'
-            binName: 'rconv-linux-arm'
+          #- os: 'ubuntu-latest'
+          #  nimOs: 'linux'
+          #  nimCpu: 'arm'
+          #  libName: 'librconv-linux-arm.so'
+          #  binName: 'rconv-linux-arm'
 
           - os: 'windows-latest'
             nimOs: 'windows'
@@ -36,11 +36,11 @@ jobs:
             libName: 'librconv-windows-amd64.dll'
             binName: 'rconv-windows-amd64.exe'
 
-          - os: 'windows-latest'
-            nimOs: 'windows'
-            nimCpu: 'i386'
-            libName: 'librconv-windows-i386.dll'
-            binName: 'rconv-windows-i386.exe'
+          #- os: 'windows-latest'
+          #  nimOs: 'windows'
+          #  nimCpu: 'i386'
+          #  libName: 'librconv-windows-i386.dll'
+          #  binName: 'rconv-windows-i386.exe'
 
           - os: 'macos-latest'
             nimOs: 'ios'
@@ -48,11 +48,11 @@ jobs:
             libName: 'librconv-macos-amd64.so'
             binName: 'rconv-macos-amd64'
 
-          - os: 'macos-latest'
-            nimOs: 'ios'
-            nimCpu: 'arm'
-            libName: 'librconv-macos-arm.so'
-            binName: 'rconv-macos-arm'
+          #- os: 'macos-latest'
+          #  nimOs: 'ios'
+          #  nimCpu: 'arm'
+          #  libName: 'librconv-macos-arm.so'
+          #  binName: 'rconv-macos-arm'
 
     runs-on: ${{ matrix.os }}
     permissions:

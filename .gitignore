@@ -12,6 +12,7 @@ thumbs.db
 /bin
 /*.json
 /coverage
+/release
 
 ####
 ## Test Files

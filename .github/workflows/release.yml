@@ -11,7 +11,48 @@ jobs:
 
     strategy:
       matrix:
-        os: [ 'ubuntu-latest', 'windows-latest', 'macos-latest' ]
+        include:
+          - os: 'ubuntu-latest'
+            nimOs: 'linux'
+            nimCpu: 'amd64'
+            libName: 'librconv-linux-amd64.so'
+            binName: 'rconv-linux-amd64'
+
+          - os: 'ubuntu-latest'
+            nimOs: 'linux'
+            nimCpu: 'i386'
+            libName: 'librconv-linux-i386.so'
+            binName: 'rconv-linux-i386'
+
+          - os: 'ubuntu-latest'
+            nimOs: 'linux'
+            nimCpu: 'arm'
+            libName: 'librconv-linux-arm.so'
+            binName: 'rconv-linux-arm'
+
+          - os: 'windows-latest'
+            nimOs: 'windows'
+            nimCpu: 'amd64'
+            libName: 'librconv-windows-amd64.dll'
+            binName: 'rconv-windows-amd64.exe'
+
+          - os: 'windows-latest'
+            nimOs: 'windows'
+            nimCpu: 'i386'
+            libName: 'librconv-windows-i386.dll'
+            binName: 'rconv-windows-i386.exe'
+
+          - os: 'macos-latest'
+            nimOs: 'ios'
+            nimCpu: 'amd64'
+            libName: 'librconv-macos-amd64.so'
+            binName: 'rconv-macos-amd64'
+
+          - os: 'macos-latest'
+            nimOs: 'ios'
+            nimCpu: 'arm'
+            libName: 'librconv-macos-arm.so'
+            binName: 'rconv-macos-arm'
 
     runs-on: ${{ matrix.os }}
     permissions:
@@ -29,7 +70,7 @@ jobs:
         uses: actions/cache@v1
         with:
           path: ~/.nimble
-          key: ${{ runner.os }}-nimble-${{ matrix.nim }}-${{ hashFiles('*.nimble') }}
+          key: ${{ runner.os }}-nimble-${{ matrix.nim }}-${{ matrix.nimCpu}}-${{ hashFiles('*.nimble') }}
         if: runner.os != 'Windows'
 
       - name: Install dependencies
@@ -37,16 +78,16 @@ jobs:
 
       # Build the release elements
       - name: Create Library Release Build
-        run: nimble clib -d:release
+        run: nim c -o:release/${{ matrix.libName }} --cpu:${{ matrix.nimCpu }} --os:${{ matrix.nimOs }} --app:lib -d:release ./src/rconv.nim
 
       - name: Create CLI Release Build
-        run: nimble build -d:release
+        run: nim c -o:release/${{ matrix.binName }} --cpu:${{ matrix.nimCpu }} --os:${{ matrix.nimOs }} --app:console -d:release ./src/rconv/cli.nim
 
       # Create/Update the release
       - name: Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "dist/*"
+          artifacts: "release/*"
           allowUpdates: true
           prerelease: ${{ endsWith(github.ref, 'rc') || endsWith(github.ref, 'snapshot') }}
           token: ${{ secrets.GITHUB_TOKEN }}

@@ -1,5 +1,7 @@
 import std/[algorithm, math, sets, strutils, strformat, tables]
 
+import pkg/regex
+
 import ./common
 import ./private/utils
 
@@ -15,6 +17,9 @@ type
     MalodyHoldRelease = tuple[memson: memson.Note, malody: malody.TimedElement] ## \
     ## Tuple to join a memson-hold and malody-hold, to be able to set the
     ## `endBeat` field on the malody hold on time.
+
+const
+    LevelRegex = re"(?:(?:[lL][vV])|(?:[lL][vV][lL])|(?:[lL][eE][vV][eE][lL]))?\s*\.*\s*([0-9]+[\.]?[0-9])"
 
 proc getBeat(value: float): malody.Beat =
     ## Helper function to convert a fraction beat-index (1.5, 2.3, ...) to a
@@ -416,26 +421,35 @@ func toStepMania*(chart: malody.Chart): sm.ChartFile =
     )
     var output: sm.NoteData = nil
     var diff = sm.Difficulty.Edit
+    var level = 0
 
     for part in chart.meta.version.stripSplit(" "):
         try:
             diff = parseEnum[sm.Difficulty](part.toLower)
         except:
             discard
+        try:
+            var match: RegexMatch
+            if part.match(LevelRegex, match):
+                level = int(parseFloat(match.groupFirstCapture(0, part)))
+        except:
+            discard
 
     case chart.meta.mode_ext.column:
         of 4:
-            output = sm.newNoteData(sm.ChartType.DanceSingle, chart.meta.creator, diff)
+            output = sm.newNoteData(sm.ChartType.DanceSingle, chart.meta.creator, diff, level)
         of 5:
-            output = sm.newNoteData(sm.ChartType.PumpSingle, chart.meta.creator, diff)
+            output = sm.newNoteData(sm.ChartType.PumpSingle, chart.meta.creator, diff, level)
         of 6:
-            output = sm.newNoteData(sm.ChartType.DanceSolo, chart.meta.creator, diff)
+            output = sm.newNoteData(sm.ChartType.DanceSolo, chart.meta.creator, diff, level)
         of 8:
-            output = sm.newNoteData(sm.ChartType.DanceDouble, chart.meta.creator, diff)
+            output = sm.newNoteData(sm.ChartType.DanceDouble, chart.meta.creator, diff, level)
         of 10:
-            output = sm.newNoteData(sm.ChartType.PumpDouble, chart.meta.creator, diff)
+            output = sm.newNoteData(sm.ChartType.PumpDouble, chart.meta.creator, diff, level)
         else:
             raise newException(ConvertException, fmt"The column-count {chart.meta.mode_ext.column} does not have a SM equivalent!")
+
+    result.noteData.add output
 
     if not chart.meta.song.title.isEmptyOrWhitespace:
         if not chart.meta.song.titleorg.isEmptyOrWhitespace:

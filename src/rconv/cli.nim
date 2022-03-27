@@ -102,7 +102,7 @@ try:
         for filePath in walkGlob(path):
             try:
                 discard convert(filePath, none(FileType), to, some(convOptions))
-            except malody.InvalidModeException:
+            except malody.InvalidModeException, InvalidTypeException, MissingTypeException, MissingConversionException:
                 discard
             except:
                 let e = newException(ConvertException, fmt"Failed to convert file '{filePath}'! Error: {getCurrentExceptionMsg()}", getCurrentException())

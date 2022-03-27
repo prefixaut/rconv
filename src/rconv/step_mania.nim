@@ -160,7 +160,6 @@ type
 
 const
     SpecialNoteStart = 'D'
-    EmptyBeat = "0000\n0000\n0000\n0000\n"
 
 func newNoteError(msg: string, beat: int, note: Note): ref InvalidNoteError =
     result = newException(InvalidNoteError, msg)
@@ -623,7 +622,7 @@ func write(notes: NoteData, withNoteExtras: bool = false): string =
         let bIndex = notes.beats.find(b => b.index == beatIndex, lastBeat)
         if bIndex == -1:
             # Empty 4th section
-            arr.add EmptyBeat
+            arr.add ($NoteType.Empty.repeat(columns).join("") & "\n").repeat(4).join("")
             continue
 
         lastBeat = bIndex

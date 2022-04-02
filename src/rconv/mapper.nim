@@ -7,15 +7,15 @@ import ./private/utils
 
 import ./fxf as fxf
 import ./malody as malody
-import ./memson as memson
+import ./memo as memo
 import ./step_mania as sm
 
 type
-    FXFHoldRelease = tuple[fxf: fxf.Hold, memson: memson.Note] ## \
-    ## Tuple to join a fxf and memson hold, to be able to set the
+    FXFHoldRelease = tuple[fxf: fxf.Hold, memo: memo.Note] ## \
+    ## Tuple to join a fxf and memo hold, to be able to set the
     ## `releaseOn` field of the fxf hold on time.
-    MalodyHoldRelease = tuple[memson: memson.Note, malody: malody.TimedElement] ## \
-    ## Tuple to join a memson-hold and malody-hold, to be able to set the
+    MalodyHoldRelease = tuple[memo: memo.Note, malody: malody.TimedElement] ## \
+    ## Tuple to join a memo-hold and malody-hold, to be able to set the
     ## `endBeat` field on the malody hold on time.
 
 const
@@ -116,11 +116,11 @@ proc getBeat(value: float): malody.Beat =
         result = [beat, 0, 1]
 #[
 ------------------------------------------
-    MEMSON CONVERTS
+    Memo CONVERTS
 ------------------------------------------
 ]#
 
-func toFXF*(this: memson.Memson): fxf.ChartFile =
+func toFXF*(this: memo.Memo): fxf.ChartFile =
     ## Function to map/convert `this` Chart to a FXF-ChartFile.
 
     result = fxf.newChartFile(
@@ -165,7 +165,7 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
                 # and remove it from the seq
                 var tmpHoldRelease = newSeq[FXFHoldRelease]()
                 for r in holdRelease.mitems:
-                    if r.memson.releaseSection == section.index and r.memson.releaseTime == timing:
+                    if r.memo.releaseSection == section.index and r.memo.releaseTime == timing:
                         r.fxf.releaseOn = noteTime
                     else:
                         tmpHoldRelease.add r
@@ -184,7 +184,7 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
                             continue
 
                         hasData = true
-                        if note.kind == memson.NoteType.Hold:
+                        if note.kind == memo.NoteType.Hold:
                             var hold = fxf.newHold(`from` = note.animationStartIndex, to = noteIndex)
                             tick.holds.add hold
                             holdRelease.add (hold, note)
@@ -199,17 +199,17 @@ func toFXF*(this: memson.Memson): fxf.ChartFile =
 
             inc indexOffset, snap.length
 
-    if this.difficulty == memson.Difficulty.Basic:
+    if this.difficulty == memo.Difficulty.Basic:
         result.charts.basic = chart
         result.charts.bscPresent = 1
-    elif this.difficulty == memson.Difficulty.Advanced:
+    elif this.difficulty == memo.Difficulty.Advanced:
         result.charts.advanced = chart
         result.charts.advPresent = 1
     else:
         result.charts.extreme = chart
         result.charts.extPresent = 1
 
-func toMalody*(this: memson.Memson): malody.Chart =
+func toMalody*(this: memo.Memo): malody.Chart =
     ## Function to map/convert `this` Chart to a Malody Chart.
 
     result = malody.newChart(meta = malody.newMetaData(
@@ -251,7 +251,7 @@ func toMalody*(this: memson.Memson): malody.Chart =
             # since we're already iterating over it
             var releasesToDelete = newSeq[int]()
             for holdIndex, holdVal in holdRelease.mpairs:
-                if holdVal.memson.releaseSection == sectionIndex and holdVal.memson.releaseTime == timeIndex:
+                if holdVal.memo.releaseSection == sectionIndex and holdVal.memo.releaseTime == timeIndex:
                     holdVal.malody.indexEndBeat = beat
                     releasesToDelete.add holdIndex
                     break
@@ -262,10 +262,10 @@ func toMalody*(this: memson.Memson): malody.Chart =
                 for secNotePos, secMultiNotes in section.notes:
                     for secNote in secMultiNotes:
                         if secNote.time == timeIndex:
-                            if secNote.kind == memson.NoteType.Hold:
+                            if secNote.kind == memo.NoteType.Hold:
                                 let hold = malody.newIndexHold(beat = beat, index = secNotePos, endIndex = secNote.animationStartIndex)
                                 result.note.add hold
-                                holdRelease.add (memson: secNote, malody: hold)
+                                holdRelease.add (memo: secNote, malody: hold)
                             else:
                                 result.note.add malody.newIndexNote(beat = beat, index = secNotePos)
 
@@ -291,7 +291,7 @@ func toMalody*(this: memson.Memson): malody.Chart =
 func toFXF*(this: malody.Chart): fxf.ChartFile =
     ## Function to map/convert `this` Chart to a FXF-ChartFile.
     ## The actual note-data will be present in the `fxf.ChartFile.charts`_ table.
-    ## The difficulty is determined by the `memson.parseDifficulty`_ function.
+    ## The difficulty is determined by the `memo.parseDifficulty`_ function.
 
     if (this.meta.mode != ChartMode.Pad):
         raise newException(InvalidModeException, fmt"The provided Malody-Chart is from the wrong Mode! Mode is {this.meta.mode}, where a {ChartMode.Pad} is required!")
@@ -302,12 +302,12 @@ func toFXF*(this: malody.Chart): fxf.ChartFile =
         jacket = this.meta.background,
     )
 
-    let diff = memson.parseDifficulty(this.meta.version)
+    let diff = memo.parseDifficulty(this.meta.version)
     var chart: fxf.Chart = fxf.newChart(rating = 1)
 
-    if diff == memson.Difficulty.Basic:
+    if diff == memo.Difficulty.Basic:
         result.charts.basic = chart
-    elif diff == memson.Difficulty.Advanced:
+    elif diff == memo.Difficulty.Advanced:
         result.charts.advanced = chart
     else:
         result.charts.extreme = chart

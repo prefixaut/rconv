@@ -1,5 +1,9 @@
 import std/[strutils, tables]
 
+import ./grid_common
+
+export grid_common
+
 type
     Difficulty* {.pure.} = enum
         ## Difficulty for jubeat like games.
@@ -14,21 +18,8 @@ type
         Note        = "note"
         Hold        = "hold"
 
-    NoteRange* = range[0..15] ## \
-    ## All positions a note can be placed on.
-    ## Posion description::
-    ## 
-    ##  0  1  2  3
-    ##  4  5  6  7
-    ##  8  9 10 11
-    ##  12 13 14 15
-    ## 
-
-    RowIndex* = range[0..3] ## \
-    ## Range of how many row-indices may exist (4).
-
     BpmRange* = tuple[min: float, max: float] ## \
-        ## The range of BPM the file is in
+    ## The range of BPM the file is in
 
     Note* = ref object
         ## A Note or Hold which has to be pressed.
@@ -78,8 +69,8 @@ type
         row*: RowIndex
         ## The row in which this snap is defined.
 
-    Memson* = ref object
-        ## Memson is the in-memory data-structure for memo-files.
+    Memo* = ref object
+        ## memo is the in-memory data-structure for memo-files.
         songTitle*: string
         ## The title of the chart's song.
         artist*: string
@@ -96,7 +87,18 @@ type
         sections*: seq[Section]
         ## The sections of the chart.
 
-func newMemson*(
+func `$`*(diff: Difficulty): string =
+    case diff:
+    of Basic:
+        result = "Basic"
+    of Advanced:
+        result = "Advanced"
+    of Extreme:
+        result = "Extreme"
+    of Edit:
+        result = "Edit"
+
+func newMemo*(
     songTitle: string = "",
     artist: string = "",
     difficulty: Difficulty = Difficulty.Basic,
@@ -104,7 +106,7 @@ func newMemson*(
     bpm: float = 0.0,
     bpmRange: BpmRange,
     sections: seq[Section] = @[]
-): Memson =
+): Memo =
     new result
     result.songTitle = songTitle
     result.artist = artist

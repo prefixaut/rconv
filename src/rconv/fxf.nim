@@ -1,7 +1,9 @@
 import std/[streams]
 
-import ./private/stream_helpers
+import ./private/[grid_common, stream_helpers]
 import ./common
+
+export grid_common
 
 const
     Version1* = uint32(1)
@@ -66,18 +68,6 @@ type
         ## optional. The snap-size in which this change occurs
         snapIndex*: uint16
         ## optional. The snap-index in which the change occurs
-
-    NoteRange* = range[0..15] ## \
-    ## Range of note indices which need to be pressed/held at some time.
-    ## e.g. [3, 10] -> button 3 and 10 need to be pressed.
-    ##
-    ## This file format indexes buttons starting from 0 to 15::
-    ##
-    ##  0  1  2  3
-    ##  4  5  6  7
-    ##  8  9  10 11
-    ##  12 13 14 15
-    ##
 
     Tick* = ref object
         ## A tick referres to a time in the chart, where one or more

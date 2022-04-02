@@ -8,15 +8,38 @@ import ./private/utils
 import ./fxf as fxf
 import ./malody as malody
 import ./memo as memo
-import ./memson as memson
 import ./step_mania as sm
 
 {.experimental: "codeReordering".}
 
-proc convert*(file: string, fromType: Option[FileType], to: FileType, options: Option[ConvertOptions]): ConvertResult =
+proc convert*(file: string, fromType: Option[FileType], to: FileType, options: Option[ConvertOptions] = none[ConvertOptions]()): ConvertResult =
     ## Converts the provided file to the requested output-format (`to`).
     ## If the `fromType` is not provided, it'll attempt to detect it from the file via the _`detectFileType` func.
-    ## If no `options` are provided, it'll get the default options for the output-type (`to`) via the _`getDefaultOptions` func.
+    ## If no `options` are provided, it'll get the default options for the output-type (`to`) via the `getDefaultOptions`_ func.
+    ##
+    ## Example:
+    ## 
+    ## ```nim
+    ## import std/options
+    ## import rconv
+    ##
+    ## let inputFile = "/example.fxf"
+    ## let outDir = "./output"
+    ##
+    ## # This will use the default Convert-Options. See `getDefaultOptions`_
+    ## try:
+    ##     let result = convert(inputFile, some(FileType.FXF), FileType.Malody)
+    ##     echo $result
+    ## except MissingTypeException, MissingConversionException:
+    ##     # Handle issues when the convertion from FXF to Malody doesn't exist
+    ##     discard
+    ## except ParseError:
+    ##     # Handle issues when the file couldn't be parsed
+    ##     discard
+    ## except ConvertException:
+    ##     # Handle issues from the convertion from FXF to Malody
+    ##     discard
+    ## ```
 
     var actualFrom: FileType
     var actualOptions: ConvertOptions

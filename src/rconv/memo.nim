@@ -123,6 +123,7 @@ const
     ReplaceableNotes = @[EmptyNote, $Token.Vertical, $Token.Horizontal]
     ReplaceableVertical = @[EmptyNote, $Token.Horizontal]
     ReplaceableHorizontal = @[EmptyNote, $Token.Vertical]
+    HoldStarts = @[$Token.Up, $Token.Down, $Token.Left, $Token.Right]
     TokenMap: array[Token, int] = [
         1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,11,12,13,14,15,16,17,18,19,20,
         21,21,22,22,23,23,24,24,25,25,26,26,27,27,28,28,29,29,
@@ -462,6 +463,7 @@ proc write*(chart: Memo): string =
     for section in chart.sections:
         var sectionParts: seq[string] = @[]
         var notes = newSeq[tuple[pos: int, note: Note]]()
+        var notesFeedback = newSeq[tuple[pos: int, note: Note]]()
         var printTable = initTable[NoteRange, string]()
 
         var timingOffset = 0
@@ -473,9 +475,9 @@ proc write*(chart: Memo): string =
                 if note.kind == NoteType.Hold:
                     let tmp = newNote(note.releaseTime, note.releasePart)
                     if note.releaseSection == section.index:
-                        notes.add (note.animationStartIndex, tmp)
+                        notes.add (noteIndex, tmp)
                     else:
-                        holdTable.mgetOrPut(note.releaseSection, @[]).add (note.animationStartIndex, tmp)
+                        holdTable.mgetOrPut(note.releaseSection, @[]).add (noteIndex, tmp)
 
         if holdTable.hasKey section.index:
             for note in holdTable[section.index]:
@@ -483,89 +485,95 @@ proc write*(chart: Memo): string =
 
         notes.sort ((a: tuple[pos: int, note: Note], b: tuple[pos: int, note: Note]) => a.note.time - b.note.time)
 
-        for elem in notes:
-            let noteIndex = elem.pos
-            let note = elem.note
-            var uncommited = newSeq[tuple[pos: int, data: string]]()
-            var isUsed = printTable.hasKey noteIndex
+        while notes.len > 0:
+            for elem in notes:
+                let noteIndex = elem.pos
+                let note = elem.note
+                var uncommited = newSeq[tuple[pos: int, data: string]]()
+                var isObstructed = printTable.hasKey noteIndex
 
-            if note.kind == NoteType.Hold:
-                uncommited.add (noteIndex, $InverseTokenMap[section.timings[note.time]])
-                isUsed = isUsed or printTable.hasKey noteIndex
-                let diff = note.animationStartIndex - noteIndex
+                if note.kind == NoteType.Hold:
+                    uncommited.add (noteIndex, $InverseTokenMap[section.timings[note.time]])
+                    isObstructed = isObstructed or printTable.hasKey noteIndex
+                    let diff = note.animationStartIndex - noteIndex
+                    var fillerPositions = newSeq[int]()
+                    var fillerReplace = ReplaceableHorizontal
+                    var fillerNote = $Token.Horizontal
 
-                if diff >= -3 and diff <= -1:
-                    uncommited.add (note.animationStartIndex, $Token.Right)
-                    if printTable.hasKey note.animationStartIndex:
-                        isUsed = isUsed or not ReplaceableNotes.contains printTable[note.animationStartIndex]
+                    if diff >= -3 and diff <= -1:
+                        uncommited.add (note.animationStartIndex, $Token.Right)
+                        if printTable.hasKey note.animationStartIndex:
+                            isObstructed = isObstructed or not ReplaceableNotes.contains printTable[note.animationStartIndex]
 
-                    for filler in (diff + 1)..<0:
-                        let fillerIdx = noteIndex + filler
-                        if printTable.hasKey(fillerIdx) and ReplaceableHorizontal.contains printTable[fillerIdx]:
+                        for filler in (diff + 1)..<0:
+                            fillerPositions.add noteIndex + filler
+
+                    elif diff == -4 or diff == -8 or diff == -12:
+                        uncommited.add (note.animationStartIndex, $Token.Down)
+                        if printTable.hasKey note.animationStartIndex:
+                            isObstructed = isObstructed or not ReplaceableNotes.contains printTable[note.animationStartIndex]
+
+                        fillerReplace = ReplaceableVertical
+                        fillerNote = $Token.Vertical
+                        for filler in 1..<((diff * -1) div 4):
+                            fillerPositions.add noteIndex + (filler * -4)
+
+                    elif diff >= 1 and diff <= 3:
+                        uncommited.add (note.animationStartIndex, $Token.Left)
+                        if printTable.hasKey note.animationStartIndex:
+                            isObstructed = isObstructed or not ReplaceableNotes.contains printTable[note.animationStartIndex]
+
+                        for filler in 1..<diff:
+                            fillerPositions.add noteIndex + filler
+
+                    elif diff == 4 or diff == 8 or diff == 12:
+                        uncommited.add (note.animationStartIndex, $Token.Up)
+                        if printTable.hasKey note.animationStartIndex:
+                            isObstructed = isObstructed or not ReplaceableNotes.contains printTable[note.animationStartIndex]
+
+                        fillerReplace = ReplaceableVertical
+                        fillerNote = $Token.Vertical
+                        for filler in 0..(diff div 4):
+                            fillerPositions.add noteIndex + ((filler + 1) * 4)
+
+                    for fillerIdx in fillerPositions:
+                        let blocked = printTable.hasKey(fillerIdx)
+                        if blocked and fillerReplace.contains printTable[fillerIdx]:
                             uncommited.add (fillerIdx, EmptyNote)
-                        else:
-                            isUsed = isUsed or printTable.hasKey fillerIdx
-                            uncommited.add (fillerIdx, $Token.Horizontal)
+                        elif not blocked or not HoldStarts.contains printTable[fillerIdx]:
+                            isObstructed = isObstructed or blocked
+                            uncommited.add (fillerIdx, fillerNote)
+                else:
+                    uncommited.add (noteIndex, $InverseTokenMap[section.timings[note.time]])
 
-                elif diff == -4 or diff == -8 or diff == -12:
-                    uncommited.add (note.animationStartIndex, $Token.Down)
-                    if printTable.hasKey note.animationStartIndex:
-                        isUsed = isUsed or not ReplaceableNotes.contains printTable[note.animationStartIndex]
+                # If the content is blocked, add it to the feedback list, so it can be applied in the next part
+                if isObstructed:
+                    notesFeedback.add elem
+                    continue
 
-                    for filler in 1..<((diff * -1) div 4):
-                        let fillerIdx = noteIndex + (filler * -4)
-                        if printTable.hasKey(fillerIdx) and ReplaceableVertical.contains printTable[fillerIdx]:
-                            uncommited.add (fillerIdx, EmptyNote)
-                        else:
-                            isUsed = isUsed or printTable.hasKey fillerIdx
-                            uncommited.add (fillerIdx, $Token.Vertical)
+                inc noteCount
+                for val in uncommited:
+                    printTable[val.pos] = val.data 
+            #/notes
 
-                elif diff >= 1 and diff <= 3:
-                    uncommited.add (note.animationStartIndex, $Token.Left)
-                    if printTable.hasKey note.animationStartIndex:
-                        isUsed = isUsed or not ReplaceableNotes.contains printTable[note.animationStartIndex]
-
-                    for filler in 1..<diff:
-                        let fillerIdx = noteIndex + filler
-                        if printTable.hasKey(fillerIdx) and ReplaceableHorizontal.contains printTable[fillerIdx]:
-                            uncommited.add (fillerIdx, EmptyNote)
-                        else:
-                            isUsed = isUsed or printTable.hasKey fillerIdx
-                            uncommited.add (fillerIdx, $Token.Horizontal)
-
-                elif diff == 4 or diff == 8 or diff == 12:
-                    uncommited.add (note.animationStartIndex, $Token.Up)
-                    if printTable.hasKey note.animationStartIndex:
-                        isUsed = isUsed or not ReplaceableNotes.contains printTable[note.animationStartIndex]
-
-                    for filler in 0..(diff div 4):
-                        let fillerIdx = noteIndex + ((filler + 1) * 4)
-                        if printTable.hasKey(fillerIdx) and ReplaceableVertical.contains printTable[fillerIdx]:
-                            uncommited.add (fillerIdx, EmptyNote)
-                        else:
-                            isUsed = isUsed or printTable.hasKey fillerIdx
-                            uncommited.add (fillerIdx, $Token.Vertical)
-
-            else:
-                uncommited.add (noteIndex, $InverseTokenMap[section.timings[note.time]])
-
-            # If the content is blocked, print the table and create a new part
-            if isUsed:
+            if partIndex == 0 or printTable.len > 0:
                 sectionParts.add writePart(printTable, timingOffset, section, partIndex).strip
-                inc partIndex
-                printTable.clear
+            inc partIndex
+            printTable.clear
 
-            inc noteCount
-            for val in uncommited:
-                printTable[val.pos] = val.data            
+            notes = notesFeedback
+            notesFeedback = @[]
+        #/while
 
-        sectionParts.add writePart(printTable, timingOffset, section, partIndex).strip
+        if partIndex == 0 or printTable.len > 0:
+            sectionParts.add writePart(printTable, timingOffset, section, partIndex).strip
         var sectionData = ""
         if section.bpm != currentBpm:
             sectionData = "BPM: " & $section.bpm & "\n"
             currentBpm = section.bpm
         sectionData &= $section.index & "\n"
         parts.add sectionData & sectionParts.join("\n\n")
+    #/section
 
     result = parts.join("\n\n")
 

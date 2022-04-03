@@ -116,7 +116,7 @@ proc getBeat(value: float): malody.Beat =
         result = [beat, 0, 1]
 #[
 ------------------------------------------
-    Memo CONVERTS
+    MEMO CONVERTS
 ------------------------------------------
 ]#
 
@@ -288,6 +288,108 @@ func toMalody*(this: memo.Memo): malody.Chart =
 ------------------------------------------
 ]#
 
+proc toMemo*(this: malody.Chart): memo.Memo =
+    if (this.meta.mode != ChartMode.Pad):
+        raise newException(InvalidModeException, fmt"The provided Malody-Chart is from the wrong Mode! Mode is {this.meta.mode}, where a {ChartMode.Pad} is required!")
+
+    result = memo.newMemo(
+        songTitle = this.meta.song.title,
+        artist = this.meta.song.artist,
+    )
+    var minBpm = 0.0
+    var maxBpm = 0.0
+    var currentBpm = 0.0
+    var currentBeat = -1
+    var currentSection = -1
+    var timingOffset = 0
+    var totalBeats = 0
+    var sections = initTable[int, memo.Section]()
+    var notes = initTable[int, seq[malody.TimedElement]]()
+
+    for elem in this.note:
+        if elem.kind != malody.ElementType.IndexNote:
+            continue
+        totalBeats = max(totalBeats, elem.beat[0])
+        notes.mgetOrPut(elem.beat[0], @[]).add elem
+
+    for elem in this.time:
+        if elem.kind != malody.ElementType.TimeSignature:
+            continue
+
+        if minBpm == 0.0:
+            minBpm = elem.sigBpm
+        else:
+            minBpm = min(minBpm, elem.sigBpm)
+
+        if maxBpm == 0.0:
+            maxBpm = elem.sigBpm
+        else:
+            maxBpm = max(maxBpm, elem.sigBpm)
+
+        if elem.beat[0] == 0:
+            currentBpm = elem.sigBpm
+
+        var section: memo.Section
+        let sectionIdx = int(elem.beat[0] / 4)
+        if sections.hasKey sectionIdx:
+            section = sections[sectionIdx]
+        else:
+            section = memo.newSection(
+                index = sectionIdx + 1,
+                bpm = elem.sigBpm
+            )
+            sections[sectionIdx] = section
+            result.sections.add section
+
+    for beatIdx in 0..totalBeats:
+        let sectionIdx = int(beatIdx / 4)
+        var section: memo.Section
+        echo "beat: " & $beatIdx & ", section: " & $sectionIdx
+
+        if sections.hasKey sectionIdx:
+            section = sections[sectionIdx]
+        else:
+            section = memo.newSection(index = sectionIdx + 1)
+            sections[sectionIdx] = section
+            result.sections.add section
+
+        if currentSection != sectionIdx:
+            timingOffset = 0
+        currentSection = sectionIdx
+
+        #echo "section: " & $sectionIdx & " " & $section[]
+        if not notes.hasKey beatIdx:
+            section.snaps.add memo.newSnap(4)
+            for i in 0..4:
+                section.timings.add -1
+            inc timingOffset, 4
+            continue
+
+        for elem in notes[beatIdx]:
+            if currentBeat != elem.beat[0]:
+                for i in 0..elem.beat[2]:
+                    section.timings.add -1
+                section.snaps.add memo.newSnap(elem.beat[2])
+                inc timingOffset, elem.beat[2]
+
+            let elemTime = timingOffset - elem.beat[2] + elem.beat[1]
+            #echo "elem: " & $elem[] & ", time: " & $elemTime
+            currentBeat = elem.beat[0]
+            section.timings[elemTime] = elem.index
+
+            if elem.hold == malody.HoldType.IndexHold:
+                section.notes.mgetOrPut(elem.index, @[]).add memo.newHold(
+                    time = elemTime,
+                    animationStartIndex = elem.indexEnd,
+                )
+            else:
+                section.notes.mgetOrPut(elem.index, @[]).add memo.newNote(
+                    time = elemTime,
+                )
+
+    result.bpm = maxBpm
+    result.bpmRange = (minBpm, maxBpm)
+
 func toFXF*(this: malody.Chart): fxf.ChartFile =
     ## Function to map/convert `this` Chart to a FXF-ChartFile.
     ## The actual note-data will be present in the `fxf.ChartFile.charts`_ table.
@@ -410,20 +512,20 @@ func toFXF*(this: malody.Chart): fxf.ChartFile =
         holdTable[element.beat].add hold
         tick.holds.add hold
 
-func toStepMania*(chart: malody.Chart): sm.ChartFile =
-    if chart.meta.mode != malody.ChartMode.Key:
-        raise newException(InvalidModeException, fmt"The provided Malody-Chart is from the wrong Mode! Mode is {chart.meta.mode}, where a {ChartMode.Key} is required!")
+func toStepMania*(this: malody.Chart): sm.ChartFile =
+    if this.meta.mode != malody.ChartMode.Key:
+        raise newException(InvalidModeException, fmt"The provided Malody-Chart is from the wrong Mode! Mode is {this.meta.mode}, where a {ChartMode.Key} is required!")
 
     result = sm.newChartFile(
-        credit = chart.meta.creator,
-        sampleStart = chart.meta.preview / 1000,
-        background = chart.meta.background
+        credit = this.meta.creator,
+        sampleStart = this.meta.preview / 1000,
+        background = this.meta.background
     )
     var output: sm.NoteData = nil
     var diff = sm.Difficulty.Edit
     var level = 0
 
-    for part in chart.meta.version.stripSplit(" "):
+    for part in this.meta.version.stripSplit(" "):
         try:
             diff = parseEnum[sm.Difficulty](part.toLower)
         except:
@@ -435,42 +537,42 @@ func toStepMania*(chart: malody.Chart): sm.ChartFile =
         except:
             discard
 
-    case chart.meta.mode_ext.column:
+    case this.meta.mode_ext.column:
         of 4:
-            output = sm.newNoteData(sm.ChartType.DanceSingle, chart.meta.creator, diff, level)
+            output = sm.newNoteData(sm.ChartType.DanceSingle, this.meta.creator, diff, level)
         of 5:
-            output = sm.newNoteData(sm.ChartType.PumpSingle, chart.meta.creator, diff, level)
+            output = sm.newNoteData(sm.ChartType.PumpSingle, this.meta.creator, diff, level)
         of 6:
-            output = sm.newNoteData(sm.ChartType.DanceSolo, chart.meta.creator, diff, level)
+            output = sm.newNoteData(sm.ChartType.DanceSolo, this.meta.creator, diff, level)
         of 8:
-            output = sm.newNoteData(sm.ChartType.DanceDouble, chart.meta.creator, diff, level)
+            output = sm.newNoteData(sm.ChartType.DanceDouble, this.meta.creator, diff, level)
         of 10:
-            output = sm.newNoteData(sm.ChartType.PumpDouble, chart.meta.creator, diff, level)
+            output = sm.newNoteData(sm.ChartType.PumpDouble, this.meta.creator, diff, level)
         else:
-            raise newException(ConvertException, fmt"The column-count {chart.meta.mode_ext.column} does not have a SM equivalent!")
+            raise newException(ConvertException, fmt"The column-count {this.meta.mode_ext.column} does not have a SM equivalent!")
 
     result.noteData.add output
 
-    if not chart.meta.song.title.isEmptyOrWhitespace:
-        if not chart.meta.song.titleorg.isEmptyOrWhitespace:
-            result.title = chart.meta.song.titleorg
-            result.titleTransliterated = chart.meta.song.title
+    if not this.meta.song.title.isEmptyOrWhitespace:
+        if not this.meta.song.titleorg.isEmptyOrWhitespace:
+            result.title = this.meta.song.titleorg
+            result.titleTransliterated = this.meta.song.title
         else:
-            result.title = chart.meta.song.title
+            result.title = this.meta.song.title
 
-    if not chart.meta.song.artist.isEmptyOrWhitespace:
-        if not chart.meta.song.artistorg.isEmptyOrWhitespace:
-            result.artist = chart.meta.song.artistorg
-            result.artistTransliterated = chart.meta.song.artist
+    if not this.meta.song.artist.isEmptyOrWhitespace:
+        if not this.meta.song.artistorg.isEmptyOrWhitespace:
+            result.artist = this.meta.song.artistorg
+            result.artistTransliterated = this.meta.song.artist
         else:
-            result.artist = chart.meta.song.artist
+            result.artist = this.meta.song.artist
 
-    for elem in chart.time:
+    for elem in this.time:
         if elem.kind != malody.ElementType.TimeSignature:
             continue
         result.bpms.add sm.newBpmChange(float(elem.beat[0]) + ((1 / elem.beat[2]) * float(elem.beat[1])), elem.sigBpm)
 
-    for elem in chart.note:
+    for elem in this.note:
         if elem.kind == malody.ElementType.SoundCue:
             if elem.cueType == malody.SoundCueType.Song:
                 result.music = elem.cueSound
@@ -506,33 +608,33 @@ func toStepMania*(chart: malody.Chart): sm.ChartFile =
 ------------------------------------------
 ]#
 
-proc toMalody*(chart: sm.ChartFile, notes: NoteData): malody.Chart =
+proc toMalody*(this: sm.ChartFile, notes: NoteData): malody.Chart =
     result = malody.newChart()
 
-    if not chart.artistTransliterated.isEmptyOrWhitespace:
-        result.meta.song.artist = chart.artistTransliterated
-        result.meta.song.artistorg = chart.artist
+    if not this.artistTransliterated.isEmptyOrWhitespace:
+        result.meta.song.artist = this.artistTransliterated
+        result.meta.song.artistorg = this.artist
     else:
-        result.meta.song.artist = chart.artist
+        result.meta.song.artist = this.artist
 
-    if not chart.titleTransliterated.isEmptyOrWhitespace:
-        result.meta.song.title = chart.titleTransliterated
-        result.meta.song.titleorg = chart.title
+    if not this.titleTransliterated.isEmptyOrWhitespace:
+        result.meta.song.title = this.titleTransliterated
+        result.meta.song.titleorg = this.title
     else:
-        result.meta.song.title = chart.title
+        result.meta.song.title = this.title
 
-    if not chart.music.isEmptyOrWhitespace:
-        result.note.add malody.newSoundCue([0, 0, 1], malody.SoundCueType.Song, chart.music, chart.offset, 100.0)
+    if not this.music.isEmptyOrWhitespace:
+        result.note.add malody.newSoundCue([0, 0, 1], malody.SoundCueType.Song, this.music, this.offset, 100.0)
 
     result.meta.mode = malody.ChartMode.Key
-    result.meta.preview = int(chart.sampleStart * 1000)
-    result.meta.background = chart.background
-    if not chart.credit.isEmptyOrWhitespace:
-        result.meta.creator = chart.credit
+    result.meta.preview = int(this.sampleStart * 1000)
+    result.meta.background = this.background
+    if not this.credit.isEmptyOrWhitespace:
+        result.meta.creator = this.credit
     elif notes != nil:
         result.meta.creator = notes.description
 
-    for bpm in chart.bpms:
+    for bpm in this.bpms:
         result.time.add malody.newTimeSignature(getBeat(bpm.beat), bpm.bpm)
 
     if notes != nil:
@@ -551,6 +653,6 @@ proc toMalody*(chart: sm.ChartFile, notes: NoteData): malody.Chart =
                 elif note.kind == sm.NoteType.Note or note.kind == sm.NoteType.Lift:
                     result.note.add malody.newColumnNote(noteBeat, note.column)
 
-proc toMalody*(chart: sm.ChartFile, index: int = 0): malody.Chart =
-    let notes = if chart.noteData.len > index: chart.noteData[index] else: nil
-    result = toMalody(chart, notes)
+proc toMalody*(this: sm.ChartFile, index: int = 0): malody.Chart =
+    let notes = if this.noteData.len > index: this.noteData[index] else: nil
+    result = toMalody(this, notes)

@@ -1,6 +1,7 @@
 import std/[strutils, tables]
 
 import ./grid_common
+import ../common
 
 export grid_common
 
@@ -104,7 +105,7 @@ func newMemo*(
     difficulty: Difficulty = Difficulty.Basic,
     level: int = 1,
     bpm: float = 0.0,
-    bpmRange: BpmRange,
+    bpmRange: BpmRange = (0.0, 0.0),
     sections: seq[Section] = @[]
 ): Memo =
     new result
@@ -122,7 +123,8 @@ func newSection*(
     partCount: int = 1,
     timings: seq[int] = @[],
     snaps: seq[Snap] = @[],
-    noteCount: uint = 0, notes: OrderedTable[NoteRange, seq[Note]] = initOrderedTable[NoteRange, seq[Note]]()
+    noteCount: uint = 0,
+    notes: OrderedTable[NoteRange, seq[Note]] = initOrderedTable[NoteRange, seq[Note]]()
 ): Section =
     new result
     result.index = index
@@ -162,7 +164,7 @@ func newHold*(
 
 func parseDifficulty*(input: string): Difficulty =
     case input.toLower:
-    of "basic":
+    of "bsc", "basic":
         result = Difficulty.Basic
     of "adv", "advanced":
         result = Difficulty.Advanced
@@ -170,3 +172,19 @@ func parseDifficulty*(input: string): Difficulty =
         result = Difficulty.Extreme
     else:
         result = Difficulty.Edit
+
+func asFormattingParams*(chart: Memo): FormattingParameters =
+    result = newFormattingParameters(
+        title = chart.songTitle,
+        artist = chart.artist,
+        extension = FileType.Memo.getFileExtension
+    )
+    case chart.difficulty:
+    of Difficulty.Basic:
+        result.difficulty = "bsc"
+    of Difficulty.Advanced:
+        result.difficulty = "adv"
+    of Difficulty.Extreme:
+        result.difficulty = "ext"
+    else:
+        result.difficulty = "edt"

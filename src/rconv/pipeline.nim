@@ -72,6 +72,9 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
             let chart = parsed.toMalody
             result = saveChart(chart, actualOptions)
 
+        of FileType.Memo:
+            result = saveChart(parsed, actualOptions)
+
         else:
             raise newException(MissingConversionException, fmt"Could not find a convertion from {fromType} to {to}!")
 
@@ -86,6 +89,10 @@ proc convert*(file: string, fromType: Option[FileType], to: FileType, options: O
 
         of FileType.Malody:
             result = saveChart(parsed, actualOptions)
+        
+        of FileType.Memo:
+            let chart = parsed.toMemo
+            result = saveChart(chart, actualOptions)
 
         of FileType.StepMania:
             let chart = parsed.toStepMania
@@ -209,6 +216,31 @@ proc saveChart(chart: malody.Chart, options: ConvertOptions): ConvertResult =
 
 proc saveChart(chart: sm.ChartFile, options: ConvertOptions): ConvertResult =
     let params = sm.asFormattingParams(chart)
+
+    var outDir = options.output
+    if not isAbsolute(outDir):
+        outDir = joinPath(getCurrentDir(), outDir)
+    var folderName = ""
+    if options.songFolders:
+        folderName = options.formatFolderName(params)
+        outDir = joinPath(outDir, folderName)
+    let filePath = joinPath(outDir, options.formatFileName(params))
+
+    if fileExists(filePath) and options.preserve:
+        raise newException(PreserveFileException, fmt"Output-File already exists: {filePath}")
+
+    existsOrCreateDirRecursive(outDir)
+
+    var str = chart.write()
+    writeFile(filePath, str)
+
+    result = ConvertResult(
+        folderName: folderName,
+        filePath: filePath
+    )
+
+proc saveChart(chart: memo.Memo, options: ConvertOptions): ConvertResult =
+    let params = memo.asFormattingParams(chart)
 
     var outDir = options.output
     if not isAbsolute(outDir):

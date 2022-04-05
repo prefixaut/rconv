@@ -533,7 +533,7 @@ proc write*(chart: Memo): string =
 
                         fillerReplace = ReplaceableVertical
                         fillerNote = $Token.Vertical
-                        for filler in 0..(diff div 4):
+                        for filler in 1..<(diff div 4):
                             fillerPositions.add noteIndex + ((filler + 1) * 4)
 
                     for fillerIdx in fillerPositions:

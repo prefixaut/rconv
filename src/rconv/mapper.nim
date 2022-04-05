@@ -298,13 +298,17 @@ proc toMemo*(this: malody.Chart): memo.Memo =
     )
     var minBpm = 0.0
     var maxBpm = 0.0
+    var bpmSet = false
     var currentBpm = 0.0
     var currentBeat = -1
     var currentSection = -1
     var timingOffset = 0
     var totalBeats = 0
     var sections = initTable[int, memo.Section]()
+    var bpmChanges = initTable[int, float]()
     var notes = initTable[int, seq[malody.TimedElement]]()
+    var noteTimings = initTable[int, int]()
+    var holdTable = initTable[int, seq[tuple[malody: malody.TimedElement, memo: memo.Note]]]()
 
     for elem in this.note:
         if elem.kind != malody.ElementType.IndexNote:
@@ -326,30 +330,25 @@ proc toMemo*(this: malody.Chart): memo.Memo =
         else:
             maxBpm = max(maxBpm, elem.sigBpm)
 
-        if elem.beat[0] == 0:
+        if not bpmSet or currentBpm != elem.sigBpm:
             currentBpm = elem.sigBpm
+            bpmSet = true
 
-        var section: memo.Section
         let sectionIdx = int(elem.beat[0] / 4)
-        if sections.hasKey sectionIdx:
-            section = sections[sectionIdx]
-        else:
-            section = memo.newSection(
-                index = sectionIdx + 1,
-                bpm = elem.sigBpm
-            )
-            sections[sectionIdx] = section
-            result.sections.add section
+        bpmChanges[sectionIdx] = elem.sigBpm       
+
+    currentBpm = bpmChanges.getOrDefault(0, 0.0)
 
     for beatIdx in 0..totalBeats:
-        let sectionIdx = int(beatIdx / 4)
+        let sectionIdx = int(beatIdx / 4) + 1
         var section: memo.Section
-        echo "beat: " & $beatIdx & ", section: " & $sectionIdx
 
         if sections.hasKey sectionIdx:
             section = sections[sectionIdx]
         else:
-            section = memo.newSection(index = sectionIdx + 1)
+            if bpmChanges.hasKey(sectionIdx) and bpmChanges[sectionIdx] != currentBpm:
+                currentBpm = bpmChanges[sectionIdx]
+            section = memo.newSection(index = sectionIdx, bpm = currentBpm)
             sections[sectionIdx] = section
             result.sections.add section
 
@@ -357,15 +356,13 @@ proc toMemo*(this: malody.Chart): memo.Memo =
             timingOffset = 0
         currentSection = sectionIdx
 
-        #echo "section: " & $sectionIdx & " " & $section[]
         if not notes.hasKey beatIdx:
             section.snaps.add memo.newSnap(4)
             for i in 0..4:
                 section.timings.add -1
             inc timingOffset, 4
-            continue
 
-        for elem in notes[beatIdx]:
+        for elem in notes.getOrDefault(beatIdx, @[]):
             if currentBeat != elem.beat[0]:
                 for i in 0..elem.beat[2]:
                     section.timings.add -1
@@ -373,19 +370,36 @@ proc toMemo*(this: malody.Chart): memo.Memo =
                 inc timingOffset, elem.beat[2]
 
             let elemTime = timingOffset - elem.beat[2] + elem.beat[1]
-            #echo "elem: " & $elem[] & ", time: " & $elemTime
             currentBeat = elem.beat[0]
-            section.timings[elemTime] = elem.index
+            if section.timings[elemTime] == -1:
+                section.timings[elemTime] = noteTimings.mgetOrPut(sectionIdx, 1)
+                noteTimings[sectionIdx] = noteTimings[sectionIdx] + 1
 
             if elem.hold == malody.HoldType.IndexHold:
-                section.notes.mgetOrPut(elem.index, @[]).add memo.newHold(
+                var tmp = memo.newHold(
                     time = elemTime,
                     animationStartIndex = elem.indexEnd,
+                    releaseSection = int(elem.indexEndBeat[0] / 4) + 1
                 )
+                section.notes.mgetOrPut(elem.index, @[]).add tmp
+                if elem.beat[0] == elem.indexEndBeat[0]:
+                    tmp.releaseTime = timingOffset - elem.indexEndBeat[2] + elem.indexEndBeat[1]
+                else:
+                    holdTable.mgetOrPut(elem.indexEndBeat[0], @[]).add (elem, tmp)
             else:
                 section.notes.mgetOrPut(elem.index, @[]).add memo.newNote(
                     time = elemTime,
                 )
+
+        for pair in holdTable.getOrDefault(beatIdx, @[]):
+            let elem = pair.malody
+            let note = pair.memo
+            let elemTime = timingOffset - elem.indexEndBeat[2] + elem.indexEndBeat[1]
+            note.releaseTime = elemTime
+            if section.timings[elemTime] == -1:
+                section.timings[elemTime] = noteTimings.mgetOrPut(sectionIdx, 1)
+                noteTimings[sectionIdx] = noteTimings[sectionIdx] + 1
+        holdTable.del beatIdx
 
     result.bpm = maxBpm
     result.bpmRange = (minBpm, maxBpm)

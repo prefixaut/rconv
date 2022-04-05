@@ -193,7 +193,7 @@ All listed formats are able to be parsed, have proper types (structs) and output
     </tr>
     <tr>
         <td style="text-align: center;">Malody</td>
-        <td style="text-align: center;">❌</td>
+        <td style="text-align: center;">✔️</td>
         <td style="text-align: center;">❌</td>
         <td style="text-align: center;">➖</td>
         <td style="text-align: center;">✔️</td>

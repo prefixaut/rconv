@@ -6,7 +6,7 @@ import ./private/[utils, simfile_common, simfile_helper]
 export simfile_common
 
 type
-    InvalidNoteError* = object of ParseError
+    InvalidNoteError* {.exportc: "rconv_sm_$1".} = object of ParseError
         ## Exception which is thrown when a Note is invalidly placed.
         beat*: int
         ## The beat where the note is placed in
@@ -32,7 +32,7 @@ type
         Fake = "F"
         ## Notes which can't be hit
 
-    Note* = ref object
+    Note* {.exportc: "rconv_sm_$1".} = ref object
         ## A single note to be played
         snap*: int
         ## On which snap this note is
@@ -57,7 +57,7 @@ type
             else:
                 discard
 
-    Beat* = ref object
+    Beat* {.exportc: "rconv_sm_$1".} = ref object
         ## A single beat which is divided into more snaps
         index*: int
         ## The index of the beat
@@ -66,7 +66,7 @@ type
         notes*: seq[Note]
         ## All notes in this beat
 
-    NoteData* = ref object
+    NoteData* {.exportc: "rconv_sm_$1".} = ref object
         ## A single chart (difficulty for a game-mode)
         chartType*: ChartType
         ## The game-mode of the chart
@@ -81,7 +81,7 @@ type
         beats*: seq[Beat]
         ## The individual beats of the chart
 
-    ChartFile* = ref object
+    ChartFile* {.exportc: "rconv_sm_$1".} = ref object
         ## A chart-file which represents a single song with multiple charts (difficulties/game-modes)
         title*: string
         ## The Song-Title
@@ -161,12 +161,12 @@ type
 const
     SpecialNoteStart = 'D'
 
-func newNoteError(msg: string, beat: int, note: Note): ref InvalidNoteError =
+func newNoteError(msg: string, beat: int, note: Note): ref InvalidNoteError {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     result = newException(InvalidNoteError, msg)
     result.beat = beat
     result.note = note
 
-func newTimedAttack*(time: float, length: float, mods: seq[Modifier] = @[]): TimedAttack =
+func newTimedAttack*(time: float, length: float, mods: seq[Modifier] = @[]): TimedAttack {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     new result
     result.time = time
     result.length = length
@@ -175,14 +175,14 @@ func newTimedAttack*(time: float, length: float, mods: seq[Modifier] = @[]): Tim
 func newTimedAttack*(time: Option[float], length: Option[float], mods: seq[Modifier] = @[]): TimedAttack =
     result = newTimedAttack(time.get(0.0), length.get(0.0), mods)
 
-func newNote*(kind: NoteType, snap: int, column: int, attack: Attack = nil, keySound: int = -1): Note =
+func newNote*(kind: NoteType, snap: int, column: int, attack: Attack = nil, keySound: int = -1): Note {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     result = Note(kind: kind)
     result.snap = snap
     result.column = column
     result.attack = attack
     result.keySound = keySound
 
-func newBeat*(index: int, snapSize: int = 0, notes: seq[Note] = @[]): Beat =
+func newBeat*(index: int, snapSize: int = 0, notes: seq[Note] = @[]): Beat {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     new result
     result.index = index
     result.snapSize = snapSize
@@ -194,7 +194,7 @@ func newNoteData*(
     difficulty: Difficulty = Difficulty.Beginner,
     difficultyLevel: int = 1,
     beats: seq[Beat] = @[]
-): NoteData =
+): NoteData {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     new result
     result.chartType = chartType
     result.description = description
@@ -240,7 +240,7 @@ func newChartFile*(
     scrolls: seq[ScollSpeedChange] = @[],
     fakes: seq[FakeSection] = @[],
     labels: seq[Label] = @[],
-): ChartFile =
+): ChartFile {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     new result
     result.title = title
     result.subtitle = subtitle
@@ -280,7 +280,7 @@ func newChartFile*(
     result.fakes = fakes
     result.labels = labels
 
-func asFormattingParams*(chart: ChartFile): FormattingParameters =
+func asFormattingParams*(chart: ChartFile): FormattingParameters {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     ## Creates formatting-parameters from the provided chart-file
 
     result = newFormattingParameters(
@@ -665,15 +665,15 @@ func write(notes: NoteData, withNoteExtras: bool = false): string =
 
     result &= arr.join(",\n") & ";\n"
 
-func parseStepMania*(data: string, lenient: bool = false): ChartFile =
+func parseStepMania*(data: string, lenient: bool = false): ChartFile {.cdecl, exportc: "rconv_sm_parse", dynlib.} =
     result = newChartFile()
     for tag, tagData in parseTags(data):
         result.putFileData(tag, tagData, lenient)
 
-proc parseStepMania*(stream: Stream, lenient: bool = false): ChartFile =
+proc parseStepMania*(stream: Stream, lenient: bool = false): ChartFile {.cdecl, exportc: "rconv_sm_parseFromStream", dynlib.} =
     result = parseStepMania(stream.readAll, lenient)
 
-func write*(chart: ChartFile): string =
+func write*(chart: ChartFile): string {.cdecl, exportc: "rconv_sm_toString", dynlib.} =
 
     # The basic/required fields
     result = fmt"""
@@ -705,20 +705,20 @@ func write*(chart: ChartFile): string =
     result.putTag("fgchanges", chart.fgchanges.mapIt(it.write).join("\n,"))
     result.putTag("keySounds", chart.keySounds.join("\n,"))
     result.putTag("offset", $chart.offset)
-    result.putTag("stops", chart.stops.mapIt(fmt"{it.beat}={it.duration}").join("\n,"))
-    result.putTag("bpms", chart.bpms.mapIt(fmt"{it.beat}={it.bpm}").join("\n,"))
-    result.putTag("timesignatures", chart.timeSignatures.mapIt(fmt"{it.beat}={it.numerator}={it.denominator}").join("\n,"))
+    result.putTag("stops", chart.stops.mapIt(fmt"{it.beat[]}={it.duration}").join("\n,"))
+    result.putTag("bpms", chart.bpms.mapIt(fmt"{it.beat[]}={it.bpm}").join("\n,"))
+    result.putTag("timesignatures", chart.timeSignatures.mapIt(fmt"{it.beat[]}={it.numerator}={it.denominator}").join("\n,"))
     result.putTag("attacks", chart.attacks.mapIt(it.write).join("\n:"))
-    result.putTag("delays", chart.delays.mapIt(fmt"{it.beat}={it.duration}").join("\n,"))
-    result.putTag("tickcounts", chart.tickCounts.mapIt(fmt"{it.beat}={it.count}").join("\n,"))
+    result.putTag("delays", chart.delays.mapIt(fmt"{it.beat[]}={it.duration}").join("\n,"))
+    result.putTag("tickcounts", chart.tickCounts.mapIt(fmt"{it.beat[]}={it.count}").join("\n,"))
     for n in chart.noteData:
         result &= write(n)
         if n.hasNoteExtra:
             result &= write(n, true)
-    result.putTag("combos", chart.combos.mapIt(fmt"{it.beat}={it.hit}={it.miss}").join("\n,"))
-    result.putTag("speeds", chart.speeds.mapIt(fmt"{it.beat}={it.ratio}={it.duration}={it.inSeconds.boolFlag}").join("\n,"))
-    result.putTag("fakes", chart.fakes.mapIt(fmt"{it.beat}={it.duration}").join("\n,"))
-    result.putTag("labels", chart.labels.mapIt(fmt"{it.beat}={it.content}").join("\n,"))
+    result.putTag("combos", chart.combos.mapIt(fmt"{it.beat[]}={it.hit}={it.miss}").join("\n,"))
+    result.putTag("speeds", chart.speeds.mapIt(fmt"{it.beat[]}={it.ratio}={it.duration}={it.inSeconds.boolFlag}").join("\n,"))
+    result.putTag("fakes", chart.fakes.mapIt(fmt"{it.beat[]}={it.duration}").join("\n,"))
+    result.putTag("labels", chart.labels.mapIt(fmt"{it.beat[]}={it.content}").join("\n,"))
 
-proc write*(chart: ChartFile, stream: Stream): void =
+proc write*(chart: ChartFile, stream: Stream): void {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     stream.write(chart.write)

@@ -20,6 +20,7 @@ requires "nim >= 1.6.0"
 requires "argparse >= 2.0.1"
 requires "glob >= 0.11.1"
 requires "regex >= 0.19.0"
+requires "bignum >= 1.0.0"
 
 # Test/Develop Dependencies
 
@@ -27,10 +28,27 @@ requires "coco >= 0.0.3"
 
 # Tasks
 
-task clib, "Compile the library to a native one (dll/so)":
+task build, "Compile to a CLI app":
+    switch "out", "bin/rconv"
+    switch "app", "console"
+    switch "usenimcache"
+    setCommand "c", "src/rconv/cli.nim"
+
+task staticlib, "Compile to a static library":
+    switch "outdir", "dist"
+    switch "app", "staticlib"
+    switch "usenimcache"
+    switch "noMain"
+    switch "noLinking"
+    #switch "passL", "-Llibs/gmp -llibgmp.dll"
+    setCommand "c", "src/rconv.nim"
+
+task dynlib, "Compile to a dynamic library":
     switch "outdir", "dist"
     switch "app", "lib"
     switch "usenimcache"
+    switch "noMain"
+    #switch "passL", "-Llibs/gmp -llibgmp.dll"
     setCommand "c", "src/rconv.nim"
 
 task docs, "Build the documentation from source-code":

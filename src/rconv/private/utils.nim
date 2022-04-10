@@ -1,28 +1,33 @@
 import std/[strutils, sequtils, options, os]
 
+import pkg/bignum
+
+func parseRat*(value: string): Rat =
+    result = newRat(value)
+
+func parseRatSafe*(value: string, default: Option[Rat] = none[Rat]()): Option[Rat] = 
+    try:
+        return some[Rat](parseRat(value))
+    except:
+        return default
+
 func parseFloatSafe*(value: string, default: Option[float] = none[float]()): Option[float] =
     try:
         return some[float](parseFloat(value))
     except ValueError:
-        if default.isSome:
-            return default
-        return none[float]()
+        return default
 
 func parseIntSafe*(value: string, default: Option[int] = none[int]()): Option[int] =
     try:
         return some[int](parseInt(value))
     except ValueError:
-        if default.isSome:
-            return default
-        return none[int]()
+        return default
 
 func parseBoolSafe*(value: string, default: Option[bool] = none[bool]()): Option[bool] =
     try:
         return some[bool](parseBool(value))
     except ValueError:
-        if default.isSome:
-            return default
-        return none[bool]()
+        return default
 
 func splitMin*(str: string, sep: string, minCount: int, default: string = ""): seq[string] =
     result = str.split(sep)

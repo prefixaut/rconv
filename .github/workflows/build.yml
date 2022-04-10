@@ -42,8 +42,11 @@ jobs:
       - name: Build CLI
         run: nimble build
 
-      - name: Build library
-        run: nimble clib
+      - name: Build library (dynamic)
+        run: nimble dynlib
+
+      - name: Build library (static)
+        run: nimble staticlib
 
       # Install perl on windows (linux and macos already have it installed)
       - uses: shogo82148/actions-setup-perl@v1

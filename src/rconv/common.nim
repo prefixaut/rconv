@@ -13,7 +13,7 @@ type
         KickItUp = "ksf"
         FXF = "fxf"
 
-    ConvertOptions* = object
+    ConvertOptions* {.exportc: "rconv_$1".} = object
         ## Options for converting one chart-file to another type
         bundle*: bool
         ## All output files should instead be bundles (if the output type supports it).
@@ -43,7 +43,7 @@ type
         chartFormat*: string
         ## The format for the chart file.
 
-    FormattingParameters* = object
+    FormattingParameters* {.exportc: "rconv_$1".} = object
         ## Parameters to format a folder or chart.
         title*: string
         artist*: string
@@ -52,7 +52,7 @@ type
         mode*: string
         extension*: string
 
-    ConvertResult* = object
+    ConvertResult* {.exportc: "rconv_$1".} = object
         ## Result from converting a chart-file
         folderName*: string
         ## The folder-name in which the file has been put into.
@@ -61,22 +61,22 @@ type
         filePath*: string
         ## Absolute file-path to the file.
 
-    CombinedError* = object of CatchableError
+    CombinedError* {.exportc: "rconv_$1".} = object of CatchableError
         ## An error which combines/collects multiple error messages into one.
         errors*: seq[ref Exception]
         ## The combined/collected errors.
 
-    ParseError* = object of CatchableError ## \
+    ParseError* {.exportc: "rconv_$1".} = object of CatchableError ## \
     ## Error which occurs when parsing of a file failed.
 
-    ConvertException* = object of CatchableError ## \
+    ConvertException* {.exportc: "rconv_$1".} = object of CatchableError ## \
     ## An error which occurs during conversion.
     ## More detailed information is from extending Exceptions.
 
-    MissingTypeException* = object of ConvertException ## \
+    MissingTypeException* {.exportc: "rconv_$1".} = object of ConvertException ## \
     ## Exception which occurs when no input type was provided and/or couldn't be determined automatically.
 
-    InvalidTypeException* = object of ConvertException
+    InvalidTypeException* {.exportc: "rconv_$1".} = object of ConvertException
         ## Exception which occurs when the converter does not have a convertion available
         ## for the input type.
         file*: string
@@ -84,7 +84,7 @@ type
         inputType*: FileType
         ## The fileType which has no available convertions.
 
-    MissingConversionException* = object of ConvertException
+    MissingConversionException* {.exportc: "rconv_$1".} = object of ConvertException
         ## Exception which occurs when it's not possible to convert from the input type to the
         ## requested output type.
         file: string
@@ -94,7 +94,7 @@ type
         outputType*: FileType
         ## The fileType to where it attmepted to convert to.
 
-    PreserveFileException* = object of ConvertException ## \
+    PreserveFileException* {.exportc: "rconv_$1".} = object of ConvertException ## \
         ## Exception which occurs when the options have `preserve` enabled,
         ## and the output-file already exists.
 
@@ -134,7 +134,7 @@ func newConvertOptions*(
     normalize: bool = false,
     folderFormat: string = DefaultFolderFormat,
     chartFormat: string = ""
-): ConvertOptions =
+): ConvertOptions {.cdecl, exportc: "rconv_$1", dynlib.} =
     ## Function to create a new `ConvertOptions` instance.
 
     result = ConvertOptions(
@@ -156,7 +156,7 @@ func newFormattingParameters*(
     level: string = "",
     mode: string = "",
     extension: string = "txt",
-): FormattingParameters =
+): FormattingParameters {.cdecl, exportc: "rconv_$1", dynlib.} =
     ## Function to create a new `FormattingParameters` instance.
 
     result = FormattingParameters(
@@ -168,7 +168,7 @@ func newFormattingParameters*(
         extension: extension,
     )
 
-proc formatFileName*(this: ConvertOptions, params: FormattingParameters): string =
+proc formatFileName*(this: ConvertOptions, params: FormattingParameters): string {.cdecl, exportc: "rconv_$1", dynlib.} =
     ## Formats the `ConvertOptions`' `chartFormat` by replacing the Placeholders
     ## with the provided formatting parameters.
 
@@ -185,7 +185,7 @@ proc formatFileName*(this: ConvertOptions, params: FormattingParameters): string
     if this.normalize:
         result = normalize(result)
 
-func formatFolderName*(this: ConvertOptions, params: FormattingParameters): string =
+func formatFolderName*(this: ConvertOptions, params: FormattingParameters): string {.cdecl, exportc: "rconv_$1", dynlib.} =
     ## Formats the `ConvertOptions`' `folderFormat` by replacing the Placeholders
     ## with the provided formatting parameters.
 
@@ -196,7 +196,7 @@ func formatFolderName*(this: ConvertOptions, params: FormattingParameters): stri
     if this.normalize:
         result = normalize(result)
 
-func detectFileType*(file: string): Option[FileType] =
+func detectFileType*(file: string): Option[FileType] {.cdecl, exportc: "rconv_$1", dynlib.} =
     ## Attmpts to detect the file-type of the provided file-path.
 
     result = none(FileType)
@@ -220,7 +220,7 @@ func detectFileType*(file: string): Option[FileType] =
         of "ksf":
             result = some(FileType.KickItUp)
 
-func getFileExtension*(fileType: FileType): string =
+func getFileExtension*(fileType: FileType): string {.cdecl, exportc: "rconv_$1", dynlib.} =
     ## Get's the file-extension for the provided file-type
 
     case fileType:
@@ -239,7 +239,7 @@ func getFileExtension*(fileType: FileType): string =
     of FileType.KickItUp:
         result = "ksf"
 
-func getDefaultChartFormat*(fileType: FileType): string =
+func getDefaultChartFormat*(fileType: FileType): string {.cdecl, exportc: "rconv_$1", dynlib.} =
     ## Gets the default chart-format for the provided file-type
 
     case fileType:
@@ -248,7 +248,7 @@ func getDefaultChartFormat*(fileType: FileType): string =
     else:
         return DefaultChartFormat
 
-func getDefaultOptions*(to: FileType): ConvertOptions =
+func getDefaultOptions*(to: FileType): ConvertOptions {.cdecl, exportc: "rconv_$1", dynlib.} =
     ## Creates file-type specific default-options.
     ##
     ## See also:

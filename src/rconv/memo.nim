@@ -317,7 +317,7 @@ func parseSection(index: int, partIndex: int, bpm: float, parts: seq[SectionPart
     # Sort the notes by the index
     result.notes.sort((a, b) => system.cmp(a[0], b[0]))
 
-func parseMemo*(content: string): Memo =
+func parseMemo*(content: string): Memo {.cdecl, exportc: "rconv_memo_parse", dynlib.} =
     ## Parses the provided memo-data to a memo object (memo object representation).
     ## The content has to be a complete memo file to be parsed correctly.
 
@@ -440,7 +440,7 @@ proc writePart(printTable: Table[NoteRange, string], timingOffset: var int, sect
             result &= "\n"
             inc rowIndex
 
-proc write*(chart: Memo): string =
+proc write*(chart: Memo): string {.cdecl, exportc: "rconv_memo_toString", dynlib.} =
     var parts = @[
         @[chart.songTitle, chart.artist].join("\n"),
         $($chart.difficulty).toUpper
@@ -577,5 +577,5 @@ proc write*(chart: Memo): string =
 
     result = parts.join("\n\n")
 
-proc write*(chart: Memo, stream: Stream): void =
+proc write*(chart: Memo, stream: Stream): void {.cdecl, exportc: "rconv_memo_$1", dynlib.} =
     stream.write(chart.write)

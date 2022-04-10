@@ -4,11 +4,11 @@ import ./common
 import ./private/json_helpers
 
 type
-    InvalidModeException* = object of CatchableError ## \
+    InvalidModeException* {.exportc: "rconv_malody_$1".} = object of CatchableError ## \
     ## Exception which is thrown when the chart's type can't be converted to the
     ## required output format
 
-    Chart* = ref object
+    Chart* {.exportc: "rconv_malody_$1".} = ref object
         ## A Malody chart-File object definition
         meta*: MetaData
         ## Meta data of the chart, such as version, creator and song data
@@ -68,7 +68,7 @@ type
     IndexRange = range[0..15] ## \
     ## Range of available indices/note positions
 
-    MetaData* = ref object
+    MetaData* {.exportc: "rconv_malody_$1".} = ref object
         `$ver`*: int
         ## Version of the chart-format
         creator*: string
@@ -90,7 +90,7 @@ type
         mode_ext*: ModeData
         ## Extra Data specifically for the Mode
 
-    SongData* = ref object
+    SongData* {.exportc: "rconv_malody_$1".} = ref object
         title*: string
         ## Title of the song.
         ## If the `titleorg` field exists, then this is should be the romanized/latin version
@@ -104,7 +104,7 @@ type
         id*: int
         ## ID combination of the title & artist (only for ranked)
 
-    ModeData* = ref object
+    ModeData* {.exportc: "rconv_malody_$1".} = ref object
         column*: int
         ## Used in Mode "Key" to determine how many keys/columns it's using
         bar_begin: int
@@ -113,12 +113,12 @@ type
         speed: int
         ## The fall speed of the notes
 
-    ExtraData* = ref object
+    ExtraData* {.exportc: "rconv_malody_$1".} = ref object
         ## Extra data for a chart
         test*: ExtraTestData
         ## Data which is only used for testing (?)
     
-    ExtraTestData* = ref object
+    ExtraTestData* {.exportc: "rconv_malody_$1".} = ref object
         ## Data used for testing (?)
         divide*: int
         ## The time signature (?) Usually 4 as in 4/4
@@ -172,7 +172,7 @@ type
         CatchHold
         ## Hold for the following Modes: Catch
 
-    TimedElement* = ref object of RootObj
+    TimedElement* {.exportc: "rconv_malody_$1".} = ref object of RootObj
         beat*: Beat
         ## The Beat on which this timed-element occurs
         case kind*: ElementType
@@ -240,7 +240,7 @@ type
 const
     EmptyBeat*: Beat = [-1, 0, 0]
 
-func getPriority*(this: TimedElement): int =
+func getPriority*(this: TimedElement): int {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     ## Internal helper function to get the priority of a `TimedElement`.
     ## Usually used for sorting.
 
@@ -255,7 +255,7 @@ func getPriority*(this: TimedElement): int =
     elif this.kind == ElementType.TimeSignature:
         result = 4
 
-func getSoundCueType*(id: int): SoundCueType =
+func getSoundCueType*(id: int): SoundCueType {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     result = SoundCueType.Effect
 
     case id:
@@ -268,7 +268,7 @@ func getSoundCueType*(id: int): SoundCueType =
     else:
         discard
 
-func getSlideNoteType*(id: int): SlideNoteType =
+func getSlideNoteType*(id: int): SlideNoteType {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     result = SlideNoteType.Hold
 
     case id:
@@ -277,7 +277,7 @@ func getSlideNoteType*(id: int): SlideNoteType =
     else:
         discard
 
-func getCatchNoteType*(id: int): CatchNoteType =
+func getCatchNoteType*(id: int): CatchNoteType {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     result = CatchNoteType.Hold
 
     case id:
@@ -292,7 +292,7 @@ func newSongData*(
     artist: string = "",
     artistorg: string = "",
     id: int = 0
-): SongData =
+): SongData {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     new result
     result.title = title
     result.titleorg = titleorg
@@ -300,7 +300,11 @@ func newSongData*(
     result.artistorg = artistorg
     result.id = id
 
-func newModeData*(column: int = 0, bar_begin: int = 0, speed: int = 0): ModeData =
+func newModeData*(
+    column: int = 0,
+    bar_begin: int = 0,
+    speed: int = 0
+): ModeData {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     new result
     result.column = column
     result.bar_begin = bar_begin
@@ -317,7 +321,7 @@ func newMetaData*(
     time: int = 0,
     song: SongData = newSongData(),
     mode_ext: ModeData = newModeData()
-): MetaData =
+): MetaData {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     new result
     result.`$ver` = `$ver`
     result.creator = creator
@@ -330,16 +334,20 @@ func newMetaData*(
     result.song = song
     result.mode_ext = mode_ext
 
-func newChart*(meta: MetaData = newMetaData(), time: seq[TimedElement] = @[], note: seq[TimedElement] = @[]): Chart =
+func newChart*(
+    meta: MetaData = newMetaData(),
+    time: seq[TimedElement] = @[],
+    note: seq[TimedElement] = @[]
+): Chart {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     new result
     result.meta = meta
     result.time = time
     result.note = note
 
-func newTimedElement*(beat: Beat = EmptyBeat): TimedElement =
+func newTimedElement*(beat: Beat = EmptyBeat): TimedElement {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     result = TimedElement(beat: beat, kind: ElementType.Plain, hold: HoldType.None)
 
-func newTimeSignature*(beat: Beat = EmptyBeat, bpm: float = 0): TimedElement =
+func newTimeSignature*(beat: Beat = EmptyBeat, bpm: float = 0): TimedElement {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     result = TimedElement(beat: beat, kind: ElementType.TimeSignature, hold: HoldType.None)
     result.sigBpm = bpm
 
@@ -349,14 +357,14 @@ func newSoundCue*(
     sound: string = "",
     offset: float = 0,
     volume: float = 0
-): TimedElement =
+): TimedElement {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     result = TimedElement(beat: beat, kind: ElementType.SoundCue, hold: HoldType.None)
     result.cueType = `type`
     result.cueSound = sound
     result.cueOffset = offset
     result.cueVolume = volume
 
-proc newIndexNote*(beat: Beat = EmptyBeat, index: IndexRange = 0): TimedElement =
+proc newIndexNote*(beat: Beat = EmptyBeat, index: IndexRange = 0): TimedElement {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     result = TimedElement(beat: beat, kind: ElementType.IndexNote, hold: HoldType.None)
     result.index = index
 
@@ -364,7 +372,7 @@ func newColumnNote*(
     beat: Beat = EmptyBeat,
     column: KeyColumnRange = 0,
     style: int = 0
-): TimedElement =
+): TimedElement {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     result = TimedElement(beat: beat, kind: ElementType.ColumnNote, hold: HoldType.None)
     result.column = column
     result.colStyle = style
@@ -373,7 +381,7 @@ func newCatchNote*(
     beat: Beat = EmptyBeat,
     x: int = 0,
     `type`: CatchNoteType = CatchNoteType.Hold
-): TimedElement =
+): TimedElement {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     result = TimedElement(beat: beat, kind: ElementType.CatchNote, hold: HoldType.None)
     result.catchX = x
     result.catchType = `type`
@@ -384,7 +392,7 @@ func newSlideNote*(
     width: int = 0,
     `type`: SlideNoteType = SlideNoteType.Hold,
     segments: seq[TimedElement] = @[]
-): TimedElement =
+): TimedElement {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     result = TimedElement(beat: beat, kind: ElementType.SlideNote, hold: HoldType.None)
     result.slideX = x
     result.slideWidth = width
@@ -396,7 +404,7 @@ func newIndexHold*(
     index: IndexRange,
     endBeat: Beat = EmptyBeat,
     endIndex: IndexRange
-): TimedElement =
+): TimedElement {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     result = TimedElement(beat: beat, kind: ElementType.IndexNote, hold: IndexHold)
     result.index = index
     result.indexEndBeat = endBeat
@@ -408,7 +416,7 @@ func newColumnHold*(
     style: int = 0,
     endBeat: Beat = EmptyBeat,
     hits: int = 1
-): TimedElement =
+): TimedElement {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     result = TimedElement(beat: beat, kind: ElementType.ColumnNote, hold: HoldType.ColumnHold)
     result.column = column
     result.colStyle = style
@@ -420,13 +428,13 @@ func newCatchHold*(
     x: int = 0,
     `type`: CatchNoteType = CatchNoteType.Hold,
     endBeat: Beat = EmptyBeat
-): TimedElement =
+): TimedElement {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     result = TimedElement(beat: beat, kind: ElementType.CatchNote, hold: HoldType.CatchHold)
     result.catchX = x
     result.catchType = `type`
     result.catchEndBeat = endBeat
 
-func asFormattingParams*(chart: Chart): FormattingParameters =
+func asFormattingParams*(chart: Chart): FormattingParameters {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     ## Creates formatting-parameters from the provided chart-file
 
     result = newFormattingParameters(
@@ -436,7 +444,7 @@ func asFormattingParams*(chart: Chart): FormattingParameters =
         extension = FileType.Malody.getFileExtension,
     )
 
-func getBeatSafe(self: JsonNode, field: string = "beat", default: Beat = EmptyBeat): Beat =
+func getBeatSafe(self: JsonNode, field: string = "beat", default: Beat = EmptyBeat): Beat {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     ## Internal helper function to safely get a beat from a JsonNode
 
     result = default
@@ -450,7 +458,10 @@ func getBeatSafe(self: JsonNode, field: string = "beat", default: Beat = EmptyBe
         except:
             discard
 
-func toTimedElement*(self: JsonNode, lenient: bool = false): TimedElement {.raises: [ParseError,ValueError].} =
+func toTimedElement*(
+    self: JsonNode,
+    lenient: bool = false
+): TimedElement {.raises: [ParseError,ValueError], cdecl, exportc: "rconv_malody_$1", dynlib.} =
     ## Hook to convert the provided JsonNode to the appropiate `TimeElement`.
 
     if self.kind != JsonNodeKind.JObject:
@@ -528,7 +539,7 @@ func toTimedElement*(self: JsonNode, lenient: bool = false): TimedElement {.rais
     else:
         result = newTimedElement(beat = beat)
 
-func toChart*(self: JsonNode, lenient: bool = false): Chart {.raises:[ParseError,ValueError].} =
+func toChart*(self: JsonNode, lenient: bool = false): Chart {.raises:[ParseError,ValueError], cdecl, exportc: "rconv_malody_$1", dynlib.} =
     ## Additional hook to make the hook for `TimedElement` work.
 
     if self.kind != JsonNodeKind.JObject:
@@ -614,17 +625,17 @@ func toJsonHook*[T: Beat](this: T): JsonNode =
     result.elems.add newJInt(this[1])
     result.elems.add newJInt(this[2])
 
-proc parseMalody*(data: string, lenient: bool = false): Chart =
+proc parseMalody*(data: string, lenient: bool = false): Chart {.cdecl, exportc: "rconv_malody_parse", dynlib.} =
     result = parseJson(data).toChart
 
-proc parseMalody*(stream: Stream, lenient: bool = false): Chart =
+proc parseMalody*(stream: Stream, lenient: bool = false): Chart {.cdecl, exportc: "rconv_malody_parseFromStream", dynlib.} =
     result = parseMalody(stream.readAll, lenient)
 
-func write*(chart: Chart, pretty: bool = false): string =
+func write*(chart: Chart, pretty: bool = false): string {.cdecl, exportc: "rconv_malody_toString", dynlib.} =
     if pretty:
         result = toJsonHook(chart).pretty
     else:
         toUgly(result, toJson(chart))
 
-proc write*(chart: Chart, stream: Stream, pretty: bool = false): void =
+proc write*(chart: Chart, stream: Stream, pretty: bool = false): void {.cdecl, exportc: "rconv_malody_$1", dynlib.} =
     stream.write(chart.write(pretty))

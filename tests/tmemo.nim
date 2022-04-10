@@ -605,7 +605,7 @@ BPM: 160
 
         check:
             chart.meta.`$ver` == 1
-            chart.meta.version == "extreme"
+            chart.meta.version == "Extreme"
             chart.meta.mode == malody.ChartMode.Pad
             chart.meta.song.title == "Song-Title-BlaFoo"
             chart.meta.song.artist == "Artist-Foobar"

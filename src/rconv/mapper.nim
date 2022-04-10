@@ -1,6 +1,6 @@
 import std/[algorithm, math, sets, strutils, strformat, tables]
 
-import pkg/regex
+import pkg/[bignum, regex]
 
 import ./common
 import ./private/utils
@@ -21,15 +21,18 @@ type
 const
     LevelRegex = re"(?:(?:[lL][vV])|(?:[lL][vV][lL])|(?:[lL][eE][vV][eE][lL]))?\s*\.*\s*([0-9]+[\.]?[0-9])"
 
-proc getBeat(value: float): malody.Beat =
+proc getBeat(value: Rat): malody.Beat =
     ## Helper function to convert a fraction beat-index (1.5, 2.3, ...) to a
     ## indicative beat & snap position.
     ## Currently supports from 1 to 20th snaps
-    let beat = int(value)
-    let part = int(int((value - float(beat)) * 100_000) / 10)
+    let beat = value.num.toInt
+    var beatDenom = value.denom.toInt
+    while beatDenom > 10_000:
+        beatDenom = int(beatDenom / 10_000)
+    # TODO: Replace with a simple loop instead of this mess
 
     # Additional values are for rounding errors/IEEE float handling
-    case part:
+    case beatDenom:
     of 9990, 9989:
         result = [beat, 3, 3]
     of 9500, 9499:
@@ -120,7 +123,7 @@ proc getBeat(value: float): malody.Beat =
 ------------------------------------------
 ]#
 
-func toFXF*(this: memo.Memo): fxf.ChartFile =
+func toFXF*(this: memo.Memo): fxf.ChartFile {.cdecl, exportc: "rconv_memo_toFXF", dynlib.} =
     ## Function to map/convert `this` Chart to a FXF-ChartFile.
 
     result = fxf.newChartFile(
@@ -209,7 +212,7 @@ func toFXF*(this: memo.Memo): fxf.ChartFile =
         result.charts.extreme = chart
         result.charts.extPresent = 1
 
-func toMalody*(this: memo.Memo): malody.Chart =
+func toMalody*(this: memo.Memo): malody.Chart {.cdecl, exportc: "rconv_memo_toMalody", dynlib.} =
     ## Function to map/convert `this` Chart to a Malody Chart.
 
     result = malody.newChart(meta = malody.newMetaData(
@@ -288,7 +291,7 @@ func toMalody*(this: memo.Memo): malody.Chart =
 ------------------------------------------
 ]#
 
-proc toMemo*(this: malody.Chart): memo.Memo =
+proc toMemo*(this: malody.Chart): memo.Memo {.cdecl, exportc: "rconv_malody_toMemo", dynlib.} =
     if (this.meta.mode != ChartMode.Pad):
         raise newException(InvalidModeException, fmt"The provided Malody-Chart is from the wrong Mode! Mode is {this.meta.mode}, where a {ChartMode.Pad} is required!")
 
@@ -404,7 +407,7 @@ proc toMemo*(this: malody.Chart): memo.Memo =
     result.bpm = maxBpm
     result.bpmRange = (minBpm, maxBpm)
 
-func toFXF*(this: malody.Chart): fxf.ChartFile =
+func toFXF*(this: malody.Chart): fxf.ChartFile {.cdecl, exportc: "rconv_malody_toFXF", dynlib.} =
     ## Function to map/convert `this` Chart to a FXF-ChartFile.
     ## The actual note-data will be present in the `fxf.ChartFile.charts`_ table.
     ## The difficulty is determined by the `memo.parseDifficulty`_ function.
@@ -526,7 +529,7 @@ func toFXF*(this: malody.Chart): fxf.ChartFile =
         holdTable[element.beat].add hold
         tick.holds.add hold
 
-func toStepMania*(this: malody.Chart): sm.ChartFile =
+func toStepMania*(this: malody.Chart): sm.ChartFile {.cdecl, exportc: "rconv_malody_toStepMania", dynlib.} =
     if this.meta.mode != malody.ChartMode.Key:
         raise newException(InvalidModeException, fmt"The provided Malody-Chart is from the wrong Mode! Mode is {this.meta.mode}, where a {ChartMode.Key} is required!")
 
@@ -584,7 +587,8 @@ func toStepMania*(this: malody.Chart): sm.ChartFile =
     for elem in this.time:
         if elem.kind != malody.ElementType.TimeSignature:
             continue
-        result.bpms.add sm.newBpmChange(float(elem.beat[0]) + ((1 / elem.beat[2]) * float(elem.beat[1])), elem.sigBpm)
+        # Readable Version: elem.beat[0] + ((1 / elem.beat[2]) * elem.beat[1])
+        result.bpms.add sm.newBpmChange(newRat(elem.beat[0]) + newRat().mul(newRat().divide(newRat(1), elem.beat[2]), newRat(elem.beat[1])), elem.sigBpm)
 
     for elem in this.note:
         if elem.kind == malody.ElementType.SoundCue:
@@ -622,7 +626,7 @@ func toStepMania*(this: malody.Chart): sm.ChartFile =
 ------------------------------------------
 ]#
 
-proc toMalody*(this: sm.ChartFile, notes: NoteData): malody.Chart =
+proc toMalody*(this: sm.ChartFile, notes: NoteData): malody.Chart {.cdecl, exportc: "rconv_sm_toMalody", dynlib.} =
     result = malody.newChart()
 
     if not this.artistTransliterated.isEmptyOrWhitespace:
@@ -667,6 +671,6 @@ proc toMalody*(this: sm.ChartFile, notes: NoteData): malody.Chart =
                 elif note.kind == sm.NoteType.Note or note.kind == sm.NoteType.Lift:
                     result.note.add malody.newColumnNote(noteBeat, note.column)
 
-proc toMalody*(this: sm.ChartFile, index: int = 0): malody.Chart =
+proc toMalody*(this: sm.ChartFile, index: int = 0): malody.Chart {.cdecl, exportc: "rconv_sm_toMalodyByIndex", dynlib.} =
     let notes = if this.noteData.len > index: this.noteData[index] else: nil
     result = toMalody(this, notes)

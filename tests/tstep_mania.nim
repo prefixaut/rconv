@@ -1,5 +1,7 @@
 import std/[strformat, unittest, options, tables]
 
+import pkg/bignum
+
 import rconv/malody as malody
 import rconv/[mapper, step_mania]
 
@@ -298,22 +300,22 @@ M0FF
             chart.offset == -0.246
             chart.stops.len == 3
             chart.bpms.len == 4
-            chart.bpms[0].beat == 0.0
+            chart.bpms[0].beat == newRat(0.0)
             chart.bpms[0].bpm == 210.0
-            chart.bpms[1].beat == 5.0
+            chart.bpms[1].beat == newRat(5.0)
             chart.bpms[1].bpm == 230.0
-            chart.bpms[2].beat == 40.333
+            chart.bpms[2].beat == newRat(40.333)
             chart.bpms[2].bpm == 120.5
-            chart.bpms[3].beat == 90.0
+            chart.bpms[3].beat == newRat(90.0)
             chart.bpms[3].bpm == 90.75
             chart.timeSignatures.len == 3
-            chart.timeSignatures[0].beat == 3.5
+            chart.timeSignatures[0].beat == newRat(3.5)
             chart.timeSignatures[0].numerator == 8
             chart.timeSignatures[0].denominator == 5
-            chart.timeSignatures[1].beat == 5.1
+            chart.timeSignatures[1].beat == newRat(5.1)
             chart.timeSignatures[1].numerator == 3
             chart.timeSignatures[1].denominator == 4
-            chart.timeSignatures[2].beat == 8.9
+            chart.timeSignatures[2].beat == newRat(8.9)
             chart.timeSignatures[2].numerator == 8
             chart.timeSignatures[2].denominator == 10
 
@@ -357,17 +359,17 @@ M0FF
 
         check:
             chart.delays.len == 3
-            int(chart.delays[0].beat * 1000) == int(65.134 * 1000)
+            int(chart.delays[0].beat.toFloat * 1000) == int(65.134 * 1000)
             int(chart.delays[0].duration * 1000) == int(4.262 * 1000)
-            int(chart.delays[1].beat * 1000) == int(84.001 * 1000)
+            int(chart.delays[1].beat.toFloat * 1000) == int(84.001 * 1000)
             int(chart.delays[1].duration * 1000) == int(43.232 * 1000)
-            int(chart.delays[2].beat * 1000) == int(930.32 * 1000)
+            int(chart.delays[2].beat.toFloat * 1000) == int(930.32 * 1000)
             int(chart.delays[2].duration * 1000) == int(12.000 * 1000)
 
             chart.tickCounts.len == 2
-            int(chart.tickCounts[0].beat * 1000) == int(45.23 * 1000)
+            int(chart.tickCounts[0].beat.toFloat * 1000) == int(45.23 * 1000)
             chart.tickCounts[0].count == 12
-            int(chart.tickCounts[1].beat * 1000) == int(84.999 * 1000)
+            int(chart.tickCounts[1].beat.toFloat * 1000) == int(84.999 * 1000)
             chart.tickCounts[1].count == 24
 
             chart.noteData.len == 1
@@ -420,40 +422,40 @@ M0FF
 
         check:
             chart.combos.len == 3
-            chart.combos[0].beat == 33.333
+            chart.combos[0].beat == newRat(33.333)
             chart.combos[0].hit == 3
             chart.combos[0].miss == 100
-            chart.combos[1].beat == 50.5
+            chart.combos[1].beat == newRat(50.5)
             chart.combos[1].hit == 10
             chart.combos[1].miss == 2
-            chart.combos[2].beat == 52.0
+            chart.combos[2].beat == newRat(52.0)
             chart.combos[2].hit == 2
             chart.combos[2].miss == 1
 
             chart.speeds.len == 2
-            chart.speeds[0].beat == 12.000
+            chart.speeds[0].beat == newRat(12.000)
             chart.speeds[0].ratio == 10.0
             chart.speeds[0].duration == 20.0
             chart.speeds[0].inSeconds == true
-            chart.speeds[1].beat == 76.666
+            chart.speeds[1].beat == newRat(76.666)
             chart.speeds[1].ratio == 7.5
             chart.speeds[1].duration == 12.0
             chart.speeds[1].inSeconds == false
 
             chart.scrolls.len == 1
-            chart.scrolls[0].beat == 75.123
+            chart.scrolls[0].beat == newRat(75.123)
             chart.scrolls[0].factor == 6.75
 
             chart.fakes.len == 2
-            chart.fakes[0].beat == 44.542
+            chart.fakes[0].beat == newRat(44.542)
             chart.fakes[0].duration == 61.0
-            chart.fakes[1].beat == 89.028
+            chart.fakes[1].beat == newRat(89.028)
             chart.fakes[1].duration == 13.999
 
             chart.labels.len == 2
-            chart.labels[0].beat == 71.987
+            chart.labels[0].beat == newRat(71.987)
             chart.labels[0].content == "hello world"
-            chart.labels[1].beat == 91.565
+            chart.labels[1].beat == newRat(91.565)
             chart.labels[1].content == "goodbye"
 
     test "strict note in holds and rolls":

@@ -56,6 +56,9 @@ let cli = newParser:
 
 try:
     var params = cli.parse(commandLineParams())
+    if params == nil:
+        raise newException(ValueError, "CLI is null!")
+
     if params.files.len == 0:
         raise newException(ValueError, "No input-files specified!")
 

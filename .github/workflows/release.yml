@@ -77,8 +77,11 @@ jobs:
         run: nimble install -Y
 
       # Build the release elements
-      - name: Create Library Release Build
-        run: nim c -o:release/${{ matrix.libName }} --cpu:${{ matrix.nimCpu }} --os:${{ matrix.nimOs }} --app:lib -d:release ./src/rconv.nim
+      - name: Create Dynamic-Library Release Build
+        run: nim c -o:release/${{ matrix.libName }} --cpu:${{ matrix.nimCpu }} --os:${{ matrix.nimOs }} --app:lib --noMain -d:release ./src/rconv.nim
+      
+      - name: Create Static-Library Release Build
+        run: nim c -o:release/${{ matrix.libName }} --cpu:${{ matrix.nimCpu }} --os:${{ matrix.nimOs }} --app:staticlib --noMain --noLinking -d:release ./src/rconv.nim
 
       - name: Create CLI Release Build
         run: nim c -o:release/${{ matrix.binName }} --cpu:${{ matrix.nimCpu }} --os:${{ matrix.nimOs }} --app:console -d:release ./src/rconv/cli.nim

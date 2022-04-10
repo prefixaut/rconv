@@ -49,19 +49,22 @@ If you still want to use it as library, you can do so as a Git Submodule and imp
 This project can be built with the regular [`nim` compiler](https://nim-lang.org/) ([Nim CLI Documentation](https://nim-lang.org/docs/nimc.html)).
 Additionally, the following convenience tasks are defined in the [`rconv.nimble`](rconv.nimble) file:
 
-- `clib`: Builds the project as a regular library
-- `build`: Builds the project as a regular library
-- `docs`: Builds the project's documentation.
+- `dynlib`: Builds the project as a dynamic library
+- `staticlib`: Builds the project as a static library
+- `build`: Builds the project as a cli-program
+- `docs`: Builds the project's documentation
 
 These may then be executed like this:
 
 ```sh
-nimble clib
+nimble dynlib
+nimble staticlib
 nimble build
 nimble docs
 
 # Release Versions
-nimble clib -d:release
+nimble dynlib -d:release
+nimble staticlib -d:release
 numble build -d:release
 ```
 

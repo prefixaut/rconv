@@ -1,5 +1,7 @@
 import std/[options, strformat, strutils, sequtils, sugar]
 
+import pkg/bignum
+
 import ./utils
 
 type
@@ -42,53 +44,53 @@ type
     RadarValues* = array[5, float] ## \
     ## Radar values from SM 3.9 (Stream, Voltage, Air, Freeze & Chaos)
 
-    BpmChange* = ref object
+    BpmChange* {.exportc: "rconv_sm_$1".} = ref object
         ## A bpm-change in a song
-        beat*: float
+        beat*: Rat
         ## At which beat the change occurs
         bpm*: float
         ## To what BPM it should change
 
-    Stop* = ref object
+    Stop* {.exportc: "rconv_sm_$1".} = ref object
         ## Stops/Freezes which happen in a song
-        beat*: float
+        beat*: Rat
         ## At which beat the stop occurs
         duration*: float
         ## For how long the stop holds on
 
-    Delay* = ref object
+    Delay* {.exportc: "rconv_sm_$1".} = ref object
         ## A delay segment in a song
-        beat*: float
+        beat*: Rat
         ## At which beat the delay occurs
         duration*: float
         ## For how long the delay holds on
 
-    TimeSignature* = ref object
+    TimeSignature* {.exportc: "rconv_sm_$1".} = ref object
         ## A time-signature change (ie. 3/4 or 7/8)
-        beat*: float
+        beat*: Rat
         ## At which point the time-signature changes
         numerator*: int
         ## The numerator of the signature
         denominator*: int
         ## The deniminator of the signature
 
-    InstrumentTrack* = ref object
+    InstrumentTrack* {.exportc: "rconv_sm_$1".} = ref object
         ## A special track for a single instrument
         instrument*: string
         ## The instrument name
         file*: string
         ## The file-path to the track/song
 
-    TickCount* = ref object
+    TickCount* {.exportc: "rconv_sm_$1".} = ref object
         ## Specifies how many checkpoints a hold has in a beat.
-        beat*: float
+        beat*: Rat
         ## At which beat the tick-count changes
         count*: int
         ## How many ticks it should change to
 
-    BackgroundChange* = ref object
+    BackgroundChange* {.exportc: "rconv_sm_$1".} = ref object
         ## A background change which occurrs at a specified time
-        beat*: float
+        beat*: Rat
         ## The beat on which the change occurs
         path*: string
         ## The file path (or if it's a folder path, uses "default.lua") to the script file
@@ -111,7 +113,7 @@ type
         color2*: Color
         ## Second color passed to the script files
 
-    Modifier* = ref object
+    Modifier* {.exportc: "rconv_sm_$1".} = ref object
         ## Modifiers which may be applied to the song or on an individual note
         name*: string
         ## The name of the modifier
@@ -124,14 +126,14 @@ type
         isPercent*: bool
         ## If the '_magnitude is percent based
 
-    Attack* = ref object
+    Attack* {.exportc: "rconv_sm_$1".} = ref object
         ## An attack is a modifier which occurs at a time/note for a certain time
         length*: float
         ## For how long the attack is active
         mods*: seq[string]
         ## The modifiers which will be applied
 
-    TimedAttack* = ref object
+    TimedAttack* {.exportc: "rconv_sm_$1".} = ref object
         ## An attack which happens at the specified time
         length*: float
         ## For how long the attack is active
@@ -140,18 +142,18 @@ type
         time*: float
         ## The time when the attack occurs
 
-    ComboChange* = ref object
+    ComboChange* {.exportc: "rconv_sm_$1".} = ref object
         ## Changes the combo count for hits/misses
-        beat*: float
+        beat*: Rat
         ## When the combo-change should occur
         hit*: int
         ## How much a single hit should count to the combo
         miss*: int
         ## How many misses a single miss should count
 
-    SpeedChange* = ref object
+    SpeedChange* {.exportc: "rconv_sm_$1".} = ref object
         ## Modifies the speed of the chart by ratio
-        beat*: float
+        beat*: Rat
         ## The beat where the speed-change occurs on
         ratio*: float
         ## The ratio that will be applied
@@ -160,28 +162,28 @@ type
         inSeconds*: bool
         ## If the duration is specified in seconds or in beats
 
-    ScollSpeedChange* = ref object
+    ScollSpeedChange* {.exportc: "rconv_sm_$1".} = ref object
         ## Modifies the scroll speed bt a factor
-        beat*: float
+        beat*: Rat
         ## The beat where the scroll-speed occurs on
         factor*: float
         ## The factor of how much the scoll changes compared to the regular speed
 
-    FakeSection* = ref object
+    FakeSection* {.exportc: "rconv_sm_$1".} = ref object
         ## Marker for a section to make all notes fakes
-        beat*: float
+        beat*: Rat
         ## The beat from when the fake-section should begin from
         duration*: float
         ## How long the fake-section should last (in beats)
 
-    Label* = ref object
+    Label* {.exportc: "rconv_sm_$1".} = ref object
         ## Label for a certain beat
-        beat*: float
+        beat*: Rat
         ## The beat on which the label is placed on
         content*: string
         ## The text/content of the label
 
-func columnCount*(mode: ChartType): int =
+func columnCount*(mode: ChartType): int {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     ## Gets the column count for a ChartType
 
     result = 4
@@ -198,83 +200,182 @@ func columnCount*(mode: ChartType): int =
     of ChartType.PumpCouple, ChartType.PumpDouble:
         result = 10
 
-func newBpmChange*(beat: float, bpm: float): BpmChange =
+func newBpmChange*(beat: Rat, bpm: float): BpmChange {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     new result
     result.beat = beat
     result.bpm = bpm
 
+func newBpmChange*(beat: float, bpm: float): BpmChange =
+    new result
+    result.beat = newRat(beat)
+    result.bpm = bpm
+
+func newBpmChange*(beat: Option[Rat], bpm: Option[float]): BpmChange =
+    result = newBpmChange(beat.get(newRat(0)), bpm.get(0.0))
+
 func newBpmChange*(beat: Option[float], bpm: Option[float]): BpmChange =
-    result = newBpmChange(beat.get(0.0), bpm.get(0.0))
+    result = newBpmChange(newRat(beat.get(0.0)), bpm.get(0.0))
+
+func newStop*(beat: Rat, duration: float): Stop {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
+    new result
+    result.beat = beat
+    result.duration = duration
 
 func newStop*(beat: float, duration: float): Stop =
     new result
-    result.beat = beat
+    result.beat = newRat(beat)
     result.duration = duration
 
-func newStop*(beat: Option[float], duration: Option[float]): Stop =
-    result = newStop(beat.get(0.0), duration.get(0.0))
+func newStop*(beat: Option[Rat], duration: Option[float]): Stop =
+    result = newStop(beat.get(newRat(0)), duration.get(0.0))
 
-func newDelay*(beat: float, duration: float): Delay =
+func newStop*(beat: Option[float], duration: Option[float]): Stop =
+    result = newStop(newRat(beat.get(0.0)), duration.get(0.0))
+
+func newDelay*(beat: Rat, duration: float): Delay {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     new result
     result.beat = beat
     result.duration = duration
 
-func newDelay*(beat: Option[float], duration: Option[float]): Delay =
-    result = newDelay(beat.get(0.0), duration.get(0.0))
+func newDelay*(beat: float, duration: float): Delay =
+    new result
+    result.beat = newRat(beat)
+    result.duration = duration
 
-func newTimeSignature*(beat: float, numerator: int, denominator: int): TimeSignature =
+func newDelay*(beat: Option[Rat], duration: Option[float]): Delay  =
+    result = newDelay(beat.get(newRat(0)), duration.get(0.0))
+
+func newDelay*(beat: Option[float], duration: Option[float]): Delay =
+    result = newDelay(newRat(beat.get(0.0)), duration.get(0.0))
+
+func newTimeSignature*(beat: Rat, numerator: int, denominator: int): TimeSignature {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     new result
     result.beat = beat
     result.numerator = numerator
     result.denominator = denominator
 
-func newTimeSignature*(beat: Option[float], numerator: Option[int], denominator: Option[int]): TimeSignature =
-    result = newTimeSignature(beat.get(0.0), numerator.get(4), denominator.get(4))
+func newTimeSignature*(beat: float, numerator: int, denominator: int): TimeSignature =
+    new result
+    result.beat = newRat(beat)
+    result.numerator = numerator
+    result.denominator = denominator
 
-func newInstrumentTrack*(instrument: string = "", file: string = ""): InstrumentTrack =
+func newTimeSignature*(beat: Option[Rat], numerator: Option[int], denominator: Option[int]): TimeSignature =
+    result = newTimeSignature(beat.get(newRat(0)), numerator.get(4), denominator.get(4))
+
+func newTimeSignature*(beat: Option[float], numerator: Option[int], denominator: Option[int]): TimeSignature =
+    result = newTimeSignature(newRat(beat.get(0.0)), numerator.get(4), denominator.get(4))
+
+func newInstrumentTrack*(instrument: string = "", file: string = ""): InstrumentTrack {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     new result
     result.instrument = instrument
     result.file = file
 
-func newComboChange*(beat: float, hit: int, miss: int): ComboChange =
+func newComboChange*(beat: Rat, hit: int, miss: int): ComboChange {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     new result
     result.beat = beat
     result.hit = hit
     result.miss = miss
 
-func newComboChange*(beat: Option[float], hit: Option[int], miss: Option[int]): ComboChange =
-    result = newComboChange(beat.get(0.0), hit.get(1), miss.get(1))
+func newComboChange*(beat: float, hit: int, miss: int): ComboChange =
+    new result
+    result.beat = newRat(beat)
+    result.hit = hit
+    result.miss = miss
 
-func newSpeedChange*(beat: float, ratio: float, duration: float, inSeconds: bool): SpeedChange =
+func newComboChange*(beat: Option[Rat], hit: Option[int], miss: Option[int]): ComboChange =
+    result = newComboChange(beat.get(newRat(0)), hit.get(1), miss.get(1))
+
+func newComboChange*(beat: Option[float], hit: Option[int], miss: Option[int]): ComboChange =
+    result = newComboChange(newRat(beat.get(0.0)), hit.get(1), miss.get(1))
+
+func newSpeedChange*(beat: Rat, ratio: float, duration: float, inSeconds: bool): SpeedChange {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     new result
     result.beat = beat
     result.ratio = ratio
     result.duration = duration
     result.inSeconds = inSeconds
 
-func newSpeedChange*(beat: Option[float], ratio: Option[float], duration: Option[float], inSeconds: Option[bool]): SpeedChange =
-    result = newSpeedChange(beat.get(0.0), ratio.get(1.0), duration.get(0.0), inSeconds.get(false))
+func newSpeedChange*(beat: float, ratio: float, duration: float, inSeconds: bool): SpeedChange =
+    new result
+    result.beat = newRat(beat)
+    result.ratio = ratio
+    result.duration = duration
+    result.inSeconds = inSeconds
 
-func newScollSpeedChange*(beat: float, factor: float): ScollSpeedChange =
+func newSpeedChange*(beat: Option[Rat], ratio: Option[float], duration: Option[float], inSeconds: Option[bool]): SpeedChange =
+    result = newSpeedChange(beat.get(newRat(0)), ratio.get(1.0), duration.get(0.0), inSeconds.get(false))
+
+func newSpeedChange*(beat: Option[float], ratio: Option[float], duration: Option[float], inSeconds: Option[bool]): SpeedChange =
+    result = newSpeedChange(newRat(beat.get(0.0)), ratio.get(1.0), duration.get(0.0), inSeconds.get(false))
+
+func newScollSpeedChange*(beat: Rat, factor: float): ScollSpeedChange {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     new result
     result.beat = beat
     result.factor = factor
 
-func newScollSpeedChange*(beat: Option[float], factor: Option[float]): ScollSpeedChange =
-    result = newScollSpeedChange(beat.get(0.0), factor.get(1.0))
+func newScollSpeedChange*(beat: float, factor: float): ScollSpeedChange =
+    new result
+    result.beat = newRat(beat)
+    result.factor = factor
 
-func newFakeSection*(beat: float, duration: float): FakeSection =
+func newScollSpeedChange*(beat: Option[Rat], factor: Option[float]): ScollSpeedChange =
+    result = newScollSpeedChange(beat.get(newRat(0)), factor.get(1.0))
+
+func newScollSpeedChange*(beat: Option[float], factor: Option[float]): ScollSpeedChange =
+    result = newScollSpeedChange(newRat(beat.get(0.0)), factor.get(1.0))
+
+func newFakeSection*(beat: Rat, duration: float): FakeSection {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     new result
     result.beat = beat
     result.duration = duration
 
-func newFakeSection*(beat: Option[float], duration: Option[float]): FakeSection =
-    result = newFakeSection(beat.get(0.0), duration.get(0.0))
+func newFakeSection*(beat: float, duration: float): FakeSection =
+    new result
+    result.beat = newRat(beat)
+    result.duration = duration
 
-func newLabel*(beat: float = 0.0, content: string = ""): Label =
+func newFakeSection*(beat: Option[Rat], duration: Option[float]): FakeSection =
+    result = newFakeSection(beat.get(newRat(0)), duration.get(0.0))
+
+func newFakeSection*(beat: Option[float], duration: Option[float]): FakeSection =
+    result = newFakeSection(newRat(beat.get(0.0)), duration.get(0.0))
+
+func newLabel*(beat: Rat = newRat(0), content: string = ""): Label {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     new result
     result.beat = beat
     result.content = content
+
+func newLabel*(beat: float = 0.0, content: string = ""): Label =
+    new result
+    result.beat = newRat(beat)
+    result.content = content
+
+func newBackgroundChange*(
+    beat: Rat = newRat(0),
+    path: string = "",
+    updateRate: float = 0.0,
+    crossFade: bool = false,
+    stretchRewind: bool = false,
+    stretchNoLoop: bool = false,
+    effect: string = "",
+    file2: string = "",
+    transition: string = "",
+    color1: Color = [0.0, 0.0, 0.0, 0.0],
+    color2: Color = [0.0, 0.0, 0.0, 0.0]
+): BackgroundChange {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
+    new result
+    result.beat = beat
+    result.path = path
+    result.updateRate = updateRate
+    result.crossFade = crossFade
+    result.stretchRewind = stretchRewind
+    result.stretchNoLoop = stretchNoLoop
+    result.effect = effect
+    result.file2 = file2
+    result.transition = transition
+    result.color1 = color1
+    result.color2 = color2
 
 func newBackgroundChange*(
     beat: float = 0.0,
@@ -290,7 +391,7 @@ func newBackgroundChange*(
     color2: Color = [0.0, 0.0, 0.0, 0.0]
 ): BackgroundChange =
     new result
-    result.beat = beat
+    result.beat = newRat(beat)
     result.path = path
     result.updateRate = updateRate
     result.crossFade = crossFade
@@ -308,7 +409,7 @@ func newModifier*(
     approachRate: int = 1,
     magnitude: float = 100,
     isPercent: bool = true
-): Modifier =
+): Modifier {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     new result
     result.name = name
     result.approachRate = approachRate
@@ -316,18 +417,26 @@ func newModifier*(
     result.isPercent = isPercent
     result.player = player
 
-func newAttack*(length: float = 0.0, mods: seq[string] = @[]): Attack =
+func newAttack*(length: float = 0.0, mods: seq[string] = @[]): Attack {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     new result
     result.length = length
     result.mods = mods
 
-func newTickCount*(beat: float, count: int): TickCount =
+func newTickCount*(beat: Rat, count: int): TickCount {.cdecl, exportc: "rconv_sm_$1", dynlib.} =
     new result
     result.beat = beat
     result.count = count
 
+func newTickCount*(beat: float, count: int): TickCount =
+    new result
+    result.beat = newRat(beat)
+    result.count = count
+
+func newTickCount*(beat: Option[Rat], count: Option[int]): TickCount =
+    result = newTickCount(beat.get(newRat(0)), count.get(4))
+
 func newTickCount*(beat: Option[float], count: Option[int]): TickCount =
-    result = newTickCount(beat.get(0.0), count.get(4))
+    result = newTickCount(newRat(beat.get(0.0)), count.get(4))
 
 func splitByComma*(data: string, doStrip: bool = false): seq[string] =
     result = @[]
@@ -366,7 +475,7 @@ func parseBackgroundChanges*(data: string): seq[BackgroundChange] =
         var spl = elem.splitMin("=", 11)
 
         result.add newBackgroundChange(
-            beat = parseFloatSafe(spl[0]).get(0.0),
+            beat = parseRatSafe(spl[0]).get(newRat(0)),
             path = spl[1],
             updateRate = parseFloatSafe(spl[2]).get(0.0),
             crossFade = parseBoolSafe(spl[3]).get(false),
@@ -383,19 +492,19 @@ func parseStops*(data: string): seq[Stop] =
     result = @[]
     for elem in data.splitByComma:
         let spl = elem.splitMin("=", 2)
-        result.add newStop(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]))
+        result.add newStop(parseRatSafe(spl[0]), parseFloatSafe(spl[1]))
 
 func parseBpms*(data: string): seq[BpmChange] =
     result = @[]
     for elem in data.splitByComma:
         let spl = elem.splitMin("=", 2)
-        result.add newBpmChange(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]))
+        result.add newBpmChange(parseRatSafe(spl[0]), parseFloatSafe(spl[1]))
 
 func parseTimeSignatures*(data: string): seq[TimeSignature] =
     result = @[]
     for elem in data.splitByComma:
         let spl = elem.split("=", 3)
-        result.add newTimeSignature(parseFloatSafe(spl[0]), parseIntSafe(spl[1]), parseIntSafe(spl[2]))
+        result.add newTimeSignature(parseRatSafe(spl[0]), parseIntSafe(spl[1]), parseIntSafe(spl[2]))
 
 func parseModifier*(data: string): Modifier =
     var spl = data.stripSplit(" ")
@@ -440,44 +549,44 @@ func parseDelays*(data: string): seq[Delay] =
     result = @[]
     for elem in data.splitByComma:
         let spl = elem.splitMin("=", 2)
-        result.add newDelay(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]))
+        result.add newDelay(parseRatSafe(spl[0]), parseFloatSafe(spl[1]))
 
 func parseTickCounts*(data: string): seq[TickCount] =
     result = @[]
     for elem in data.splitByComma:
         let spl = elem.splitMin("=", 2)
-        result.add newTickCount(parseFloatSafe(spl[0]), parseIntSafe(spl[1]))
+        result.add newTickCount(parseRatSafe(spl[0]), parseIntSafe(spl[1]))
 
 func parseComboChanges*(data: string): seq[ComboChange] =
     result = @[]
     for elem in data.splitByComma:
         let spl = elem.splitMin("=", 3)
-        result.add newComboChange(parseFloatSafe(spl[0]), parseIntSafe(spl[1]), parseIntSafe(spl[2]))
+        result.add newComboChange(parseRatSafe(spl[0]), parseIntSafe(spl[1]), parseIntSafe(spl[2]))
 
 func parseSpeedChanges*(data: string): seq[SpeedChange] =
     result = @[]
     for elem in data.splitByComma:
         let spl = elem.splitMin("=", 4)
-        result.add newSpeedChange(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]), parseFloatSafe(spl[2]), parseBoolSafe(spl[3]))
+        result.add newSpeedChange(parseRatSafe(spl[0]), parseFloatSafe(spl[1]), parseFloatSafe(spl[2]), parseBoolSafe(spl[3]))
 
 func parseScollSpeedChanges*(data: string): seq[ScollSpeedChange] =
     result = @[]
     for elem in data.splitByComma:
         let spl = elem.splitMin("=", 2)
-        result.add newScollSpeedChange(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]))
+        result.add newScollSpeedChange(parseRatSafe(spl[0]), parseFloatSafe(spl[1]))
 
 func parseFakeSections*(data: string): seq[FakeSection] =
     result = @[]
     for elem in data.splitByComma:
         let spl = elem.splitMin("=", 2)
-        result.add newFakeSection(parseFloatSafe(spl[0]), parseFloatSafe(spl[1]))
+        result.add newFakeSection(parseRatSafe(spl[0]), parseFloatSafe(spl[1]))
 
 func parseLabels*(data: string): seq[Label] =
     result = @[]
     for elem in data.splitByComma:
         let spl = elem.splitMin("=", 2)
         if spl.len > 1:
-            result.add newLabel(parseFloat(spl[0]), spl[1])
+            result.add newLabel(parseRat(spl[0]), spl[1])
 
 func parseRadarValues*(data: string): RadarValues =
     var spl = data.splitMin(",", 5, "0")
@@ -530,7 +639,6 @@ func write*(attack: TimedAttack): string =
         fmt"LEN={attack.length}",
         fmt"MODS={mods}"
     ].join(":")
-
 
 func `$`*(ct: ChartType): string =
     case ct:

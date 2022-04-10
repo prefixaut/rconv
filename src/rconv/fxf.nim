@@ -9,7 +9,7 @@ const
     Version1* = uint32(1)
 
 type
-    InvalidVersionException* = object of CatchableError
+    InvalidVersionException* {.exportc: "rconv_fxf_$1".} = object of CatchableError
     ## Exception which is thrown when the loaded Version is not parsable/valid
 
     ChartFile* = ref object
@@ -34,7 +34,7 @@ type
         `charts`*: ChartCollection
         ## Chart collection which separates the difficulties
 
-    ChartCollection* = ref object
+    ChartCollection* {.exportc: "rconv_fxf_$1".} = ref object
         ## Multiple charts keyed by their difficulties
         `bscPresent`*: uint8
         ## If the `basic` difficulty/chart is present
@@ -49,7 +49,7 @@ type
         `extreme`*: Chart
         ## The chart for the `extreme` difficulty
 
-    Chart* = ref object
+    Chart* {.exportc: "rconv_fxf_$1".} = ref object
         ## A single FXF chart which holds the note/hold information
         `rating`*: uint32
         ## The charts difficulty rating as numerical value
@@ -58,7 +58,7 @@ type
         `ticks`*: seq[Tick]
         ## The ticks/notes of the chart
 
-    BpmChange* = ref object
+    BpmChange* {.exportc: "rconv_fxf_$1".} = ref object
         ## A change of BPM in the song/chart on a given time
         bpm*: float32
         ## The BPM it changes to
@@ -69,7 +69,7 @@ type
         snapIndex*: uint16
         ## optional. The snap-index in which the change occurs
 
-    Tick* = ref object
+    Tick* {.exportc: "rconv_fxf_$1".} = ref object
         ## A tick referres to a time in the chart, where one or more
         ## actions need to be performed.
         `time`*: float32
@@ -87,7 +87,7 @@ type
         `holds`*: seq[Hold]
         ## Sequence of holds to start at this time
 
-    Hold* = ref object
+    Hold* {.exportc: "rconv_fxf_$1".} = ref object
         ## A hold is a regular note which needs to be held until a certain time.
         ## It starts on the `from` position together with an animation which
         ## starts on the `to` position.
@@ -102,7 +102,7 @@ type
         ## There is no need to search for the hold end
         ## and animation duration can be calculated really easily
 
-func newChartCollection*(basic: Chart = nil, advanced: Chart = nil, extreme: Chart = nil): ChartCollection =
+func newChartCollection*(basic: Chart = nil, advanced: Chart = nil, extreme: Chart = nil): ChartCollection {.cdecl, exportc: "rconv_fxf_$1", dynlib.} =
     result = ChartCollection()
     result.bscPresent = uint8(basic != nil)
     result.basic = basic
@@ -111,7 +111,15 @@ func newChartCollection*(basic: Chart = nil, advanced: Chart = nil, extreme: Cha
     result.extPresent = uint8(extreme != nil)
     result.extreme = extreme
 
-func newChartFile*(title: string = "", artist: string = "", audio: string = "", jacket: string = "", offset: int32 = 0, bpmChange: seq[BpmChange] = @[], charts = newChartCollection()): ChartFile =
+func newChartFile*(
+    title: string = "",
+    artist: string = "",
+    audio: string = "",
+    jacket: string = "",
+    offset: int32 = 0,
+    bpmChange: seq[BpmChange] = @[],
+    charts = newChartCollection()
+): ChartFile {.cdecl, exportc: "rconv_fxf_$1", dynlib.} =
     result = ChartFile()
     result.version = Version1
     result.title = title
@@ -123,20 +131,31 @@ func newChartFile*(title: string = "", artist: string = "", audio: string = "", 
     result.bpmChange = bpmChange
     result.charts = charts
 
-func newChart*(rating: uint32 = 1, ticks: seq[Tick] = @[]): Chart =
+func newChart*(rating: uint32 = 1, ticks: seq[Tick] = @[]): Chart {.cdecl, exportc: "rconv_fxf_$1", dynlib.} =
     result = Chart()
     result.rating = rating
     result.numTick = uint32(ticks.len)
     result.ticks = ticks
 
-func newBpmChange*(bpm: float32 = 0, time: float32 = 0, snapSize: uint16 = 0, snapIndex: uint16 = 0): BpmChange =
+func newBpmChange*(
+    bpm: float32 = 0,
+    time: float32 = 0,
+    snapSize: uint16 = 0,
+    snapIndex: uint16 = 0
+): BpmChange {.cdecl, exportc: "rconv_fxf_$1", dynlib.} =
     result = BpmChange()
     result.bpm = bpm
     result.time = time
     result.snapSize = snapSize
     result.snapIndex = snapIndex
 
-func newTick*(time: float32 = 0, snapSize: uint16 = 0, snapIndex: uint16 = 0, notes: seq[uint8] = @[], holds: seq[Hold] = @[]): Tick =
+func newTick*(
+    time: float32 = 0,
+    snapSize: uint16 = 0,
+    snapIndex: uint16 = 0,
+    notes: seq[uint8] = @[],
+    holds: seq[Hold] = @[]
+): Tick {.cdecl, exportc: "rconv_fxf_$1", dynlib.} =
     result = Tick()
     result.time = time
     result.snapSize = snapSize
@@ -146,13 +165,13 @@ func newTick*(time: float32 = 0, snapSize: uint16 = 0, snapIndex: uint16 = 0, no
     result.numHolds = uint8(holds.len)
     result.holds = holds
 
-func newHold*(`from`: NoteRange, to: NoteRange, releaseOn: float32 = 0): Hold =
+func newHold*(`from`: NoteRange, to: NoteRange, releaseOn: float32 = 0): Hold {.cdecl, exportc: "rconv_fxf_$1", dynlib.} =
     result = Hold()
     result.`from` = `from`
     result.to = to
     result.releaseOn = releaseOn
 
-func asFormattingParams*(chart: ChartFile): FormattingParameters =
+func asFormattingParams*(chart: ChartFile): FormattingParameters {.cdecl, exportc: "rconv_fxf_$1", dynlib.} =
     ## Creates formatting-parameters from the provided chart-file
 
     result = newFormattingParameters(
@@ -161,18 +180,18 @@ func asFormattingParams*(chart: ChartFile): FormattingParameters =
         extension = $FileType.FXF,
     )
 
-proc readFXFBpmChange(stream: Stream): BpmChange =
+proc readFXFBpmChange(stream: Stream): BpmChange {.cdecl, exportc: "rconv_fxf_$1", dynlib.} =
     result.bpm = stream.readFloat32
     result.time = stream.readFloat32
     result.snapSize = stream.readUint16
     result.snapIndex = stream.readUint16
 
-proc readFXFHold(stream: Stream): Hold =
+proc readFXFHold(stream: Stream): Hold {.cdecl, exportc: "rconv_fxf_$1", dynlib.} =
     result.`from` = stream.readUint8
     result.to = stream.readUint8
     result.releaseOn = stream.readFloat32
 
-proc readFXFTick(stream: Stream): Tick =
+proc readFXFTick(stream: Stream): Tick {.cdecl, exportc: "rconv_fxf_$1", dynlib.} =
     result.time = stream.readFloat32
     result.snapSize = stream.readUint16
     result.snapIndex = stream.readUint16
@@ -188,7 +207,7 @@ proc readFXFTick(stream: Stream): Tick =
     for i in 0..uint32(result.numHolds):
         result.holds.add stream.readFXFHold
 
-proc readFXFChart(stream: Stream): Chart =
+proc readFXFChart(stream: Stream): Chart {.cdecl, exportc: "rconv_fxf_$1", dynlib.} =
     result.rating = stream.readUint32
     result.numTick = stream.readUint32
     result.ticks = @[]
@@ -196,7 +215,7 @@ proc readFXFChart(stream: Stream): Chart =
     for i in 0..result.numTick:
         result.ticks.add stream.readFXFTick
 
-proc readFXFChartCollection(stream: Stream): ChartCollection =
+proc readFXFChartCollection(stream: Stream): ChartCollection {.cdecl, exportc: "rconv_fxf_$1", dynlib.} =
     result.bscPresent = stream.readUint8
     result.advPresent = stream.readUint8
     result.extPresent = stream.readUint8
@@ -208,7 +227,7 @@ proc readFXFChartCollection(stream: Stream): ChartCollection =
     if result.extPresent != 0:
         result.extreme = stream.readFXFChart
 
-proc parseFXF*(stream: Stream, lenient: bool = false): ChartFile =
+proc parseFXF*(stream: Stream, lenient: bool = false): ChartFile {.cdecl, exportc: "rconv_fxf_$1".} =
     ## Parse a FXF Chart File from the stream
 
     var version = stream.readUint32
@@ -229,7 +248,7 @@ proc parseFXF*(stream: Stream, lenient: bool = false): ChartFile =
 
     result.charts = stream.readFXFChartCollection
 
-proc write(chart: Chart, stream: Stream): void =
+proc write(chart: Chart, stream: Stream): void {.cdecl, exportc: "rconv_fxf_writeChart", dynlib.} =
     stream.write(chart.rating)
     stream.write(uint32(chart.ticks.len))
 
@@ -249,7 +268,7 @@ proc write(chart: Chart, stream: Stream): void =
             stream.write(uint8(hold.to))
             stream.write(hold.releaseOn)
 
-proc write*(chart: ChartFile, stream: Stream): void =
+proc write*(chart: ChartFile, stream: Stream): void {.cdecl, exportc: "rconv_fxf_$1", dynlib.} =
     stream.write(chart.version)
     stream.writeUTF8(chart.title, chart.artist, chart.audio, chart.jacket)
     stream.write(chart.offset)

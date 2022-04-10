@@ -22,7 +22,7 @@ type
     BpmRange* = tuple[min: float, max: float] ## \
     ## The range of BPM the file is in
 
-    Note* = ref object
+    Note* {.exportc: "rconv_memo_$1".} = ref object
         ## A Note or Hold which has to be pressed.
         time*: int
         ## The timing id when this note has to be pressed.
@@ -42,7 +42,7 @@ type
             else:
                 discard
 
-    Section* = ref object
+    Section* {.exportc: "rconv_memo_$1".} = ref object
         ## Describes a complete section (with all parts).
         index*: int
         ## The index of this section.
@@ -61,7 +61,7 @@ type
         ## Keys are the positions, which start from top-left to bottom-right.
         ## _`NoteRange`
 
-    Snap* = ref object
+    Snap* {.exportc: "rconv_memo_$1".} = ref object
         ## Describes the amount of notes that can occur in a single beat.
         length*: int
         ## How many notes fit into a Snap.
@@ -70,7 +70,7 @@ type
         row*: RowIndex
         ## The row in which this snap is defined.
 
-    Memo* = ref object
+    Memo* {.exportc: "rconv_memo_$1".} = ref object
         ## memo is the in-memory data-structure for memo-files.
         songTitle*: string
         ## The title of the chart's song.
@@ -107,7 +107,7 @@ func newMemo*(
     bpm: float = 0.0,
     bpmRange: BpmRange = (0.0, 0.0),
     sections: seq[Section] = @[]
-): Memo =
+): Memo {.cdecl, exportc: "rconv_memo_$1", dynlib.} =
     new result
     result.songTitle = songTitle
     result.artist = artist
@@ -125,7 +125,7 @@ func newSection*(
     snaps: seq[Snap] = @[],
     noteCount: uint = 0,
     notes: OrderedTable[NoteRange, seq[Note]] = initOrderedTable[NoteRange, seq[Note]]()
-): Section =
+): Section {.cdecl, exportc: "rconv_memo_$1", dynlib.} =
     new result
     result.index = index
     result.bpm = bpm
@@ -135,13 +135,13 @@ func newSection*(
     result.noteCount = noteCount
     result.notes = notes
 
-func newSnap*(length: int = 1, partIndex: int = 0, row = 0): Snap =
+func newSnap*(length: int = 1, partIndex: int = 0, row = 0): Snap {.cdecl, exportc: "rconv_memo_$1", dynlib.} =
     new result
     result.length = length
     result.partIndex = partIndex
     result.row = row
 
-func newNote*(time: int = 0, partIndex: int = 0): Note =
+func newNote*(time: int = 0, partIndex: int = 0): Note {.cdecl, exportc: "rconv_memo_$1", dynlib.} =
     result = Note(kind: NoteType.Note)
     result.time = time
     result.partIndex = partIndex
@@ -153,7 +153,7 @@ func newHold*(
     releaseTime: int = 0,
     releasePart: int = 0,
     releaseSection: int = 1
-): Note =
+): Note {.cdecl, exportc: "rconv_memo_$1", dynlib.} =
     result = Note(kind: NoteType.Hold)
     result.time = time
     result.partIndex = partIndex
@@ -162,7 +162,7 @@ func newHold*(
     result.releasePart = releasePart
     result.releaseSection = releaseSection
 
-func parseDifficulty*(input: string): Difficulty =
+func parseDifficulty*(input: string): Difficulty {.cdecl, exportc: "rconv_memo_$1", dynlib.} =
     case input.toLower:
     of "bsc", "basic":
         result = Difficulty.Basic
@@ -173,7 +173,7 @@ func parseDifficulty*(input: string): Difficulty =
     else:
         result = Difficulty.Edit
 
-func asFormattingParams*(chart: Memo): FormattingParameters =
+func asFormattingParams*(chart: Memo): FormattingParameters {.cdecl, exportc: "rconv_memo_$1", dynlib.} =
     result = newFormattingParameters(
         title = chart.songTitle,
         artist = chart.artist,

@@ -1,3 +1,8 @@
+##[
+    Module which contains types for all FXF elements,
+    as well as procs to parse and write them from and to binary streams.
+]##
+
 import std/[streams]
 
 import ./private/[grid_common, stream_helpers]

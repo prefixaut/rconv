@@ -1,3 +1,8 @@
+##[
+    Module which contains types for all Memo elements,
+    as well as procs to parse and write memo-charts.
+]##
+
 import std/[algorithm, sequtils, streams, strformat, sugar, tables, unicode]
 import std/strutils except split, strip
 

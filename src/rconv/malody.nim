@@ -1,3 +1,8 @@
+##[
+    Module which contains types for all Malody elements,
+    as well as JSON parsing hooks to read/write them with the nim json-module.
+]##
+
 import std/[enumutils, json, jsonutils, sets, streams, tables]
 
 import ./common

@@ -1,3 +1,7 @@
+##[
+    Module which contains common types for 4x4 grid-based games.
+]##
+
 type
     NoteRange* = range[0..15] ## \
     ## Range of note indices which need to be pressed/held at some time.

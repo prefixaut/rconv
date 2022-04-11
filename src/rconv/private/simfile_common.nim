@@ -1,3 +1,8 @@
+##[
+    Module which contains types and procs which are used in all
+    simfile-based file-formats (`.sm`, `.ssc`).
+]##
+
 import std/[options, strformat, strutils, sequtils, sugar]
 
 import pkg/bignum

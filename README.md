@@ -17,13 +17,14 @@ rconv is a library and command-line program to parse and convert various rhythm 
 
 - [rconv](#rconv)
   - [Installation](#installation)
-  - [Installation as CLI](#installation-as-cli)
+    - [Installation as CLI](#installation-as-cli)
     - [Installtion as Library](#installtion-as-library)
   - [Building](#building)
   - [Documentation](#documentation)
   - [Usage](#usage)
     - [Usage of CLI](#usage-of-cli)
-    - [Usage of Library](#usage-of-library)
+    - [Usage as Nim Library](#usage-as-nim-library)
+    - [Usage as C Library](#usage-as-c-library)
   - [Supported Formats](#supported-formats)
     - [Parsing](#parsing)
     - [Convertion](#convertion)
@@ -32,7 +33,7 @@ rconv is a library and command-line program to parse and convert various rhythm 
 
 ## Installation
 
-## Installation as CLI
+### Installation as CLI
 
 See the [releases](https://github.com/prefixaut/rconv/releases) for pre-build executables of your system.
 
@@ -40,9 +41,11 @@ If you want to build it yourself, see the [Building](#building) section for furt
 
 ### Installtion as Library
 
-Currently not available as nimble package just yet, as it's still in an unstable phase.
+You may install rconv via [`nimble`](https://github.com/nim-lang/nimble):
 
-If you still want to use it as library, you can do so as a Git Submodule and import the [entry](./src/entry.nim)-file.
+```sh
+nimble install rconv
+```
 
 ## Building
 
@@ -126,7 +129,7 @@ rconv -C -j -f -t malody --out output/nested /somewhere/my-input/sample.memo
 
 > **Note**: You can also use the same output format again to format the files.
 
-### Usage of Library
+### Usage as Nim Library
 
 As library, you should only have to import the entry file and the file formtats you want to use.
 Each file-format should be imported in an own namespace, as types might overlap (Multiple types called `Chart` for example).
@@ -146,6 +149,44 @@ let memoChart = memo.parseMemo(rawMemo)
 let fxfChart = memoChart.toFXF
 echo fxfChart.write
 ```
+
+### Usage as C Library
+
+The usage as a C Library is the same as in nim, however with namespaced and slightly renamed function names.
+
+All functions are namespaced/prefixed with `rconv_`, and the gamemode (i.E. `memo_`).
+Common functions do not have such a gamemode prefix.
+
+However, due to how functions are generated/exported from nim, it is not possible to overload functions (have functions with the same name, but with different parameters).
+Therefore, certain functions had to renamed.
+
+Additionally, as this library is written in nim, you need to call the nim runtime (`NimMain()`) to enable nim's garbage collection:
+
+```c
+#include <stdio.h>
+#include "librconv.h"
+
+int main(int argc, char *argv[]) {
+    // This call is neccessary to make rconv work.
+    // Its setting up nims garbage-collection and general environment.
+    NimMain();
+
+    // Now you can use rconv without any additional thoughts
+    rconv_fxf_ChartFile chart* = rconv_fxf_parse(...);
+}
+```
+
+Examples:
+
+| Nim function signature                                                | C function signature                      |
+| --------------------------------------------------------------------- | ----------------------------------------- |
+| `rconv/common/detectFileType(string)`                                 | `rconv_detectFileType(string)`            |
+| `rconv/common/getFileExtension(FileType)`                             | `rconv_getFileExtension(rconv_FileType)`  |
+| `rconv/fxf/newTick(float32, uint16, uint16, seq[uint8], seq[Hold])`   | `rconv_fxf_newTick(float32, uint16, uint16, std::vec<uint8>, std::vec<rconv_fxf_Hold>)` |
+| `rconv/memo/write(Memo)`                                              | `rconv_memo_toString(rconv_memo_Memo)` |
+| `rconv/memo/write(Memo, Stream)`                                      | `rconv_memo_write(rconv_memo_Memo, stream)` |
+
+A proper documentation as well as the resulting C function name can be found in the [Documentation](#documentation).
 
 ## Supported Formats
 

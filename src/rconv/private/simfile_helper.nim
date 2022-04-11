@@ -1,9 +1,13 @@
+##[
+    Module which contains helpers for simfile-based file-formats (`.sm`, `.ssc`, `.ksf`).
+]##
+
 import std/strutils
 
 import ./line_reader
 
 type
-    Tag = tuple[name: string, data: string]
+    Tag* = tuple[name: string, data: string]
 
 iterator parseTags*(data: string): Tag =
     var reader = newLineReader(data)

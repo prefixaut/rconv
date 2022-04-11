@@ -1,3 +1,8 @@
+##[
+    Module which contains types for all StepMania elements,
+    as well as procs to parse and write stepmania-charts.
+]##
+
 import std/[enumutils, options, sequtils, sugar, streams, strformat, strutils, tables]
 
 import ./common

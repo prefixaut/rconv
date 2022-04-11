@@ -1,3 +1,7 @@
+##[
+    Module which contains utility procs used in testing.
+]##
+
 import std/unittest
 
 import ../malody as malody

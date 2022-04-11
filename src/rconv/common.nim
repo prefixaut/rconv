@@ -1,3 +1,7 @@
+##[
+    This module contains common types and procs which are used throughout the library.
+]##
+
 import std/[options, strformat, strutils]
 
 import pkg/regex

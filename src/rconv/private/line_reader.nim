@@ -1,3 +1,9 @@
+##[
+    Module which contains a basic implementation of a LineReader,
+    which reads lines as long as there's content present.
+    Difference is, that is strips each line and skips empty lines entirely.
+]##
+
 import std/[unicode]
 
 type

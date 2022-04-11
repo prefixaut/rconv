@@ -1,3 +1,7 @@
+##[
+    Module which contains general use utility procs.
+]##
+
 import std/[strutils, sequtils, options, os]
 
 import pkg/bignum

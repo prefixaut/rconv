@@ -1,3 +1,8 @@
+##[
+    Module which contains a general purpose converter proc,
+    as well as utility procs to save charts to a file.
+]##
+
 import std/[streams, strformat, options, os]
 
 import ./common, mapper
@@ -179,6 +184,12 @@ proc convert*(
 
     var actualFrom: FileType
     var actualOptions: ConvertOptions
+
+    # Empty result has to be created, otherwise we get some nil-reference errors
+    result = ConvertResult(
+        folderName: "",
+        filePath: ""
+    )
 
     if fromType.isSome:
         actualFrom = fromType.get

@@ -1,3 +1,8 @@
+##[
+    Module which contains types and procs which are used
+    in all memo-based file-formats (`.memo`, `.memo2`).
+]##
+
 import std/[strutils, tables]
 
 import ./grid_common

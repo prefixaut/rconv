@@ -1,3 +1,7 @@
+##[
+    Module which contains helper procs for easier json usage.
+]##
+
 import std/[json, tables]
 
 func hasField*(self: JsonNode, field: string, kind: JsonNodeKind): bool =

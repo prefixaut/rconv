@@ -1,3 +1,9 @@
+##[
+    Module which is the entrypoint for the CLI part of rconv.
+    Creates a handler for all cli-arguments and calls the converter
+    with the provided options.
+]##
+
 import std/[options, strutils, strformat, os]
 
 import pkg/[argparse, glob]

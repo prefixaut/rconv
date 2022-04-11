@@ -1,3 +1,7 @@
+##[
+    Module which contains helper-procs for easier stream interactions.
+]##
+
 import std/[encodings, streams]
 
 const
